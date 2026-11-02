@@ -14,7 +14,7 @@ android {
     compileSdk = 36
     ndkVersion '28.1.13356709'
     defaultConfig {
-        applicationId 'fr.vroot.vfiles'
+        applicationId 'fr.vroot.vfiles.fork'
         minSdk 23
         // Not supporting foreground service timeout yet.
         //noinspection OldTargetApi
@@ -114,7 +114,7 @@ if (project.hasProperty('systemPicker')) {
     }
 }
 
-// Always name the assembled APK "VFiles-v<versionName>.apk" so the file name carries the
+// Name assembled APKs "Files-Fork-v<versionName>.apk" so the file name carries the
 // current version. This is the name users see on the GitHub Releases page. Uses AGP's new
 // variant API (the legacy applicationVariants was removed in newer AGP).
 def appVersionName = android.defaultConfig.versionName
@@ -124,7 +124,7 @@ androidComponents {
         // the build over it.
         try {
             variant.outputs.each { output ->
-                output.outputFileName.set("VFiles-v${appVersionName}.apk")
+                output.outputFileName.set("Files-Fork-v${appVersionName}.apk")
             }
         } catch (Throwable t) {
             logger.warn("APK rename skipped: ${t.message}")

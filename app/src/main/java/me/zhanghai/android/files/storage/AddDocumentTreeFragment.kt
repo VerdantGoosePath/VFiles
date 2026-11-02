@@ -7,7 +7,6 @@ package me.zhanghai.android.files.storage
 
 import android.net.Uri
 import android.os.Bundle
-import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import me.zhanghai.android.files.file.DocumentTreeUri
@@ -21,8 +20,9 @@ class AddDocumentTreeFragment : Fragment() {
         ActivityResultContracts.OpenDocumentTree(), this::onOpenDocumentTreeResult
     )
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+    @Suppress("DEPRECATION")
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+        super.onActivityCreated(savedInstanceState)
 
         if (savedInstanceState == null) {
             openDocumentTreeLauncher.launchSafe(null, this)

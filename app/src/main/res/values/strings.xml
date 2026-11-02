@@ -7,8 +7,8 @@
 
 <resources>
 
-    <string name="app_name">VFiles</string>
-    <string name="app_name_launcher">Files</string>
+    <string name="app_name">Files Fork</string>
+    <string name="app_name_launcher">Files Fork</string>
 
     <string name="close">Close</string>
     <string name="copy">Copy</string>
