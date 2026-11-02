@@ -51,16 +51,8 @@ jobs:
             echo "KEY_PASSWORD=$SIGN_KEY_PASSWORD" >> "$GITHUB_ENV"
             echo "Using repository signing secrets"
           else
-            # Fallback installable APK: this signing key is NEW on each run.
-            keytool -genkeypair -v -keystore "$RUNNER_TEMP/files-fork-ephemeral.jks" \
-              -storepass android -keypass android -alias filesfork \
-              -keyalg RSA -keysize 2048 -validity 3650 -noprompt \
-              -dname "CN=Files Fork CI"
-            echo "STORE_FILE=$RUNNER_TEMP/files-fork-ephemeral.jks" >> "$GITHUB_ENV"
-            echo "STORE_PASSWORD=android" >> "$GITHUB_ENV"
-            echo "KEY_ALIAS=filesfork" >> "$GITHUB_ENV"
-            echo "KEY_PASSWORD=android" >> "$GITHUB_ENV"
-            echo "::warning::Ephemeral signing key. Configure signing secrets for updatable releases."
+            echo "::error::Permanent signing secrets missing. Configure all four FILES_FORK_* secrets before building."
+            exit 1
           fi
 
       - name: Build installable release APK
