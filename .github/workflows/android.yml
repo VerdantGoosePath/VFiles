@@ -27,12 +27,23 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install required SDK components
+      - name: Install required Android SDK components
+        shell: bash
         run: |
-          sdkmanager --install "platforms;android-36" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+          set -euo pipefail
+          # GitHub-hosted Ubuntu runners already have an Android SDK and command-line tools.
+          # setup-android@v3 currently fails by requesting the removed SDK "tools" package.
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          if command -v sdkmanager >/dev/null 2>&1; then
+            SDKMANAGER="$(command -v sdkmanager)"
+          else
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          fi
+          if [[ -z "$SDKMANAGER" || ! -x "$SDKMANAGER" ]]; then
+            echo "::error::Android sdkmanager not found on runner"
+            exit 1
+          fi
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
 
       - name: Prepare release signing
         env:
