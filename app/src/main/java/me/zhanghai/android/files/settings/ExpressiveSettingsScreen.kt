@@ -621,7 +621,7 @@ internal fun <T> ExpressiveChoiceDialog(
                             .clickable(role = Role.RadioButton) {
                                 onSelected(option.first)
                                 onDismiss()
-                            }.semantics { selected = isSelected }
+                            }.semantics { this.selected = isSelected }
                             .padding(horizontal = 8.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
