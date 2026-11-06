@@ -198,7 +198,10 @@ fn extract_rawzip(path: &Path, name: &str, target: &Path, password: &str, option
         // Built-in rawzip ZipCrypto handles legacy PKWARE encryption, not WinZip AES.
         // A wrong check byte rejects most incorrect passwords before decompression;
         // verifying_reader still validates the full uncompressed size and CRC.
-        let header = entry.local_header();
+        // File-backed rawzip readers need caller-provided space for the local
+        // name and extra fields (each can be up to 65,535 bytes).
+        let mut header_buffer = vec![0u8; 30 + 65_535 * 2];
+        let header = entry.local_header(&mut header_buffer)?;
         let expected = if header.flags().has_data_descriptor() {
             (header.last_modified_dos().packed_time() >> 8) as u8
         } else {
