@@ -220,6 +220,16 @@ fn extract_sevenz(path: &Path, name: &str, target: &Path, password: &str, option
                 Ok(()) => {},
                 Err(e) => failure = Some(e.to_string()),
             }
+            // Do not decode unrelated members after the requested file.
+            return Ok(false);
+        }
+        if !entry.is_directory {
+            // Solid blocks require earlier entry data to be consumed before
+            // advancing to the requested entry, even when it is discarded.
+            if let Err(e) = copy_limited(input, io::sink(), options) {
+                failure = Some(e.to_string());
+                return Ok(false);
+            }
         }
         Ok(true)
     })?;
