@@ -45,7 +45,12 @@ jobs:
             echo "::error::Android sdkmanager not found"
             exit 1
           fi
-          "$SDKMANAGER" --install "platforms;android-37" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+          "$SDKMANAGER" --install "platforms;android-37.0" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+          # API 37's SDK Manager package is "android-37.0" on GitHub runners.
+          # Some AGP/aapt2 paths still look up "android-37"; provide a local alias.
+          if [[ ! -e "$SDK_ROOT/platforms/android-37" && -d "$SDK_ROOT/platforms/android-37.0" ]]; then
+            ln -s android-37.0 "$SDK_ROOT/platforms/android-37"
+          fi
 
       - name: Assemble standard debug and run JVM test task
         run: ./gradlew --no-daemon --warning-mode all :app:assembleDebug :app:testDebugUnitTest
