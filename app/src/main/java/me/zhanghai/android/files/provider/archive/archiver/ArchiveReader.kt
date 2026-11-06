@@ -157,8 +157,11 @@ object ArchiveReader {
             }
             if (!success) {
                 val failure = last ?: IOException("Cannot decompress archive entry")
-                if (archiveFormat(file) == "zip" &&
-                    failure.message?.contains("not supported", ignoreCase = true) == true) {
+                if (archiveFormat(file) == "zip" && (
+                    failure.message?.contains("not supported", ignoreCase = true) == true ||
+                    failure.message?.contains("unsupported", ignoreCase = true) == true ||
+                    failure.message?.contains("require the rawzip engine", ignoreCase = true) == true
+                )) {
                     // Neither selected ZIP engine has a password decoder. Re-prompting for
                     // a password would never succeed; surface the unsupported format instead.
                     throw failure
