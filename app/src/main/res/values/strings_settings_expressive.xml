@@ -24,5 +24,6 @@
     <string name="ftp_server_expressive_password_set">Password set</string>
     <string name="ftp_server_expressive_password_unset">No password</string>
     <string name="ftp_server_expressive_password_clipboard">Copy the stored password to the clipboard</string>
+    <string name="ftp_server_expressive_password_copied">Password copied securely</string>
     <string name="ftp_server_expressive_invalid_port">Enter a non-negative whole number</string>
 </resources>
