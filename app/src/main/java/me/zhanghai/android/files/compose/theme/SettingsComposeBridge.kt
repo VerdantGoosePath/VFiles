@@ -5,7 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.ui.platform.LocalMotionDurationScale
+import androidx.compose.ui.platform.LocalContext
 import me.zhanghai.android.files.settings.SettingLiveData
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.theme.night.NightMode
@@ -30,6 +30,7 @@ fun rememberVFilesAppearance(): VFilesAppearance {
     val nightMode by Settings.NIGHT_MODE.observeCompose()
     val black by Settings.BLACK_NIGHT_MODE.observeCompose()
     val systemDark = isSystemInDarkTheme()
+    val context = LocalContext.current
     val dark = when (nightMode) {
         NightMode.ON -> true
         NightMode.OFF -> false
@@ -39,6 +40,6 @@ fun rememberVFilesAppearance(): VFilesAppearance {
         color = selectedColor,
         dark = dark,
         black = black,
-        reducedMotion = LocalMotionDurationScale.current.scaleFactor == 0f
+        reducedMotion = systemAnimationsDisabled(context)
     )
 }

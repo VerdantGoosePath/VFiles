@@ -16,7 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalMotionDurationScale
+import android.provider.Settings as AndroidSettings
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -94,12 +94,11 @@ fun VFilesTheme(
     appearance: VFilesAppearance? = null,
     content: @Composable () -> Unit
 ) {
-    val persisted = rememberVFilesAppearance()
-    val selected = appearance ?: persisted
+    val selected = appearance ?: rememberVFilesAppearance()
     val context = LocalContext.current
     // A zero animator-duration scale is honored by Compose animations automatically; additionally
     // use standard spatial motion when the platform has animations disabled.
-    val animationScale = LocalMotionDurationScale.current.scaleFactor
+    val reduceMotion = systemAnimationsDisabled(context)
     val scheme = resolveVFilesColorScheme(context, selected)
     androidx.compose.runtime.CompositionLocalProvider(
         LocalVFilesSemanticColors provides if (selected.dark) darkSemantics else lightSemantics
@@ -108,7 +107,7 @@ fun VFilesTheme(
             colorScheme = scheme,
             typography = VFilesTypography,
             shapes = VFilesShapes,
-            motionScheme = if (selected.reducedMotion || animationScale == 0f) {
+            motionScheme = if (selected.reducedMotion || reduceMotion) {
                 MotionScheme.standard()
             } else {
                 MotionScheme.expressive()
@@ -187,3 +186,10 @@ fun resolveVFilesColorScheme(context: Context, appearance: VFilesAppearance): Co
         surfaceContainerHighest = Color(0xFF262626)
     ) else scheme
 }
+
+/** Context lookup is safe for preview/Activity; Compose itself honours live platform animation scale. */
+internal fun systemAnimationsDisabled(context: Context): Boolean = runCatching {
+    AndroidSettings.Global.getFloat(
+        context.contentResolver, AndroidSettings.Global.ANIMATOR_DURATION_SCALE, 1f
+    ) == 0f
+}.getOrDefault(false)
