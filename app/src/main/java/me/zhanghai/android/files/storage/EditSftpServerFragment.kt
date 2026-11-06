@@ -236,9 +236,7 @@ class EditSftpServerFragment : Fragment() {
                 viewModel.finishReadingPrivateKeyFile()
             }
             is ActionState.Error -> {
-                val throwable = state.throwable
-                throwable.printStackTrace()
-                showToast(throwable.toString())
+                showRemoteConnectionError(state.throwable, binding.privateKeyPasswordEdit.text?.toString())
                 viewModel.finishReadingPrivateKeyFile()
             }
         }
@@ -272,17 +270,17 @@ class EditSftpServerFragment : Fragment() {
                 finish()
             }
             is ActionState.Error -> {
-                val throwable = state.throwable
-                throwable.printStackTrace()
-                showToast(throwable.toString())
+                showRemoteConnectionError(state.throwable, binding.passwordEdit.text?.toString(), binding.privateKeyEdit.text?.toString(), binding.privateKeyPasswordEdit.text?.toString())
                 viewModel.finishConnecting()
             }
         }
     }
 
     private fun remove() {
-        Storages.remove(args.server!!)
-        finish()
+        confirmRemoveStorage {
+            Storages.remove(args.server!!)
+            finish()
+        }
     }
 
     private fun getServerOrSetError(): SftpServer? {
@@ -304,7 +302,7 @@ class EditSftpServerFragment : Fragment() {
         }
         val port = binding.portEdit.text.toString().takeIfNotEmpty()
             .let { if (it != null) it.toIntOrNull() else Authority.DEFAULT_PORT }
-        if (port == null) {
+        if (port == null || port !in 1..65535) {
             binding.portLayout.error = getString(R.string.storage_edit_sftp_server_port_error_invalid)
             if (errorEdit == null) {
                 errorEdit = binding.portEdit
@@ -338,7 +336,8 @@ class EditSftpServerFragment : Fragment() {
                 } else {
                     val exception = PublicKeyAuthentication.validate(privateKey, privateKeyPassword)
                     if (exception != null) {
-                        exception.printStackTrace()
+
+
                         if (exception is KeyDecryptionFailedException) {
                             binding.privateKeyPasswordLayout.error = getString(
                                 R.string.storage_edit_sftp_server_private_key_password_error_invalid
