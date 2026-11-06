@@ -552,7 +552,6 @@
         <item>خودکار</item>
         <item>فقط دسترسی ریشه</item>
     </string-array>
-    <string name="settings_archive_file_name_encoding_title">رمزگذاری نام پروندهٔ بایگانی</string>
     <string name="settings_open_apk_default_action_title">گشودن بستهٔ اندروید</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>نصب</item>
