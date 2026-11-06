@@ -159,7 +159,6 @@ import me.zhanghai.android.files.util.takeIfNotEmpty
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import me.zhanghai.android.files.util.withChooser
-import me.zhanghai.android.files.viewer.image.ImageViewerActivity
 import kotlin.math.roundToInt
 
 class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.Listener,
@@ -1545,8 +1544,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             val intent = path.fileProviderUri.createViewIntent(mimeType)
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 .apply {
-                    extraPath = path
-                    maybeAddImageViewerActivityExtras(this, path, mimeType)
                     if (!withChooser) {
                         applyDefaultAppPackage(this, mimeType)
                     }
@@ -1578,33 +1575,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (canHandle) {
             intent.setPackage(packageName)
         }
-    }
-
-    private fun maybeAddImageViewerActivityExtras(intent: Intent, path: Path, mimeType: MimeType) {
-        if (!mimeType.isImage) {
-            return
-        }
-        var paths = mutableListOf<Path>()
-        // We need the ordered list from our adapter instead of the list from FileListLiveData.
-        for (index in 0..<adapter.itemCount) {
-            val file = adapter.getItem(index)
-            val filePath = file.path
-            if (file.mimeType.isImage || filePath == path) {
-                paths.add(filePath)
-            }
-        }
-        var position = paths.indexOf(path)
-        if (position == -1) {
-            return
-        }
-        // HACK: Don't send too many paths to avoid TransactionTooLargeException.
-        if (paths.size > IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX) {
-            val start = (position - IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX / 2)
-                .coerceIn(0, paths.size - IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
-            paths = paths.subList(start, start + IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
-            position -= start
-        }
-        ImageViewerActivity.putExtras(intent, paths, position)
     }
 
     override fun cutFile(file: FileItem) {
@@ -1975,7 +1945,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         private const val ACTION_VIEW_DOWNLOADS =
             "me.zhanghai.android.files.intent.action.VIEW_DOWNLOADS"
 
-        private const val IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
     }
 
     private class RequestAllFilesAccessContract : ActivityResultContract<Unit, Boolean>() {

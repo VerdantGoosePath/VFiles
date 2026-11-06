@@ -38,7 +38,6 @@ class OpenFileActivity : AppActivity() {
         } else {
             val intent = path.fileProviderUri.createViewIntent(mimeType)
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                .apply { extraPath = path }
             startActivitySafe(intent)
         }
     }
