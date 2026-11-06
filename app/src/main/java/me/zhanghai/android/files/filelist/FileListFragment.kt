@@ -291,13 +291,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.recyclerView.layoutManager = layoutManager
         adapter = FileListAdapter(this)
         binding.recyclerView.adapter = adapter
-        dragSelectTouchListener = FileDragSelectTouchListener(binding.recyclerView) { from, to ->
-            val selection = fileItemSetOf().apply { addAll(dragSelectionBefore) }
-            if (adapter.itemCount > 0) {
-                for (index in from..to) selection.add(adapter.getItem(index))
-            }
-            viewModel.replaceSelectedFiles(selection)
-        }
+        dragSelectTouchListener = FileDragSelectTouchListener(
+            binding.recyclerView,
+            onRange = { from, to ->
+                val selection = fileItemSetOf().apply { addAll(dragSelectionBefore) }
+                selection.addAll(adapter.selectableFilesBetween(from, to))
+                viewModel.replaceSelectedFiles(selection)
+            },
+            onFinished = { binding.swipeRefreshLayout.isEnabled = true }
+        )
         binding.recyclerView.addOnItemTouchListener(dragSelectTouchListener)
         val fastScroller = ThemedFastScroller.create(binding.recyclerView)
         binding.recyclerView.setOnApplyWindowInsetsListener(
@@ -1490,6 +1492,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val position = adapter.positionOf(file) ?: return
         if (viewModel.pickOptions?.allowMultiple == false) return
         dragSelectionBefore = fileItemSetOf().apply { addAll(viewModel.selectedFiles) }
+        binding.swipeRefreshLayout.isEnabled = false
         viewModel.selectFile(file, true)
         dragSelectTouchListener.start(position)
     }

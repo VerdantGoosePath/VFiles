@@ -11,7 +11,8 @@ import kotlin.math.min
  */
 class FileDragSelectTouchListener(
     private val recyclerView: RecyclerView,
-    private val onRange: (Int, Int) -> Unit
+    private val onRange: (Int, Int) -> Unit,
+    private val onFinished: () -> Unit = {}
 ) : RecyclerView.SimpleOnItemTouchListener() {
     private var anchor = RecyclerView.NO_POSITION
     private var lastX = 0f
@@ -47,14 +48,17 @@ class FileDragSelectTouchListener(
     }
 
     fun stop() {
+        val wasActive = anchor != RecyclerView.NO_POSITION
         anchor = RecyclerView.NO_POSITION
         latest = RecyclerView.NO_POSITION
         recyclerView.removeCallbacks(scrollFrame)
+        if (wasActive) onFinished()
     }
 
     override fun onInterceptTouchEvent(rv: RecyclerView, e: MotionEvent): Boolean {
         if (anchor == RecyclerView.NO_POSITION) return false
         when (e.actionMasked) {
+            MotionEvent.ACTION_DOWN -> { stop(); return false }
             MotionEvent.ACTION_MOVE -> { track(e); return true }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> { stop(); return true }
         }
