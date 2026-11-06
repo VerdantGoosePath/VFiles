@@ -31,6 +31,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.ListItemDefaults
@@ -206,15 +209,15 @@ internal fun ExpressiveSettingsScreen(
 
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
-        modifier = Modifier.fillMaxSize().androidxNestedScroll(scroll),
+        modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
         topBar = {
             LargeFlexibleTopAppBar(
                 title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(
-                            painterResource(R.drawable.settings_back_icon_placeholder),
-                            contentDescription = stringResource(android.R.string.cancel)
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.settings_expressive_back)
                         )
                     }
                 },
@@ -233,12 +236,12 @@ internal fun ExpressiveSettingsScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             item(key = "preview") {
-                Box(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     AppearancePreview(color, previewDark, black)
                 }
             }
             item(key = "appearance") {
-                Box(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
                         stringResource(R.string.settings_expressive_appearance),
                         listOf(
@@ -272,7 +275,7 @@ internal fun ExpressiveSettingsScreen(
                 }
             }
             item(key = "browsing") {
-                Box(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
                         stringResource(R.string.settings_expressive_browsing),
                         buildList {
@@ -304,7 +307,7 @@ internal fun ExpressiveSettingsScreen(
                 }
             }
             item(key = "storage") {
-                Box(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
                         stringResource(R.string.settings_expressive_storage),
                         listOf(
@@ -336,7 +339,7 @@ internal fun ExpressiveSettingsScreen(
                 }
             }
             item(key = "opening") {
-                Box(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
                         stringResource(R.string.settings_expressive_opening),
                         buildList {
@@ -370,7 +373,7 @@ internal fun ExpressiveSettingsScreen(
                 }
             }
             item(key = "advanced") {
-                Box(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
                         stringResource(R.string.settings_expressive_advanced),
                         listOf(ExpressiveSettingRow(
@@ -385,7 +388,7 @@ internal fun ExpressiveSettingsScreen(
                 }
             }
             item(key = "about") {
-                Box(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
                         stringResource(R.string.about_title),
                         listOf(ExpressiveSettingRow(
@@ -604,7 +607,3 @@ internal fun <T> ExpressiveChoiceDialog(
     )
 }
 
-// Keep the nested-scroll modifier in one place for callers building on the same scaffold.
-private fun Modifier.androidxNestedScroll(
-    scroll: androidx.compose.material3.TopAppBarScrollBehavior
-): Modifier = this.then(androidx.compose.ui.input.nestedscroll.nestedScroll(scroll.nestedScrollConnection))
