@@ -59,8 +59,7 @@ object CustomThemeHelper {
     // overriding the system accent. Falls back to the base theme's system-accent colors when the
     // wallpaper color can't be read (older API, or the read failed).
     private fun applyWallpaperDynamicColors(activity: Activity) {
-        if (Settings.THEME_COLOR.valueCompat != ThemeColor.DYNAMIC
-            || !Settings.MATERIAL_DESIGN_3.valueCompat) {
+        if (Settings.THEME_COLOR.valueCompat != ThemeColor.DYNAMIC) {
             return
         }
         val seedColor = activity.wallpaperAccentColor() ?: return
@@ -96,7 +95,9 @@ object CustomThemeHelper {
         val resources = context.resources
         val baseThemeName = resources.getResourceName(baseThemeRes)
         val themeColor = Settings.THEME_COLOR.valueCompat
-        val isMaterial3 = Settings.MATERIAL_DESIGN_3.valueCompat
+        // The legacy switch is no longer an appearance choice. Preserve its stored key,
+        // but never let a pre-upgrade false value force Material 2 views.
+        val isMaterial3 = true
         // With Material Design 3, the "dynamic" color follows the system/wallpaper colors, which the
         // base Material3 theme already applies; so we leave it without a color suffix in that case.
         val isDynamic = themeColor == ThemeColor.DYNAMIC && isMaterial3
