@@ -452,6 +452,37 @@ mod tests {
         Ok(())
     }
     #[test]
+    fn enforce_extraction_size_limit() -> Result<()> {
+        let (temp, source) = sample()?;
+        let archive = temp.path().join("limited.zip");
+        create(&source, &archive, "zip", "", &Options::default())?;
+        let target = temp.path().join("too-large.txt");
+        let options = Options { max_entry_bytes: 5, ..Options::default() };
+        assert!(extract_one(&archive, "hello.txt", &target, "", &options).is_err());
+        assert!(!target.exists(), "a rejected archive member must not leave partial output");
+        Ok(())
+    }
+
+    #[test]
+    fn tar_symlink_metadata_preserved() -> Result<()> {
+        let temp = tempfile::tempdir()?;
+        let path = temp.path().join("links.tar");
+        let mut builder = tar::Builder::new(File::create(&path)?);
+        let mut header = tar::Header::new_gnu();
+        header.set_entry_type(tar::EntryType::Symlink);
+        header.set_size(0);
+        header.set_link_name("inside.txt")?;
+        header.set_cksum();
+        builder.append_data(&mut header, "link.txt", io::empty())?;
+        builder.finish()?;
+        let entries = list(&path, "", &Options::default())?;
+        let link = entries.iter().find(|e| e.name == "link.txt").unwrap();
+        assert!(link.symlink);
+        assert_eq!(link.link_target.as_deref(), Some("inside.txt"));
+        Ok(())
+    }
+
+    #[test]
     fn reject_unsafe_archive_paths() {
         for path in ["../escape", "/absolute", "folder/../escape", "C:/drive", "a\\b", ""] {
             assert!(check_name(path).is_err(), "accepted {path:?}");
