@@ -1484,18 +1484,8 @@ class OpenFileJob(
             R.string.file_open_from_background_text
         ) { file ->
             file.fileProviderUri.createViewIntent(mimeType)
-                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 .apply { extraPath = file }
-                .let {
-                    if (withChooser) {
-                        it.withChooser(
-                            OpenFileAsDialogActivity::class.createIntent()
-                                .putArgs(OpenFileAsDialogFragment.Args(file))
-                        )
-                    } else {
-                        it
-                    }
-                }
+                .let { if (withChooser) Intent.createChooser(it, null) else it }
         }
     }
 }
