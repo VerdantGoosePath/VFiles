@@ -165,6 +165,7 @@ import kotlin.math.roundToInt
 class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.Listener,
     ConfirmReplaceFileDialogFragment.Listener, OpenApkDialogFragment.Listener,
     ConfirmDeleteFilesDialogFragment.Listener, CreateArchiveDialogFragment.Listener,
+    ExtractArchiveOptionsDialogFragment.Listener,
     RenameFileDialogFragment.Listener, CreateFileDialogFragment.Listener,
     CreateDirectoryDialogFragment.Listener, NavigateToPathDialogFragment.Listener,
     NavigationFragment.Listener, ShowRequestAllFilesAccessRationaleDialogFragment.Listener,
@@ -1268,6 +1269,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun extractFiles(files: FileItemSet) {
+        ExtractArchiveOptionsDialogFragment.show(files, this)
+    }
+
+    override fun onExtractOptionsConfirmed(files: FileItemSet) {
         copyFiles(files.mapTo(fileItemSetOf()) { it.createDummyArchiveRoot() })
         viewModel.selectFiles(files, false)
     }
@@ -1281,11 +1286,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         name: String,
         format: Int,
         filter: Int,
-        password: String?
+        password: String?,
+        optionsOverride: String?
     ) {
         val archiveFile = viewModel.currentPath.resolve(name)
         FileJobService.archive(
-            makePathListForJob(files), archiveFile, format, filter, password, requireContext()
+            makePathListForJob(files), archiveFile, format, filter, password, optionsOverride, requireContext()
         )
         viewModel.selectFiles(files, false)
     }
@@ -1639,7 +1645,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun extractFile(file: FileItem) {
-        copyFile(file.createDummyArchiveRoot())
+        ExtractArchiveOptionsDialogFragment.show(fileItemSetOf(file), this)
     }
 
     override fun showCreateArchiveDialog(file: FileItem) {

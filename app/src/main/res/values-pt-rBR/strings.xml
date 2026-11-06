@@ -616,7 +616,6 @@
         <item>Automático</item>
         <item>Apenas acesso root</item>
     </string-array>
-    <string name="settings_archive_file_name_encoding_title">Codificação do nome do arquivo</string>
     <string name="settings_open_apk_default_action_title">Abrir pacote do Android</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>Instalar</item>

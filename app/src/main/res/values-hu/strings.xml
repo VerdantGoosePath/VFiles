@@ -559,7 +559,6 @@
         <item>Automatikus</item>
         <item>Csak root hozzéférés</item>
     </string-array>
-    <string name="settings_archive_file_name_encoding_title">Archívum fájlnévkódolása</string>
     <string name="settings_open_apk_default_action_title">Androidos csomag megnyitása</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>Telepítés</item>

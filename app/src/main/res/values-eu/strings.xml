@@ -359,7 +359,6 @@
         <item>Automatic</item>
         <item>Root sarbidea soilik</item>
     </string-array>
-    <string name="settings_archive_file_name_encoding_title">Artxibo fitxategi-izenaren kodeketa</string>
     <string name="settings_open_apk_default_action_title">Ireki Android paketea</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>Instalatu</item>

@@ -2,12 +2,16 @@ name: Build Files Fork APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/rust-archive-backends]
     tags: ['v*']
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release-apk-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release-apk:
@@ -45,6 +49,14 @@ jobs:
           fi
           "$SDKMANAGER" --install "platforms;android-36" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
 
+      - name: Install Rust and cargo-ndk for native archive libraries
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: armv7-linux-androideabi,aarch64-linux-android,i686-linux-android,x86_64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+
       - name: Prepare release signing
         env:
           KEYSTORE_BASE64: ${{ secrets.FILES_FORK_KEYSTORE_BASE64 }}
@@ -68,6 +80,18 @@ jobs:
 
       - name: Build installable release APK
         run: ./gradlew --no-daemon assembleRelease
+
+      - name: Verify release APK signature and native archive libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
+          test -n "$APK"
+          "$ANDROID_HOME/build-tools/37.0.0/apksigner" verify --verbose "$APK"
+          for ABI in armeabi-v7a arm64-v8a x86 x86_64; do
+            unzip -Z1 "$APK" | grep -Fx "lib/$ABI/libvfiles_archive.so"
+          done
+          sha256sum "$APK"
 
       - name: Upload release APK
         uses: actions/upload-artifact@v4

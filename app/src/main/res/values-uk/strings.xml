@@ -721,7 +721,6 @@
         <item>Автоматично</item>
         <item>Лише доступ root</item>
     </string-array>
-    <string name="settings_archive_file_name_encoding_title">Кодування назви файлу для архіву</string>
     <string name="settings_open_apk_default_action_title">Відкривати пакунок Android</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>Встановити</item>

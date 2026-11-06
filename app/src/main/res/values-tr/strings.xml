@@ -531,7 +531,6 @@
         <item>Otomatik</item>
         <item>Yalnızca kök erişimi</item>
     </string-array>
-    <string name="settings_archive_file_name_encoding_title">Arşiv dosya adı kodlaması</string>
     <string name="settings_open_apk_default_action_title">Android paketini aç</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>Yükle</item>

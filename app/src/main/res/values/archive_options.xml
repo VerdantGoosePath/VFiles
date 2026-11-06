@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="archive_settings_title">Archive engines</string>
+    <string name="archive_zip_engine_title">ZIP engine</string>
+    <string name="archive_rawzip_level_title">rawzip compression level</string>
+    <string name="archive_ripzip_level_title">ripzip compression level</string>
+    <string name="archive_sevenz_level_title">7z compression level</string>
+    <string name="archive_tar_level_title">TAR/XZ compression level</string>
+    <string name="archive_level_label">Compression level</string>
+    <string name="archive_zip_method_title">ZIP compression method</string>
+    <string name="archive_advanced_toggle">Advanced options</string>
+    <string name="archive_advanced_closed">Tap to show per-library tuning and safety controls</string>
+    <string name="archive_advanced_open">Tap to hide advanced controls</string>
+    <string name="archive_advanced_category">Advanced archive options</string>
+    <string name="archive_sevenz_solid_title">Solid 7z compression</string>
+    <string name="archive_sevenz_solid_summary">Better ratio for related files; slower random access</string>
+    <string name="archive_sevenz_encrypt_headers_title">Encrypt 7z file names</string>
+    <string name="archive_sevenz_encrypt_headers_summary">Protect the file list when using a password</string>
+    <string name="archive_rar_verify_title">Verify RAR checksums</string>
+    <string name="archive_rar_verify_summary">Check each extracted file against its archive checksum</string>
+    <string name="archive_max_entry_title">Maximum extracted entry (MiB)</string>
+    <string name="archive_max_entry_summary">Safety limit for opening individual archive members, in MiB</string>
+    <string name="archive_engine_label">ZIP engine</string>
+    <string name="archive_zip_password_note">rawzip supports legacy ZipCrypto passwords (weak encryption). For sensitive files, use encrypted 7z.</string>
+    <string name="archive_ripzip_password_note">ripzip-rs does not support encrypted ZIP archives. Switch to rawzip to use a ZIP password.</string>
+    <string name="archive_sevenz_engine_hint">7z · sevenz-turbo · LZMA2</string>
+    <string name="archive_tar_engine_hint">TAR/XZ · Rust tar + lzma-rust2</string>
+    <string name="archive_zip_rawzip_hint">rawzip · Standard Deflate or Store, broad compatibility</string>
+    <string name="archive_zip_ripzip_hint">ripzip-rs · Parallel ZIP, Deflate or Zstandard</string>
+    <string-array name="archive_zip_engine_entries">
+        <item>rawzip</item>
+        <item>ripzip-rs</item>
+    </string-array>
+    <string-array name="archive_zip_engine_values">
+        <item>rawzip</item>
+        <item>ripzip</item>
+    </string-array>
+    <string-array name="archive_rawzip_method_entries">
+        <item>Deflate (compatible)</item>
+        <item>Store (no compression)</item>
+    </string-array>
+    <string-array name="archive_rawzip_method_values">
+        <item>deflate</item>
+        <item>store</item>
+    </string-array>
+    <string-array name="archive_ripzip_method_entries">
+        <item>Deflate (compatible)</item>
+        <item>Zstandard (newer ZIP readers)</item>
+    </string-array>
+    <string-array name="archive_ripzip_method_values">
+        <item>deflate</item>
+        <item>zstd</item>
+    </string-array>
+    <integer name="archive_default_level">5</integer>
+    <integer name="archive_default_tar_level">6</integer>
+    <bool name="archive_default_false">false</bool>
+    <bool name="archive_default_true">true</bool>
+    <string name="archive_default_zip_engine">rawzip</string>
+    <string name="archive_default_zip_method">deflate</string>
+    <string name="archive_default_max_entry">2048</string>
+    <string name="archive_extract_options_title">Extraction options</string>
+    <string name="archive_extract_destination_hint">Choose the archive readers below, then choose where to extract using the paste bar. These settings are saved as defaults.</string>
+    <string name="archive_sevenz_read_hint">7z · sevenz-turbo. Encrypted archives ask for a password when needed. CRC checks are always enabled.</string>
+    <string name="archive_rar_engine_hint">RAR · unrar-rs (read and extract only)</string>
+    <string name="archive_extract_continue">Choose destination</string>
+    <string-array name="archive_max_entry_entries">
+        <item>256 MiB</item>
+        <item>512 MiB</item>
+        <item>1 GiB</item>
+        <item>2 GiB (default)</item>
+        <item>4 GiB</item>
+        <item>8 GiB</item>
+        <item>16 GiB</item>
+    </string-array>
+    <string-array name="archive_max_entry_values">
+        <item>256</item>
+        <item>512</item>
+        <item>1024</item>
+        <item>2048</item>
+        <item>4096</item>
+        <item>8192</item>
+        <item>16384</item>
+    </string-array>
+</resources>

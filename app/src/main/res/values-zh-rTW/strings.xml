@@ -627,7 +627,6 @@
     <plurals name="settings_root_strategy_message_format">
         <item quantity="other">您有 %1$,d 個正在執行的檔案作業，因此現在變更 root 存取模式可能會導致未預期的錯誤。您確定要現在變更它嗎？</item>
     </plurals>
-    <string name="settings_archive_file_name_encoding_title">封存檔名稱編碼</string>
     <string name="settings_open_apk_default_action_title">開啟 Android 套件</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>安裝</item>
