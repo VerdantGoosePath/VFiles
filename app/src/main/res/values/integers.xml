@@ -16,6 +16,6 @@
 
     <integer name="file_list_toolbar_scroll_flags">@integer/scrollFlags_noScroll</integer>
 
-    <!-- SevenZOutputFile requires SeekableByteChannel which requires Android N. -->
-    <integer name="create_archive_type_seven_z_visibility">@integer/visibility_gone</integer>
+    <!-- Rust sevenz-turbo supports all of this application's Android ABIs. -->
+    <integer name="create_archive_type_seven_z_visibility">@integer/visibility_visible</integer>
 </resources>
