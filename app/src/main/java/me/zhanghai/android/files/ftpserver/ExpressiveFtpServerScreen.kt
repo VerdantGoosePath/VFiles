@@ -1,6 +1,8 @@
 package me.zhanghai.android.files.ftpserver
 
 import android.app.StatusBarManager
+import android.content.ClipData
+import android.os.PersistableBundle
 import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
@@ -161,7 +163,7 @@ internal fun ExpressiveFtpServerScreen(
                                     key = "copy_password",
                                     title = context.getString(R.string.ftp_server_url_menu_copy_password),
                                     summary = context.getString(R.string.ftp_server_expressive_password_clipboard),
-                                    onClick = { clipboardManager.copyText(password, context) }
+                                    onClick = { copySensitiveFtpPassword(context, password) }
                                 ))
                             }
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -339,4 +341,18 @@ private fun requestFtpQuickSettingsTile(context: Context) {
         }
         context.showToast(resultRes)
     }
+}
+
+/** Never pass a password through copyText(): it repeats clipboard contents in a Toast. */
+private fun copySensitiveFtpPassword(context: Context, password: String) {
+    val clip = ClipData.newPlainText(context.getString(R.string.ftp_server_password_title), password)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        // Also suppress Android 13+ system clipboard-preview plaintext. The documented key
+        // works on pre-33 versions where ClipDescription.EXTRA_IS_SENSITIVE is not defined.
+        clip.description.extras = PersistableBundle().apply {
+            putBoolean("android.content.extra.IS_SENSITIVE", true)
+        }
+    }
+    clipboardManager.setPrimaryClip(clip)
+    context.showToast(R.string.ftp_server_expressive_password_copied)
 }
