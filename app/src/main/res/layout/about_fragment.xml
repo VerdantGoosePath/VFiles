@@ -68,6 +68,7 @@
                             android:orientation="horizontal">
 
                             <ImageView
+                                android:id="@+id/appIcon"
                                 android:layout_width="@dimen/large_icon_size"
                                 android:layout_height="@dimen/large_icon_size"
                                 android:scaleType="centerCrop"

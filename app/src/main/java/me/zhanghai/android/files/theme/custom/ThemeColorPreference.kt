@@ -117,6 +117,16 @@ class ThemeColorPreference : BaseColorPreference {
         stringValue = getPersistedString(defaultValue as String?)
     }
 
+    override val selectedEntryIndex: Int
+        get() = entryThemeColors.indexOf(stringValue.toThemeColor()).coerceAtLeast(0)
+
+    override val defaultEntryIndex: Int
+        get() = entryThemeColors.indexOf(defaultStringValue.toThemeColor()).coerceAtLeast(0)
+
+    override fun selectEntry(index: Int) {
+        stringValue = entryThemeColors[index].ordinal.toString()
+    }
+
     companion object {
         init {
             PreferenceFragmentCompat.registerPreferenceFragment(

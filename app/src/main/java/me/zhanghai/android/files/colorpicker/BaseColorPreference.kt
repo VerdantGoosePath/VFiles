@@ -64,6 +64,20 @@ abstract class BaseColorPreference : DialogPreference {
 
     abstract val entryValues: IntArray
 
+    // Use indices so two swatches with identical RGB values remain distinct options.
+    open val selectedEntryIndex: Int
+        get() = entryValues.indexOf(value)
+
+    open val defaultEntryIndex: Int
+        get() = entryValues.indexOf(defaultValue)
+
+    open fun selectEntry(index: Int) {
+        value = entryValues[index]
+    }
+
+    @get:androidx.annotation.StringRes
+    open val leadingColorLabelResource: Int = R.string.color_picker_dynamic_color_label
+
     // When non-null, the first of [entryValues] is a "dynamic" color following the system/wallpaper
     // colors rather than a fixed preset, and the picker shows it apart from the rest with a label.
     @get:ColorInt

@@ -20,6 +20,7 @@ import me.zhanghai.android.files.storage.SftpServerAuthenticator
 import me.zhanghai.android.files.storage.SmbServerAuthenticator
 import me.zhanghai.android.files.storage.StorageVolumeListLiveData
 import me.zhanghai.android.files.storage.WebDavServerAuthenticator
+import me.zhanghai.android.files.theme.custom.AppIconColorHelper
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
 import me.zhanghai.android.files.theme.night.NightModeHelper
 import java.util.Properties
@@ -36,6 +37,7 @@ val appInitializers = listOf(
     ::upgradeApp,
     ::initializeLiveDataObjects,
     ::initializeCustomTheme,
+    ::initializeAppIconColor,
     ::initializeNightMode,
     ::createNotificationChannels
 )
@@ -76,6 +78,10 @@ private fun initializeLiveDataObjects() {
 
 private fun initializeCustomTheme() {
     CustomThemeHelper.initialize(application)
+}
+
+private fun initializeAppIconColor() {
+    AppIconColorHelper.sync(application)
 }
 
 private fun initializeNightMode() {

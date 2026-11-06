@@ -757,6 +757,9 @@
     <string name="settings_locale_title">Language</string>
     <string name="settings_theme_color_title">Theme color</string>
     <string name="settings_theme_color_summary">Color that appears most frequently in the app</string>
+    <string name="settings_app_icon_color_title">App icon color</string>
+    <string name="settings_app_icon_color_summary">Background color of the app icon</string>
+    <string name="color_picker_default_color_label">Default color</string>
     <string name="color_picker_dynamic_color_label">Based on wallpaper</string>
     <string name="color_picker_preset_colors_label">Other colors</string>
     <string name="settings_material_design_3_title">Material Design 3</string>

@@ -22,6 +22,7 @@ import me.zhanghai.android.files.storage.FileSystemRoot
 import me.zhanghai.android.files.storage.PrimaryStorageVolume
 import me.zhanghai.android.files.storage.Storage
 import me.zhanghai.android.files.storage.StorageVolumeCustomization
+import me.zhanghai.android.files.theme.custom.AppIconColor
 import me.zhanghai.android.files.theme.custom.ThemeColor
 import me.zhanghai.android.files.theme.night.NightMode
 import java.io.File
@@ -104,6 +105,12 @@ object Settings {
         EnumSettingLiveData(
             R.string.pref_key_theme_color, R.string.pref_default_value_theme_color,
             ThemeColor::class.java
+        )
+
+    val APP_ICON_COLOR: SettingLiveData<AppIconColor> =
+        EnumSettingLiveData(
+            R.string.pref_key_app_icon_color, R.string.pref_default_value_app_icon_color,
+            AppIconColor::class.java
         )
 
     val MATERIAL_DESIGN_3: SettingLiveData<Boolean> =

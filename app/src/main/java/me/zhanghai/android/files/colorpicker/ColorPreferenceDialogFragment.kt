@@ -11,7 +11,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
 import android.widget.GridView
-import androidx.annotation.ColorInt
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
@@ -32,8 +32,8 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
     private lateinit var gridColors: IntArray
     // Non-null when the first of [colors] is the wallpaper/dynamic color, shown apart from the grid.
     private var dynamicColor: Int? = null
-    private var checkedColor = 0
-    private var defaultColor = 0
+    private var checkedEntryIndex = 0
+    private var defaultEntryIndex = 0
 
     private lateinit var paletteGrid: GridView
     private lateinit var dynamicColorSwatch: ColorSwatchView
@@ -45,14 +45,14 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
             val preference = preference
             colors = preference.entryValues
             dynamicColor = preference.leadingDynamicColor
-            checkedColor = preference.value
-            defaultColor = preference.defaultValue
+            checkedEntryIndex = preference.selectedEntryIndex
+            defaultEntryIndex = preference.defaultEntryIndex
         } else {
             val state = savedInstanceState.getState<State>()
             colors = state.colors
             dynamicColor = state.dynamicColor
-            checkedColor = state.checkedColor
-            defaultColor = state.defaultColor
+            checkedEntryIndex = state.checkedEntryIndex
+            defaultEntryIndex = state.defaultEntryIndex
         }
         gridColors = if (dynamicColor != null && colors.isNotEmpty()) {
             colors.copyOfRange(1, colors.size)
@@ -65,7 +65,7 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
         super.onSaveInstanceState(outState)
 
         outState.putState(
-            State(colors, dynamicColor, currentCheckedColor() ?: checkedColor, defaultColor)
+            State(colors, dynamicColor, currentCheckedEntryIndex() ?: checkedEntryIndex, defaultEntryIndex)
         )
     }
 
@@ -89,6 +89,8 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
             ViewCompat.requireViewById<View>(view, R.id.dynamicColorSection).isVisible = true
             ViewCompat.requireViewById<View>(view, R.id.dynamicColorDivider).isVisible = true
             ViewCompat.requireViewById<View>(view, R.id.presetColorsLabel).isVisible = true
+            ViewCompat.requireViewById<TextView>(view, R.id.dynamicColorLabel)
+                .setText(preference.leadingColorLabelResource)
             dynamicColorSwatch = ViewCompat.requireViewById(view, R.id.dynamicColorSwatch)
             dynamicColorSwatch.setColor(dynamicColor)
             dynamicColorSwatch.setOnClickListener {
@@ -97,11 +99,11 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
             }
         }
 
-        if (dynamicColor != null && checkedColor == dynamicColor) {
+        if (dynamicColor != null && checkedEntryIndex == 0) {
             dynamicColorSwatch.isChecked = true
         } else {
-            val checkedPosition = gridColors.indexOf(checkedColor)
-            if (checkedPosition != -1) {
+            val checkedPosition = checkedEntryIndex - if (dynamicColor != null) 1 else 0
+            if (checkedPosition in gridColors.indices) {
                 paletteGrid.setItemChecked(checkedPosition, true)
             }
         }
@@ -110,7 +112,7 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
     override fun onPrepareDialogBuilder(builder: AlertDialog.Builder) {
         super.onPrepareDialogBuilder(builder)
 
-        if (defaultColor in colors) {
+        if (defaultEntryIndex in colors.indices) {
             builder.setNeutralButton(R.string.default_, null)
         }
     }
@@ -121,7 +123,7 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
                 // Override the listener here so that we won't close the dialog.
                 setOnShowListener {
                     getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                        selectColor(defaultColor)
+                        selectEntry(defaultEntryIndex)
                     }
                 }
             }
@@ -131,12 +133,12 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
         if (!positiveResult) {
             return
         }
-        val checkedColor = currentCheckedColor() ?: return
-        preference.value = checkedColor
+        val checkedIndex = currentCheckedEntryIndex() ?: return
+        preference.selectEntry(checkedIndex)
     }
 
-    private fun selectColor(@ColorInt color: Int) {
-        if (dynamicColor != null && color == dynamicColor) {
+    private fun selectEntry(index: Int) {
+        if (dynamicColor != null && index == 0) {
             clearGridChoice()
             dynamicColorSwatch.isChecked = true
             return
@@ -144,9 +146,9 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
         if (dynamicColor != null) {
             dynamicColorSwatch.isChecked = false
         }
-        val checkedPosition = gridColors.indexOf(color)
-        if (checkedPosition != -1) {
-            paletteGrid.setItemChecked(checkedPosition, true)
+        val gridPosition = index - if (dynamicColor != null) 1 else 0
+        if (gridPosition in gridColors.indices) {
+            paletteGrid.setItemChecked(gridPosition, true)
         }
     }
 
@@ -157,18 +159,15 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
         }
     }
 
-    // The currently selected color, or null when nothing is checked (so callers can decide whether
-    // to fall back to the stored value or skip committing).
-    private fun currentCheckedColor(): Int? {
-        val dynamicColor = dynamicColor
+    private fun currentCheckedEntryIndex(): Int? {
         if (dynamicColor != null && ::dynamicColorSwatch.isInitialized
             && dynamicColorSwatch.isChecked) {
-            return dynamicColor
+            return 0
         }
         if (::paletteGrid.isInitialized) {
             val checkedPosition = paletteGrid.checkedItemPosition
             if (checkedPosition != AdapterView.INVALID_POSITION) {
-                return gridColors[checkedPosition]
+                return checkedPosition + if (dynamicColor != null) 1 else 0
             }
         }
         return null
@@ -178,7 +177,7 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
     private class State(
         val colors: IntArray,
         val dynamicColor: Int?,
-        val checkedColor: Int,
-        val defaultColor: Int
+        val checkedEntryIndex: Int,
+        val defaultEntryIndex: Int
     ) : ParcelableState
 }

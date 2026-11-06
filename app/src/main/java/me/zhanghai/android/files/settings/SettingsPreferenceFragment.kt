@@ -9,6 +9,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import me.zhanghai.android.files.R
+import me.zhanghai.android.files.theme.custom.AppIconColor
+import me.zhanghai.android.files.theme.custom.AppIconColorHelper
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
 import me.zhanghai.android.files.theme.custom.ThemeColor
 import me.zhanghai.android.files.theme.night.NightMode
@@ -44,6 +46,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         //Settings.NIGHT_MODE.observe(viewLifecycleOwner) { NightModeHelper.sync() }
         //Settings.BLACK_NIGHT_MODE.observe(viewLifecycleOwner) { CustomThemeHelper.sync() }
         Settings.THEME_COLOR.observe(viewLifecycleOwner, this::onThemeColorChanged)
+        Settings.APP_ICON_COLOR.observe(viewLifecycleOwner, this::onAppIconColorChanged)
         Settings.MATERIAL_DESIGN_3.observe(viewLifecycleOwner, this::onMaterialDesign3Changed)
         Settings.NIGHT_MODE.observe(viewLifecycleOwner, this::onNightModeChanged)
         Settings.BLACK_NIGHT_MODE.observe(viewLifecycleOwner, this::onBlackNightModeChanged)
@@ -52,6 +55,10 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
 
     private fun onThemeColorChanged(themeColor: ThemeColor) {
         CustomThemeHelper.sync()
+    }
+
+    private fun onAppIconColorChanged(color: AppIconColor) {
+        AppIconColorHelper.sync(requireContext())
     }
 
     private fun onMaterialDesign3Changed(isMaterialDesign3: Boolean) {

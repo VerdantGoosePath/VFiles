@@ -23,6 +23,13 @@
             android:summary="@string/settings_theme_color_summary"
             app:singleLineTitle="false" />
 
+        <me.zhanghai.android.files.theme.custom.AppIconColorPreference
+            android:key="@string/pref_key_app_icon_color"
+            android:title="@string/settings_app_icon_color_title"
+            android:defaultValue="@string/pref_default_value_app_icon_color"
+            android:summary="@string/settings_app_icon_color_summary"
+            app:singleLineTitle="false" />
+
         <SwitchPreferenceCompat
             android:key="@string/pref_key_material_design_3"
             android:title="@string/settings_material_design_3_title"

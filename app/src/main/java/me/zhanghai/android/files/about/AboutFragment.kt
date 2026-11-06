@@ -13,6 +13,7 @@ import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import me.zhanghai.android.files.databinding.AboutFragmentBinding
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.ui.LicensesDialogFragment
 import me.zhanghai.android.files.util.createViewIntent
 import me.zhanghai.android.files.util.startActivitySafe
@@ -35,6 +36,9 @@ class AboutFragment : Fragment() {
         val activity = requireActivity() as AppCompatActivity
         activity.setSupportActionBar(binding.toolbar)
         activity.supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+        Settings.APP_ICON_COLOR.observe(viewLifecycleOwner) { color ->
+            binding.appIcon.setImageResource(color.iconRes)
+        }
         binding.gitHubLayout.setOnClickListener { startActivitySafe(GITHUB_URI.createViewIntent()) }
         binding.licensesLayout.setOnClickListener { LicensesDialogFragment.show(this) }
         binding.authorNameLayout.setOnClickListener {
