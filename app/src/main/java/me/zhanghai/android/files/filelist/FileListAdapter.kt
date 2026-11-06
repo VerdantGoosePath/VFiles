@@ -278,6 +278,8 @@ class FileListAdapter(
         val isReadOnly = path.fileSystem.isReadOnly
         menu.findItem(R.id.action_cut).isVisible = !hasPickOptions && !isReadOnly
         menu.findItem(R.id.action_copy).isVisible = !hasPickOptions
+        menu.findItem(R.id.action_edit_with).isVisible =
+            !hasPickOptions && !isReadOnly && !isDirectory && !path.isArchivePath
         val checked = file in selectedFiles
         holder.itemLayout.isChecked = checked
         holder.nameText.apply {
@@ -395,6 +397,10 @@ class FileListAdapter(
             when (it.itemId) {
                 R.id.action_open_with -> {
                     listener.openFileWith(file)
+                    true
+                }
+                R.id.action_edit_with -> {
+                    listener.editFileWith(file)
                     true
                 }
                 R.id.action_cut -> {
@@ -528,6 +534,7 @@ class FileListAdapter(
         fun selectFiles(files: FileItemSet, selected: Boolean)
         fun openFile(file: FileItem)
         fun openFileWith(file: FileItem)
+        fun editFileWith(file: FileItem)
         fun cutFile(file: FileItem)
         fun copyFile(file: FileItem)
         fun confirmDeleteFile(file: FileItem)
