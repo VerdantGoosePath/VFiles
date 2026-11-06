@@ -1,5 +1,7 @@
 package me.zhanghai.android.files.filelist
 
+import androidx.activity.compose.BackHandler
+
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -84,6 +86,7 @@ fun VFilesBrowserChrome(
     modifier: Modifier = Modifier
 ) {
     var sortMenuOpen by remember { mutableStateOf(false) }
+    BackHandler(state.searchExpanded) { onSearchExpanded(false) }
     val keyboard = LocalSoftwareKeyboardController.current
     val searchFocus = remember { FocusRequester() }
     LaunchedEffect(state.searchExpanded) {
@@ -271,7 +274,11 @@ fun VFilesBrowserChrome(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        state.pasteCount.toString() + if (state.pasteIsCopy) " to copy" else " to move",
+                        stringResource(
+                            if (state.pasteIsCopy) R.string.file_list_paste_copy_title_format
+                            else R.string.file_list_paste_move_title_format,
+                            state.pasteCount
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 12.dp)
                     )
