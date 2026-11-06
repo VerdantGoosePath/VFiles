@@ -22,7 +22,7 @@ android {
     }
     ndkVersion = "30.0.16248370"
     defaultConfig {
-        applicationId = "fr.vroot.vfiles"
+        applicationId = "fr.vroot.vfiles.two"
         minSdk = 26
         // Android 17 needs the local network permission for LAN servers and the FTP server.
         //noinspection OldTargetApi
@@ -162,13 +162,13 @@ baselineProfile {
     mergeIntoMain = true
 }
 
-// Always name the assembled APK "VFiles-v<versionName>.apk" so the file name carries the current
+// Always name the assembled APK "Files-2-v<versionName>.apk" so the file name carries the current
 // version. This is the name users see on the GitHub Releases page.
 androidComponents {
     onVariants { variant ->
         variant.outputs.forEach { output ->
             (output as? VariantOutputImpl)?.outputFileName
-                ?.set("VFiles-v${android.defaultConfig.versionName}.apk")
+                ?.set("Files-2-v${android.defaultConfig.versionName}.apk")
         }
     }
 }

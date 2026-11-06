@@ -6,8 +6,10 @@
   -->
 
 <resources>
-    <string name="app_name">VFiles</string>
-    <string name="app_name_launcher">Files</string>
+    <string name="app_name">Files 2</string>
+    <string name="app_name_launcher">Files 2</string>
+    <!-- Keep the launcher and system app label fixed across localized resources. -->
+    <string name="app_name_display" translatable="false">Files 2</string>
 
     <string name="clear_query">Clear query</string>
     <string name="close">Close</string>
