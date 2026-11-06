@@ -10,11 +10,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -28,13 +23,13 @@ import me.zhanghai.android.files.R
 @Composable
 fun VFilesCreateMenu(
     enabled: Boolean,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
     onCreateFile: () -> Unit,
     onCreateDirectory: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    BackHandler(enabled && expanded) { expanded = false }
-    LaunchedEffect(enabled) { if (!enabled) expanded = false }
+    BackHandler(enabled && expanded) { onExpandedChange(false) }
     if (!enabled) return
     Box(modifier = modifier) {
         FloatingActionButtonMenu(
@@ -43,7 +38,7 @@ fun VFilesCreateMenu(
             button = {
                 ToggleFloatingActionButton(
                     checked = expanded,
-                    onCheckedChange = { expanded = it },
+                    onCheckedChange = onExpandedChange,
                     modifier = Modifier.semantics {
                         contentDescription = if (expanded) "Close create menu" else "Create file or folder"
                     }
@@ -60,7 +55,7 @@ fun VFilesCreateMenu(
         ) {
             FloatingActionButtonMenuItem(
                 onClick = {
-                    expanded = false
+                    onExpandedChange(false)
                     onCreateDirectory()
                 },
                 text = { Text("New folder") },
@@ -73,7 +68,7 @@ fun VFilesCreateMenu(
             )
             FloatingActionButtonMenuItem(
                 onClick = {
-                    expanded = false
+                    onExpandedChange(false)
                     onCreateFile()
                 },
                 text = { Text("New file") },

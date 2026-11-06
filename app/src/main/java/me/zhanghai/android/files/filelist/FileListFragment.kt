@@ -24,6 +24,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
+import android.view.MotionEvent
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.LayoutInflater
@@ -217,6 +218,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     // Immutable Compose snapshots: selectedFiles/pasteState themselves mutate in-place.
     private var browserChromeState by mutableStateOf(FileBrowserChromeState())
+    private var browserFabExpanded by mutableStateOf(false)
 
     private val debouncedSearchRunnable = DebouncedRunnable(Handler(Looper.getMainLooper()), 1000) {
         if (!isResumed || !viewModel.isSearchViewExpanded) {
@@ -786,12 +788,23 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 }
             }
         }
-        binding.root.findViewById<ComposeView>(R.id.browserCreateMenuView).apply {
+        val createView = binding.root.findViewById<ComposeView>(R.id.browserCreateMenuView)
+        // Only intercept an outside tap while the menu is open. The legacy content
+        // remains fully touchable otherwise (including directory rows and swipe refresh).
+        (createView.parent as ViewGroup).setOnTouchListener { _, event ->
+            if (browserFabExpanded && event.actionMasked == MotionEvent.ACTION_DOWN) {
+                browserFabExpanded = false
+                true
+            } else false
+        }
+        createView.apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 VFilesTheme {
                     VFilesCreateMenu(
                         enabled = !browserChromeState.picker && !browserChromeState.currentReadOnly,
+                        expanded = browserFabExpanded,
+                        onExpandedChange = { browserFabExpanded = it },
                         onCreateFile = { showCreateFileDialog() },
                         onCreateDirectory = { showCreateDirectoryDialog() }
                     )
@@ -830,6 +843,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             pasteCount = paste?.files?.size ?: 0,
             pasteIsCopy = paste?.copy == true
         )
+        if (browserChromeState.picker || browserChromeState.currentReadOnly) {
+            browserFabExpanded = false
+        }
     }
 
     private fun onComposeSelection(command: FileBrowserSelectionCommand) {
