@@ -118,6 +118,8 @@ class FileJobErrorDialogFragment : AppCompatDialogFragment() {
             else -> R.string.file_job_remount_success_format
         }
         binding.remountButton.text = getString(textRes, args.readOnlyFileStore!!.name())
+        binding.remountButton.isEnabled = viewModel.remountState.value.isReady &&
+            args.readOnlyFileStore!!.isReadOnly
     }
 
     private fun onDialogButtonClick(dialog: DialogInterface, which: Int) {
