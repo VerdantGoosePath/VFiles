@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,6 +54,13 @@ import me.zhanghai.android.files.compose.theme.observeCompose
  * A removed application is displayed as "Ask every time", never forced into an invalid intent.
  */
 class DefaultAppsFragment : Fragment() {
+    private var installedAppsRevision by mutableIntStateOf(0)
+
+    override fun onResume() {
+        super.onResume()
+        installedAppsRevision++
+    }
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View = ComposeView(requireContext()).apply {
@@ -61,6 +69,7 @@ class DefaultAppsFragment : Fragment() {
             VFilesTheme {
                 // Recompose immediately after another dialog changes the SharedPreferences setting.
                 val stored by Settings.FILE_OPEN_DEFAULT_APPS.observeCompose()
+                val revision = installedAppsRevision
                 var selected by remember { mutableStateOf<FileOpenAppCategory?>(null) }
                 val categories = FileOpenAppCategory.entries
                 VFilesScreenScaffold(
@@ -93,7 +102,7 @@ class DefaultAppsFragment : Fragment() {
                     }
                 }
                 selected?.let { category ->
-                    val candidates = remember(category) { resolveApps(category) }
+                    val candidates = remember(category, revision) { resolveApps(category) }
                     val activePackage = stored.firstOrNull {
                         it.category == category.name
                     }?.packageName
