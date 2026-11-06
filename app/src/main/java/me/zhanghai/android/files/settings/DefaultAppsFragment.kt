@@ -134,8 +134,8 @@ private fun ExternalDefaultAppsScreen(onNavigateUp: () -> Unit) {
             context.packageManager.queryIntentActivities(
                 Intent(Intent.ACTION_VIEW).setDataAndType(uri, category.queryMimeType), 0
             ).map { it.activityInfo.packageName }.distinct()
-                .mapNotNull { package ->
-                    appLabel(context.packageManager, package)?.let { package to it }
+                .mapNotNull { packageName ->
+                    appLabel(context.packageManager, packageName)?.let { packageName to it }
                 }.sortedBy { it.second.lowercase() }
         }
         val choices: List<Pair<String?, String>> =
