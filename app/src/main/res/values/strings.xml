@@ -541,6 +541,9 @@
     <string name="storage_remove_confirmation_message">Remove this entry from your storage list? Files on the storage device or server will not be deleted.</string>
     <string name="file_properties_refresh_failed">Could not refresh properties. Pull down to retry.</string>
     <string name="file_properties_load_failed">Could not read properties (%1$s). Tap to retry.</string>
+    <string name="navigation_change_bookmark_path">Choose bookmark folder</string>
+    <string name="navigation_remove_bookmark_title">Remove bookmark?</string>
+    <string name="navigation_remove_bookmark_message">Remove “%1$s” from your bookmarks? The folder and its files will not be deleted.</string>
     <string name="storage_lan_discovery_failed">Could not discover local network servers. You can retry or enter a server manually.</string>
     <string name="storage_list_title">Storage</string>
     <string name="storage_list_empty">No storage</string>
