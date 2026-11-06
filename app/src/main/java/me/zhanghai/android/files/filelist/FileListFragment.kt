@@ -5,6 +5,13 @@
 
 package me.zhanghai.android.files.filelist
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import me.zhanghai.android.files.compose.theme.VFilesTheme
+import me.zhanghai.android.files.compose.components.BreadcrumbUi
 import android.app.Activity
 import android.content.ClipData
 import android.content.Context
@@ -65,7 +72,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.leinardi.android.speeddial.SpeedDialView
 import java8.nio.file.AccessDeniedException
 import java8.nio.file.NoSuchFileException
 import java8.nio.file.Path
@@ -82,7 +88,6 @@ import me.zhanghai.android.files.databinding.FileListFragmentBinding
 import me.zhanghai.android.files.databinding.FileListFragmentBottomBarIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentContentIncludeBinding
 import me.zhanghai.android.files.databinding.FileListFragmentIncludeBinding
-import me.zhanghai.android.files.databinding.FileListFragmentSpeedDialIncludeBinding
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.asMimeTypeOrNull
@@ -119,7 +124,6 @@ import me.zhanghai.android.files.ui.PersistentBarLayout
 import me.zhanghai.android.files.ui.PersistentBarLayoutToolbarActionMode
 import me.zhanghai.android.files.ui.PersistentDrawerLayout
 import me.zhanghai.android.files.ui.ScrollingViewOnApplyWindowInsetsListener
-import me.zhanghai.android.files.ui.SpeedDialViewOnBackPressedCallback
 import me.zhanghai.android.files.ui.ThemedFastScroller
 import me.zhanghai.android.files.ui.ToolbarActionMode
 import me.zhanghai.android.files.util.DebouncedRunnable
@@ -159,7 +163,6 @@ import me.zhanghai.android.files.util.takeIfNotEmpty
 import me.zhanghai.android.files.util.valueCompat
 import me.zhanghai.android.files.util.viewModels
 import me.zhanghai.android.files.util.withChooser
-import me.zhanghai.android.files.viewer.image.ImageViewerActivity
 import kotlin.math.roundToInt
 
 class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.Listener,
@@ -210,6 +213,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private lateinit var layoutManager: GridLayoutManager
 
     private lateinit var adapter: FileListAdapter
+
+    // Immutable Compose snapshots: selectedFiles/pasteState themselves mutate in-place.
+    private var browserChromeState by mutableStateOf(FileBrowserChromeState())
 
     private val debouncedSearchRunnable = DebouncedRunnable(Handler(Looper.getMainLooper()), 1000) {
         if (!isResumed || !viewModel.isSearchViewExpanded) {
@@ -279,6 +285,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         binding.appBarLayout.syncBackgroundColorTo(binding.overlayToolbar)
         binding.breadcrumbLayout.setListener(this)
+        // The old breadcrumb view stays in the hierarchy for caller compatibility but does not
+        // duplicate the accessible Compose path trail.
+        binding.breadcrumbLayout.isVisible = false
+        installComposeBrowser()
         if (!(activity.hasSw600Dp && activity.isOrientationLandscape)) {
             binding.swipeRefreshLayout.setProgressViewEndTarget(
                 true, binding.swipeRefreshLayout.progressViewEndOffset
@@ -293,17 +303,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.recyclerView.setOnApplyWindowInsetsListener(
             ScrollingViewOnApplyWindowInsetsListener(binding.recyclerView, fastScroller)
         )
-        binding.speedDialView.inflate(R.menu.file_list_speed_dial)
-        binding.speedDialView.setOnActionSelectedListener {
-            when (it.id) {
-                R.id.action_create_file -> showCreateFileDialog()
-                R.id.action_create_directory -> showCreateDirectoryDialog()
-            }
-            // Returning false causes the speed dial to close without animation.
-            //return false
-            binding.speedDialView.close()
-            true
-        }
 
         binding.fileJobProgressIndicator.isIndeterminate = false
         binding.fileJobProgressButton.setOnClickListener { toggleFileJobProgressPopup() }
@@ -324,7 +323,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 }
         )
         addOnBackPressedCallback(overlayActionMode.onBackPressedCallback)
-        addOnBackPressedCallback(SpeedDialViewOnBackPressedCallback(binding.speedDialView))
         binding.drawerLayout?.let {
             addOnBackPressedCallback(DrawerLayoutOnBackPressedCallback(it))
             // Drawer listener handling, in order: the status bar icon tint crossfade (the drawer
@@ -471,7 +469,21 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         viewModel.fileListLiveData.observe(viewLifecycleOwner) { onFileListChanged(it) }
         Settings.FILE_LIST_SHOW_HIDDEN_FILES.observe(viewLifecycleOwner) {
             onShowHiddenFilesChanged(it)
+            updateBrowserChrome()
         }
+        // Retain the View-based operational UI and use scalar projections for Compose chrome.
+        // Observing these individually also handles provider changes and in-place set mutations.
+        viewModel.currentPathLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.breadcrumbLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.viewTypeLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.sortOptionsLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.viewSortPathSpecificLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.pickOptionsLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.selectedFilesLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.pasteStateLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.searchStateLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.searchViewExpandedLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        viewModel.fileListLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
     }
 
     override fun onResume() {
@@ -571,15 +583,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 return false
             }
         })
-        if (viewModel.isSearchViewExpanded) {
-            menuBinding.searchItem.expandActionView()
-        }
+        // Compose owns the visible query field. Keep the legacy SearchView instance solely
+        // for menu/backward compatibility, never expand a hidden competing input.
     }
 
     private fun collapseSearchView() {
+        debouncedSearchRunnable.cancel()
         if (this::menuBinding.isInitialized && menuBinding.searchItem.isActionViewExpanded) {
             menuBinding.searchItem.collapseActionView()
         }
+        viewModel.isSearchViewExpanded = false
+        viewModel.searchViewQuery = ""
+        viewModel.stopSearching()
+        updateBrowserChrome()
     }
 
     override fun onPrepareMenu(menu: Menu) {
@@ -709,6 +725,131 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
         }
         return false
+    }
+
+
+    private fun installComposeBrowser() {
+        binding.root.findViewById<ComposeView>(R.id.browserChromeView).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                VFilesTheme {
+                    VFilesBrowserChrome(
+                        state = browserChromeState,
+                        onBreadcrumb = { id ->
+                            val path = id.toIntOrNull()?.let {
+                                viewModel.breadcrumbLiveData.value?.paths?.getOrNull(it)
+                            }
+                            if (path != null) navigateTo(path)
+                        },
+                        onSearchExpanded = { expanded ->
+                            viewModel.isSearchViewExpanded = expanded
+                            if (!expanded) {
+                                debouncedSearchRunnable.cancel()
+                                viewModel.stopSearching()
+                                viewModel.searchViewQuery = ""
+                            }
+                            updateBrowserChrome()
+                        },
+                        onSearchQuery = { query ->
+                            viewModel.searchViewQuery = query
+                            if (query.isBlank()) {
+                                debouncedSearchRunnable.cancel()
+                                viewModel.stopSearching()
+                            } else {
+                                debouncedSearchRunnable()
+                            }
+                            updateBrowserChrome()
+                        },
+                        onSearchSubmit = {
+                            debouncedSearchRunnable.cancel()
+                            if (viewModel.searchViewQuery.isBlank()) viewModel.stopSearching()
+                            else viewModel.search(viewModel.searchViewQuery)
+                            updateBrowserChrome()
+                        },
+                        onViewType = { viewModel.viewType = it },
+                        onSortBy = { viewModel.setSortBy(it) },
+                        onSortOrder = { viewModel.setSortOrder(it) },
+                        onDirectoriesFirst = { viewModel.setSortDirectoriesFirst(it) },
+                        onPathSpecificSort = { viewModel.isViewSortPathSpecific = it },
+                        onShowHiddenFiles = { setShowHiddenFiles(it) },
+                        onSelection = { onComposeSelection(it) }
+                    )
+                }
+            }
+        }
+        binding.root.findViewById<ComposeView>(R.id.browserCreateMenuView).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                VFilesTheme {
+                    VFilesCreateMenu(
+                        enabled = !browserChromeState.picker && !browserChromeState.currentReadOnly,
+                        onCreateFile = { showCreateFileDialog() },
+                        onCreateDirectory = { showCreateDirectoryDialog() }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun updateBrowserChrome() {
+        if (!isAdded || !this::binding.isInitialized || !viewModel.hasTrail) return
+        val breadcrumb = viewModel.breadcrumbLiveData.value
+        val segments = breadcrumb?.paths?.mapIndexed { index, _ ->
+            BreadcrumbUi(index.toString(), breadcrumb.nameProducers[index](requireContext()))
+        }.orEmpty()
+        val selection = viewModel.selectedFilesLiveData.value.orEmpty()
+        val paste = viewModel.pasteStateLiveData.value
+        val pickOptions = viewModel.pickOptionsLiveData.value
+        browserChromeState = FileBrowserChromeState(
+            breadcrumbs = segments,
+            subtitle = binding.toolbar.subtitle?.toString().orEmpty(),
+            viewType = viewModel.viewTypeLiveData.value ?: FileViewType.LIST,
+            sortOptions = viewModel.sortOptionsLiveData.value ?: FileSortOptions(
+                By.NAME, Order.ASCENDING, true
+            ),
+            pathSpecificSort = viewModel.viewSortPathSpecificLiveData.value ?: false,
+            showHiddenFiles = Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat,
+            searchExpanded = viewModel.isSearchViewExpanded,
+            searchQuery = viewModel.searchViewQuery,
+            selectedCount = selection.size,
+            selectedReadOnly = selection.any { it.path.fileSystem.isReadOnly },
+            selectedArchivePaths = selection.isNotEmpty() && selection.all { it.path.isArchivePath },
+            selectedArchiveFiles = selection.isNotEmpty() && selection.all { it.isArchiveFile },
+            currentReadOnly = viewModel.currentPath.fileSystem.isReadOnly,
+            picker = pickOptions != null,
+            pickerCanSelectMultiple = pickOptions?.allowMultiple == true,
+            pasteCount = paste?.files?.size ?: 0,
+            pasteIsCopy = paste?.copy == true
+        )
+    }
+
+    private fun onComposeSelection(command: FileBrowserSelectionCommand) {
+        val files = viewModel.selectedFiles
+        when (command) {
+            FileBrowserSelectionCommand.CLEAR -> viewModel.clearSelectedFiles()
+            FileBrowserSelectionCommand.SELECT_ALL -> selectAllFiles()
+            FileBrowserSelectionCommand.PICK -> {
+                if (files.isNotEmpty()) {
+                    if (viewModel.pickOptions?.mode == PickOptions.Mode.CREATE_FILE) {
+                        files.singleOrNull()?.let { confirmReplaceFile(it) }
+                    } else pickFiles(files)
+                }
+            }
+            FileBrowserSelectionCommand.CUT ->
+                if (files.isNotEmpty() && files.none { it.path.fileSystem.isReadOnly }) cutFiles(files)
+            FileBrowserSelectionCommand.COPY -> if (files.isNotEmpty()) copyFiles(files)
+            FileBrowserSelectionCommand.DELETE ->
+                if (files.isNotEmpty() && files.none { it.path.fileSystem.isReadOnly }) confirmDeleteFiles(files)
+            FileBrowserSelectionCommand.EXTRACT ->
+                if (files.isNotEmpty() && files.all { it.isArchiveFile }) extractFiles(files)
+            FileBrowserSelectionCommand.ARCHIVE ->
+                if (files.isNotEmpty() && !currentPath.fileSystem.isReadOnly) showCreateArchiveDialog(files)
+            FileBrowserSelectionCommand.SHARE -> if (files.isNotEmpty()) shareFiles(files)
+            FileBrowserSelectionCommand.PASTE ->
+                if (viewModel.pickOptions == null && !currentPath.fileSystem.isReadOnly &&
+                    viewModel.pasteState.files.isNotEmpty()) pasteFiles(currentPath)
+            FileBrowserSelectionCommand.CANCEL_PASTE -> viewModel.clearPasteState()
+        }
     }
 
     private fun onPersistentDrawerOpenChanged(open: Boolean) {
@@ -1546,23 +1687,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 .apply {
                     extraPath = path
-                    maybeAddImageViewerActivityExtras(this, path, mimeType)
                     if (!withChooser) {
                         applyDefaultAppPackage(this, mimeType)
                     }
                 }
-                .let {
-                    if (withChooser) {
-                        it.withChooser(
-                            EditFileActivity::class.createIntent()
-                                .putArgs(EditFileActivity.Args(path, mimeType)),
-                            OpenFileAsDialogActivity::class.createIntent()
-                                .putArgs(OpenFileAsDialogFragment.Args(path))
-                        )
-                    } else {
-                        it
-                    }
-                }
+                .let { if (withChooser) Intent.createChooser(it, null) else it }
+
             startActivitySafe(intent)
         }
     }
@@ -1578,33 +1708,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (canHandle) {
             intent.setPackage(packageName)
         }
-    }
-
-    private fun maybeAddImageViewerActivityExtras(intent: Intent, path: Path, mimeType: MimeType) {
-        if (!mimeType.isImage) {
-            return
-        }
-        var paths = mutableListOf<Path>()
-        // We need the ordered list from our adapter instead of the list from FileListLiveData.
-        for (index in 0..<adapter.itemCount) {
-            val file = adapter.getItem(index)
-            val filePath = file.path
-            if (file.mimeType.isImage || filePath == path) {
-                paths.add(filePath)
-            }
-        }
-        var position = paths.indexOf(path)
-        if (position == -1) {
-            return
-        }
-        // HACK: Don't send too many paths to avoid TransactionTooLargeException.
-        if (paths.size > IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX) {
-            val start = (position - IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX / 2)
-                .coerceIn(0, paths.size - IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
-            paths = paths.subList(start, start + IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX)
-            position -= start
-        }
-        ImageViewerActivity.putExtras(intent, paths, position)
     }
 
     override fun cutFile(file: FileItem) {
@@ -1975,7 +2078,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         private const val ACTION_VIEW_DOWNLOADS =
             "me.zhanghai.android.files.intent.action.VIEW_DOWNLOADS"
 
-        private const val IMAGE_VIEWER_ACTIVITY_PATH_LIST_SIZE_MAX = 1000
     }
 
     private class RequestAllFilesAccessContract : ActivityResultContract<Unit, Boolean>() {
@@ -2109,7 +2211,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val bottomBarLayout: ViewGroup,
         val bottomToolbar: Toolbar,
         val bottomCreateFileNameEdit: EditText,
-        val speedDialView: SpeedDialView,
         val fileJobProgressButton: MaterialCardView,
         val fileJobProgressIndicator: CircularProgressIndicator,
         val fileJobProgressCount: TextView
@@ -2126,7 +2227,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 val appBarBinding = FileListFragmentAppBarIncludeBinding.bind(bindingRoot)
                 val contentBinding = FileListFragmentContentIncludeBinding.bind(bindingRoot)
                 val bottomBarBinding = FileListFragmentBottomBarIncludeBinding.bind(bindingRoot)
-                val speedDialBinding = FileListFragmentSpeedDialIncludeBinding.bind(bindingRoot)
                 val progressBinding = FileListFragmentProgressIncludeBinding.bind(bindingRoot)
                 return Binding(
                     bindingRoot, includeBinding.drawerLayout, includeBinding.persistentDrawerLayout,
@@ -2136,7 +2236,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     contentBinding.progress, contentBinding.errorText, contentBinding.emptyView,
                     contentBinding.swipeRefreshLayout, contentBinding.recyclerView,
                     bottomBarBinding.bottomBarLayout, bottomBarBinding.bottomToolbar,
-                    bottomBarBinding.bottomCreateFileNameEdit, speedDialBinding.speedDialView,
+                    bottomBarBinding.bottomCreateFileNameEdit,
                     progressBinding.fileJobProgressButton, progressBinding.fileJobProgressIndicator,
                     progressBinding.fileJobProgressCount
                 )
