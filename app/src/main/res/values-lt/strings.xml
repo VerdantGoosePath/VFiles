@@ -619,7 +619,6 @@
         <item>Automatinis</item>
         <item>Tik root prieiga</item>
     </string-array>
-    <string name="settings_archive_file_name_encoding_title">Archyvo failo pavadinimo kodavimas</string>
     <string name="settings_open_apk_default_action_title">Atidaryti Android paketą</string>
     <string-array name="settings_open_apk_default_action_entries">
         <item>Įdiegti</item>
