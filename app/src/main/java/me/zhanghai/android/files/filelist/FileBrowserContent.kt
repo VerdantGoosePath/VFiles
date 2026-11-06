@@ -17,10 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as gridItems
+import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Checkbox
@@ -50,6 +50,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -110,6 +115,8 @@ fun VFilesBrowserContent(
     state: FileBrowserContentState,
     onRefresh: () -> Unit,
     onItemAction: (FileItem, FileBrowserItemAction) -> Unit,
+    onRangeSelect: (List<FileItem>) -> Unit,
+    onListReachedTop: () -> Boolean,
     modifier: Modifier = Modifier
 ) {
     val visible by produceState(
@@ -184,8 +191,10 @@ fun VFilesBrowserContent(
                                 ),
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
-                                items(visible, key = { it.path.toString() },
-                                    contentType = { if (it.attributes.isDirectory) "directory" else "file" }) { file ->
+                                itemsIndexed(visible, key = { _, file -> file.path.toString() },
+                                    contentType = { _, file ->
+                                        if (file.attributes.isDirectory) "directory" else "file"
+                                    }) { index, file ->
                                     FileBrowserItem(
                                         file = file,
                                         grid = false,
@@ -193,7 +202,21 @@ fun VFilesBrowserContent(
                                         hasSelection = state.selectedPaths.isNotEmpty(),
                                         pickOptions = state.pickOptions,
                                         ellipsize = state.nameEllipsize,
-                                        onAction = { onItemAction(file, it) }
+                                        onAction = { onItemAction(file, it) },
+                                        onKeyNavigation = { key, shift ->
+                                            val next = index + if (key == Key.DirectionDown) 1 else -1
+                                            when {
+                                                shift && next in visible.indices -> {
+                                                    onRangeSelect(visible.subList(
+                                                        minOf(index, next), maxOf(index, next) + 1
+                                                    ))
+                                                    false // Allow native focus to advance.
+                                                }
+                                                !shift && index == 0 && key == Key.DirectionUp ->
+                                                    onListReachedTop()
+                                                else -> false
+                                            }
+                                        }
                                     )
                                 }
                             }
@@ -209,8 +232,10 @@ fun VFilesBrowserContent(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                gridItems(visible, key = { it.path.toString() },
-                                    contentType = { if (it.attributes.isDirectory) "directory" else "file" }) { file ->
+                                gridItemsIndexed(visible, key = { _, file -> file.path.toString() },
+                                    contentType = { _, file ->
+                                        if (file.attributes.isDirectory) "directory" else "file"
+                                    }) { index, file ->
                                     FileBrowserItem(
                                         file = file,
                                         grid = true,
@@ -218,7 +243,18 @@ fun VFilesBrowserContent(
                                         hasSelection = state.selectedPaths.isNotEmpty(),
                                         pickOptions = state.pickOptions,
                                         ellipsize = state.nameEllipsize,
-                                        onAction = { onItemAction(file, it) }
+                                        onAction = { onItemAction(file, it) },
+                                        onKeyNavigation = { key, shift ->
+                                            val next = index + if (key == Key.DirectionDown) 1 else -1
+                                            if (shift && next in visible.indices) {
+                                                onRangeSelect(visible.subList(
+                                                    minOf(index, next), maxOf(index, next) + 1
+                                                ))
+                                                false
+                                            } else if (!shift && index == 0 && key == Key.DirectionUp) {
+                                                onListReachedTop()
+                                            } else false
+                                        }
                                     )
                                 }
                             }
@@ -249,7 +285,8 @@ private fun FileBrowserItem(
     hasSelection: Boolean,
     pickOptions: PickOptions?,
     ellipsize: TextUtils.TruncateAt,
-    onAction: (FileBrowserItemAction) -> Unit
+    onAction: (FileBrowserItemAction) -> Unit,
+    onKeyNavigation: (Key, Boolean) -> Boolean
 ) {
     val isDirectory = file.attributes.isDirectory
     val selectable = canSelectBrowserFile(file, pickOptions)
@@ -265,6 +302,12 @@ private fun FileBrowserItem(
         color = bg,
         shape = if (grid) MaterialTheme.shapes.large else MaterialTheme.shapes.medium,
         modifier = Modifier.fillMaxWidth().semantics { this.selected = selected }
+            .onPreviewKeyEvent { event ->
+                if (event.type == KeyEventType.KeyDown &&
+                    (event.key == Key.DirectionUp || event.key == Key.DirectionDown)) {
+                    onKeyNavigation(event.key, event.isShiftPressed)
+                } else false
+            }
             .combinedClickable(
                 enabled = enabled,
                 onClick = {
