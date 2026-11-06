@@ -6,6 +6,10 @@ on:
       - m3e/file-browser
   workflow_dispatch:
 
+concurrency:
+  group: m3e-browser-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
