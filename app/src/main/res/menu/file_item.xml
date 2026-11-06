@@ -12,6 +12,12 @@
         android:icon="@drawable/open_with_icon_control_normal_24dp"
         android:title="@string/file_item_action_open_with" />
 
+    <!-- External ACTION_EDIT: the built-in editor is removed in the parallel UI workstream. -->
+    <item
+        android:id="@+id/action_edit_with"
+        android:icon="@drawable/rename_icon_control_normal_24dp"
+        android:title="@string/edit" />
+
     <item
         android:id="@+id/action_cut"
         android:icon="@drawable/cut_icon_control_normal_24dp"
