@@ -57,4 +57,27 @@
     <string name="archive_default_zip_engine">rawzip</string>
     <string name="archive_default_zip_method">deflate</string>
     <string name="archive_default_max_entry">2048</string>
+    <string name="archive_extract_options_title">Extraction options</string>
+    <string name="archive_extract_destination_hint">Choose the archive readers below, then choose where to extract using the paste bar. These settings are saved as defaults.</string>
+    <string name="archive_sevenz_read_hint">7z · sevenz-turbo. Encrypted archives ask for a password when needed. CRC checks are always enabled.</string>
+    <string name="archive_rar_engine_hint">RAR · unrar-rs (read and extract only)</string>
+    <string name="archive_extract_continue">Choose destination</string>
+    <string-array name="archive_max_entry_entries">
+        <item>256 MiB</item>
+        <item>512 MiB</item>
+        <item>1 GiB</item>
+        <item>2 GiB (default)</item>
+        <item>4 GiB</item>
+        <item>8 GiB</item>
+        <item>16 GiB</item>
+    </string-array>
+    <string-array name="archive_max_entry_values">
+        <item>256</item>
+        <item>512</item>
+        <item>1024</item>
+        <item>2048</item>
+        <item>4096</item>
+        <item>8192</item>
+        <item>16384</item>
+    </string-array>
 </resources>
