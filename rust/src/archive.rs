@@ -108,7 +108,7 @@ fn list_rawzip(path: &Path) -> Result<Vec<Entry>> {
     while let Some(e) = iter.next_entry()? {
         let name = String::from_utf8_lossy(e.file_path().as_ref()).into_owned();
         entries.push(Entry { name, size: e.uncompressed_size_hint(), directory: e.is_dir(),
-            encrypted: false, symlink: false });
+            encrypted: e.flags().is_encrypted(), symlink: false });
     }
     Ok(entries)
 }
@@ -168,18 +168,19 @@ fn extract_rawzip(path: &Path, name: &str, target: &Path, options: &Options) -> 
     let mut selected = None;
     while let Some(e) = entries.next_entry()? {
         if String::from_utf8_lossy(e.file_path().as_ref()) == name {
-            selected = Some((e.wayfinder(), e.compression_method()));
+            selected = Some((e.wayfinder(), e.compression_method(), e.flags().is_encrypted()));
             break;
         }
     }
-    let (location, method) = selected.ok_or_else(|| invalid("missing zip entry"))?;
+    let (location, method, encrypted) = selected.ok_or_else(|| invalid("missing zip entry"))?;
+    if encrypted { return Err(invalid("ZIP password decryption is not supported by this engine").into()); }
     drop(entries);
     let entry = archive.get_entry(location)?;
     let output = File::create(target)?;
     match method {
         CompressionMethod::STORE => copy_limited(entry.verifying_reader(entry.reader()), output, options),
         CompressionMethod::DEFLATE => copy_limited(
-            entry.verifying_reader(flate2::bufread::DeflateDecoder::new(entry.reader())), output, options),
+            entry.verifying_reader(flate2::read::DeflateDecoder::new(entry.reader())), output, options),
         _ => Err(invalid(format!("unsupported ZIP compression method: {method:?}")).into()),
     }
 }
@@ -328,13 +329,38 @@ fn create_sevenz(source: &Path, target: &Path, password: &str, options: &Options
         writer.set_content_methods(vec![AesEncoderOptions::new(Password::new(password)).into(), method.into()]);
         writer.set_encrypt_header(options.sevenz_encrypt_headers);
     }
-    // Non-solid gives predictable per-entry access for VFiles' random-access
-    // archive explorer. Solid mode can be added without changing the JNI API.
-    for (path, name, directory) in members(source)? {
-        if directory {
-            writer.push_archive_entry::<io::Empty>(ArchiveEntry::new_directory(&name), None)?;
-        } else {
-            writer.push_archive_entry(ArchiveEntry::from_path(&path, name), Some(File::open(path)?))?;
+    if options.sevenz_solid {
+        use sevenz_turbo::SourceReader;
+        let mut entries = Vec::new();
+        let mut readers: Vec<SourceReader<Box<dyn Read>>> = Vec::new();
+        let mut bytes = 0u64;
+        for (path, name, directory) in members(source)? {
+            if directory {
+                if !entries.is_empty() {
+                    writer.push_archive_entries(std::mem::take(&mut entries), std::mem::take(&mut readers))?;
+                    bytes = 0;
+                }
+                writer.push_archive_entry::<io::Empty>(ArchiveEntry::new_directory(&name), None)?;
+            } else {
+                let size = fs::metadata(&path)?.len();
+                entries.push(ArchiveEntry::from_path(&path, name));
+                readers.push(SourceReader::new(Box::new(File::open(path)?) as Box<dyn Read>));
+                bytes = bytes.saturating_add(size);
+                // Bound solid block memory and preserve random access across batches.
+                if entries.len() >= 128 || bytes >= 32 * 1024 * 1024 {
+                    writer.push_archive_entries(std::mem::take(&mut entries), std::mem::take(&mut readers))?;
+                    bytes = 0;
+                }
+            }
+        }
+        if !entries.is_empty() { writer.push_archive_entries(entries, readers)?; }
+    } else {
+        for (path, name, directory) in members(source)? {
+            if directory {
+                writer.push_archive_entry::<io::Empty>(ArchiveEntry::new_directory(&name), None)?;
+            } else {
+                writer.push_archive_entry(ArchiveEntry::from_path(&path, name), Some(File::open(path)?))?;
+            }
         }
     }
     writer.finish()?;
