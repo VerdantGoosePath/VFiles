@@ -549,15 +549,6 @@
     <string name="navigation_edit_bookmark_directory_name">Pavadinimas</string>
     <string name="navigation_edit_bookmark_directory_path">Kelias</string>
     <string name="archive_viewer_title">Archyvų žiūryklė</string>
-    <string name="image_viewer_title">Nuotraukų žiūryklė</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
-    <string name="text_editor_title">Teksto redaktorius</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Išsaugota</string>
-    <string name="text_editor_reload_message">Ar tikrai norite įkelti iš naujo? Neišsaugoti šio dokumento pakeitimai bus prarasti.</string>
-    <string name="text_editor_encoding">Kodavimas</string>
-    <string name="text_editor_close_message">Ar tikrai norite atmesti neišsaugotus šio dokumento pakeitimus?</string>
 
     <string name="ftp_server_title">FTP serveris</string>
     <string name="ftp_server_state_title">Būsena</string>

@@ -643,18 +643,9 @@
     <string name="navigation_edit_bookmark_directory_name">שם</string>
     <string name="navigation_edit_bookmark_directory_path">נתיב</string>
     <string name="archive_viewer_title">מציג ארכיונים</string>
-    <string name="image_viewer_title">מציג התמונות</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
     <string name="save_as_title">שמירה בשם</string>
     <string name="save_as_error">שגיאה בשמירת הקובץ</string>
     <string name="save_as_success_format">„%1$s” נשמר אל „%2$s”</string>
-    <string name="text_editor_title">עורך טקסט</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">נשמר</string>
-    <string name="text_editor_reload_message">האם בוודאות ברצונך לטעון מחדש? שינויים שלא נשמרו במסמך זה יאבדו.</string>
-    <string name="text_editor_encoding">הצפנה</string>
-    <string name="text_editor_close_message">האם בוודאות ברצונך למחוק שינויים שלא נשמרו במסמך זה?</string>
 
     <string name="ftp_server_title">שרת FTP</string>
     <string name="ftp_server_state_title">סטטוס</string>

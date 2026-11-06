@@ -472,15 +472,6 @@
     <string name="navigation_edit_bookmark_directory_name">Nama</string>
     <string name="navigation_edit_bookmark_directory_path">Jalur</string>
     <string name="archive_viewer_title">Penilik arsip</string>
-    <string name="image_viewer_title">Penampil gambar</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
-    <string name="text_editor_title">Penyunting teks</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Disimpan</string>
-    <string name="text_editor_reload_message">Apakah Anda yakin ingin memuat ulang? Perubahan yang belum disimpan pada dokumen ini akan hilang.</string>
-    <string name="text_editor_encoding">Enkode</string>
-    <string name="text_editor_close_message">Apakah Anda yakin ingin menghapus perubahan yang belum disimpan pada dokumen ini?</string>
 
     <string name="ftp_server_title">Server FTP</string>
     <string name="ftp_server_state_title">Status</string>

@@ -553,18 +553,9 @@
     <string name="navigation_edit_bookmark_directory_name">이름</string>
     <string name="navigation_edit_bookmark_directory_path">경로</string>
     <string name="archive_viewer_title">압축 파일 뷰어</string>
-    <string name="image_viewer_title">이미지 뷰어</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
     <string name="save_as_title">다른 이름으로 저장</string>
     <string name="save_as_error">파일 저장 중 오류</string>
     <string name="save_as_success_format">“%1$s” 항목을 “%2$s”에 저장했습니다.</string>
-    <string name="text_editor_title">텍스트 편집기</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">저장됨</string>
-    <string name="text_editor_reload_message">정말 다시 불러오시겠습니까? 이 문서의 저장하지 않은 내용은 사라집니다.</string>
-    <string name="text_editor_encoding">인코딩</string>
-    <string name="text_editor_close_message">정말 이 문서의 저장하지 않은 내용을 버리시겠습니까?</string>
 
     <string name="ftp_server_title">FTP 서버</string>
     <string name="ftp_server_state_title">상태</string>
