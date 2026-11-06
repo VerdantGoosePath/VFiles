@@ -216,7 +216,7 @@ fn extract_sevenz(path: &Path, name: &str, target: &Path, password: &str, option
         if entry.name == name {
             found = true;
             let output = File::create(target);
-            match output.and_then(|out| copy_limited(input, out, options).map_err(io::Error::other)) {
+            match output.and_then(|out| copy_limited(input, out, options).map_err(|e| io::Error::other(e.to_string()))) {
                 Ok(()) => {},
                 Err(e) => failure = Some(e.to_string()),
             }
