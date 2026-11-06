@@ -648,7 +648,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 true
             }
             R.id.action_view_sort_path_specific -> {
-                viewModel.isViewSortPathSpecific = !menuBinding.viewSortPathSpecificItem.isChecked
+                viewModel.setViewSortPathSpecific(!menuBinding.viewSortPathSpecificItem.isChecked)
                 true
             }
             R.id.action_new_task -> {
@@ -734,6 +734,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun onCurrentPathChanged(path: Path) {
         dragSelectTouchListener.stop()
+        viewModel.rememberGlobalViewSortForPath(path)
         updateOverlayToolbar()
         updateBottomToolbar()
     }

@@ -15,6 +15,8 @@ import java8.nio.file.Path
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.filelist.FileSortOptions.By
 import me.zhanghai.android.files.filelist.FileSortOptions.Order
+import me.zhanghai.android.files.settings.PathSettings
+import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.provider.archive.archiveRefresh
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.util.CloseableLiveData
@@ -124,11 +126,37 @@ class FileListViewModel : ViewModel() {
         FileViewSortPathSpecificLiveData(currentPathLiveData)
     val viewSortPathSpecificLiveData: LiveData<Boolean>
         get() = _viewSortPathSpecificLiveData
-    var isViewSortPathSpecific: Boolean
+    val isViewSortPathSpecific: Boolean
         get() = _viewSortPathSpecificLiveData.valueCompat
-        set(value) {
-            _viewSortPathSpecificLiveData.putValue(value)
+
+    private var rememberedSortPath: Path? = null
+    private var globalViewTypeOnEntry: FileViewType? = null
+    private var globalSortOptionsOnEntry: FileSortOptions? = null
+
+    fun rememberGlobalViewSortForPath(path: Path) {
+        if (rememberedSortPath == path) return
+        rememberedSortPath = path
+        globalViewTypeOnEntry = Settings.FILE_LIST_VIEW_TYPE.valueCompat
+        globalSortOptionsOnEntry = Settings.FILE_LIST_SORT_OPTIONS.valueCompat
+    }
+
+    fun setViewSortPathSpecific(enabled: Boolean) {
+        if (enabled && !isViewSortPathSpecific) {
+            val localViewType = viewType
+            val localSortOptions = sortOptions
+            // Store the entire current view/sort state under this folder before undoing global
+            // changes made since it was opened. Other folders keep their previous defaults.
+            _viewSortPathSpecificLiveData.putValue(true)
+            PathSettings.getFileListViewType(currentPath).putValue(localViewType)
+            PathSettings.getFileListSortOptions(currentPath).putValue(localSortOptions)
+            if (rememberedSortPath == currentPath) {
+                globalViewTypeOnEntry?.let { Settings.FILE_LIST_VIEW_TYPE.putValue(it) }
+                globalSortOptionsOnEntry?.let { Settings.FILE_LIST_SORT_OPTIONS.putValue(it) }
+            }
+        } else {
+            _viewSortPathSpecificLiveData.putValue(enabled)
         }
+    }
 
     private val _pickOptionsLiveData = MutableLiveData<PickOptions?>()
     val pickOptionsLiveData: LiveData<PickOptions?>
