@@ -19,6 +19,7 @@ import me.zhanghai.android.files.compat.setThemeCompat
 import me.zhanghai.android.files.compat.themeResIdCompat
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.settings.MaterialDesign
+import me.zhanghai.android.files.settings.FontChoice
 import me.zhanghai.android.files.theme.night.NightModeHelper
 import me.zhanghai.android.files.util.SimpleActivityLifecycleCallbacks
 import me.zhanghai.android.files.util.valueCompat
@@ -28,6 +29,7 @@ object CustomThemeHelper {
     // Edge-to-edge is read by views as they inflate and lay out, so an activity has to be recreated
     // for a change to apply consistently, the same way as a theme change.
     private val activityEdgeToEdge = mutableMapOf<Activity, Boolean>()
+    private val activityFonts = mutableMapOf<Activity, FontChoice>()
 
     fun initialize(application: Application) {
         application.registerActivityLifecycleCallbacks(object : SimpleActivityLifecycleCallbacks {
@@ -40,6 +42,7 @@ object CustomThemeHelper {
             override fun onActivityDestroyed(activity: Activity) {
                 activityBaseThemes.remove(activity)
                 activityEdgeToEdge.remove(activity)
+                activityFonts.remove(activity)
             }
         })
     }
@@ -48,6 +51,7 @@ object CustomThemeHelper {
         val baseThemeRes = activity.themeResIdCompat
         activityBaseThemes[activity] = baseThemeRes
         activityEdgeToEdge[activity] = Settings.EDGE_TO_EDGE.valueCompat
+        activityFonts[activity] = Settings.FONT_CHOICE.valueCompat
         val customThemeRes = getCustomThemeRes(baseThemeRes, activity)
         activity.setThemeCompat(customThemeRes)
         applyWallpaperDynamicColors(activity)
@@ -77,9 +81,10 @@ object CustomThemeHelper {
             val customThemeRes = getCustomThemeRes(baseThemeRes, activity)
             val isEdgeToEdgeChanged =
                 activityEdgeToEdge[activity] != Settings.EDGE_TO_EDGE.valueCompat
-            if (currentThemeRes != customThemeRes || isEdgeToEdgeChanged) {
+            val isFontChanged = activityFonts[activity] != Settings.FONT_CHOICE.valueCompat
+            if (currentThemeRes != customThemeRes || isEdgeToEdgeChanged || isFontChanged) {
                 // Ignore ".Black" theme changes when not in night mode.
-                if (!isEdgeToEdgeChanged
+                if (!isEdgeToEdgeChanged && !isFontChanged
                     && !NightModeHelper.isInNightMode(activity as AppCompatActivity)
                     && isBlackThemeChange(currentThemeRes, customThemeRes, activity)) {
                     continue

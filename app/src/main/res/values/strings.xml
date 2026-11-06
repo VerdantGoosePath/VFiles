@@ -763,6 +763,14 @@
     <string name="color_picker_dynamic_color_label">Based on wallpaper</string>
     <string name="color_picker_preset_colors_label">Other colors</string>
     <string name="settings_material_design_title">Material design</string>
+    <string name="settings_font_title">App font</string>
+    <string name="settings_font_summary">Choose a font. Custom font files are imported privately from your device.</string>
+    <string name="settings_font_import_failed">Cannot import this font file</string>
+    <string-array name="settings_font_entries">
+        <item>System default</item>
+        <item>Roboto Flex</item>
+        <item>Google Sans Flex</item>
+    </string-array>
     <string-array name="settings_material_design_entries">
         <item>Material 2</item>
         <item>Material 3</item>

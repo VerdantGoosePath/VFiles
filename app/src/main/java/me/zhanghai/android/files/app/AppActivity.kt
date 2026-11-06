@@ -9,6 +9,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
+import me.zhanghai.android.files.font.FontHelper
 import me.zhanghai.android.files.theme.night.NightModeHelper
 
 abstract class AppActivity : AppCompatActivity() {
@@ -28,6 +29,7 @@ abstract class AppActivity : AppCompatActivity() {
         CustomThemeHelper.apply(this)
 
         super.onCreate(savedInstanceState)
+        FontHelper.install(this)
     }
 
     override fun onSupportNavigateUp(): Boolean {

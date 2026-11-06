@@ -36,6 +36,13 @@
     <string name="pref_key_locale">key_locale</string>
     <string name="pref_key_theme_color">key_theme_color</string>
     <string name="pref_default_value_theme_color">0</string>
+    <string name="pref_key_font_choice">key_font_choice</string>
+    <string name="pref_default_value_font_choice">0</string>
+    <string-array name="pref_entry_values_font_choice">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
     <string name="pref_key_material_design">key_material_design_mode</string>
     <string name="pref_default_value_material_design">1</string>
     <string-array name="pref_entry_values_material_design">

@@ -106,6 +106,12 @@ object Settings {
             ThemeColor::class.java
         )
 
+    val FONT_CHOICE: SettingLiveData<FontChoice> =
+        EnumSettingLiveData(
+            R.string.pref_key_font_choice, R.string.pref_default_value_font_choice,
+            FontChoice::class.java
+        )
+
     val MATERIAL_DESIGN: SettingLiveData<MaterialDesign> =
         EnumSettingLiveData(
             R.string.pref_key_material_design, R.string.pref_default_value_material_design,
