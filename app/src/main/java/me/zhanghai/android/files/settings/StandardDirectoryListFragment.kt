@@ -8,6 +8,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +53,7 @@ class StandardDirectoryListFragment : Fragment() {
                 // Capture changes to the underlying list even if the provider list remains stable.
                 val preferences by Settings.STANDARD_DIRECTORY_SETTINGS.observeCompose()
                 VFilesScreenScaffold(
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
                     title = getString(R.string.settings_standard_directory_list_title),
                     onBack = { requireActivity().onBackPressedDispatcher.onBackPressed() }
                 ) { padding ->

@@ -13,6 +13,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -73,6 +76,7 @@ class DefaultAppsFragment : Fragment() {
                 var selected by remember { mutableStateOf<FileOpenAppCategory?>(null) }
                 val categories = FileOpenAppCategory.entries
                 VFilesScreenScaffold(
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
                     title = getString(R.string.settings_default_apps_title),
                     onBack = { requireActivity().onBackPressedDispatcher.onBackPressed() }
                 ) { innerPadding ->

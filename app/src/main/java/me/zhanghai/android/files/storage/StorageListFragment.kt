@@ -8,6 +8,9 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,6 +65,7 @@ class StorageListFragment : Fragment() {
                 val context = LocalContext.current
                 val addTitle = context.getString(R.string.storage_add_storage_title)
                 VFilesScreenScaffold(
+                    modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing),
                     title = getString(R.string.storage_list_title),
                     onBack = { requireActivity().onBackPressedDispatcher.onBackPressed() }
                 ) { padding ->
