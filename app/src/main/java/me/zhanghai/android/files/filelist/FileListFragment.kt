@@ -715,6 +715,39 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     fun onKeyShortcut(keyCode: Int, event: KeyEvent): Boolean {
+        // Legacy ToolbarActionMode no longer owns selection in the normal Compose browser.
+        // Route common physical-keyboard shortcuts through the existing operation methods.
+        // Search fields keep their own Ctrl+A/C/X editing shortcuts.
+        if (useComposeFileList && event.isCtrlPressed && !viewModel.isSearchViewExpanded) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_A -> { selectAllFiles(); return true }
+                KeyEvent.KEYCODE_C -> {
+                    val selected = viewModel.selectedFiles
+                    if (selected.isNotEmpty()) { copyFiles(selected); return true }
+                }
+                KeyEvent.KEYCODE_X -> {
+                    val selected = viewModel.selectedFiles
+                    if (selected.isNotEmpty() &&
+                        selected.none { it.path.fileSystem.isReadOnly }) {
+                        cutFiles(selected)
+                        return true
+                    }
+                }
+                KeyEvent.KEYCODE_V -> {
+                    if (viewModel.pasteState.files.isNotEmpty() &&
+                        !currentPath.fileSystem.isReadOnly) {
+                        pasteFiles(currentPath)
+                        return true
+                    }
+                }
+                KeyEvent.KEYCODE_R -> { refresh(); return true }
+                KeyEvent.KEYCODE_L -> { showNavigateToPathDialog(); return true }
+                KeyEvent.KEYCODE_H -> {
+                    setShowHiddenFiles(!Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat)
+                    return true
+                }
+            }
+        }
         if (bottomActionMode.isActive) {
             val menu = bottomActionMode.menu
             menu.setQwertyMode(
