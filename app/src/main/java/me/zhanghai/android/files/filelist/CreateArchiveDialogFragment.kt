@@ -152,6 +152,23 @@ class CreateArchiveDialogFragment : FileNameDialogFragment() {
         val method = if (binding.zipMethodSpinner.selectedItemPosition == 1) {
             if (zipEngine == "ripzip") "zstd" else "store"
         } else "deflate"
+        // Changes in the modal become the next operation's defaults, and the
+        // settings screen switches immediately to the selected ZIP engine.
+        val levelKey = when (format) {
+            ArchiveFormats.ZIP -> if (zipEngine == "ripzip")
+                ArchiveSettings.RIPZIP_LEVEL else ArchiveSettings.RAWZIP_LEVEL
+            ArchiveFormats.SEVEN_Z -> ArchiveSettings.SEVENZ_LEVEL
+            else -> ArchiveSettings.TAR_LEVEL
+        }
+        ArchiveSettings.preferences.edit()
+            .putString(ArchiveSettings.ZIP_ENGINE, zipEngine)
+            .putInt(levelKey, binding.compressionLevel.progress)
+            .putString(if (zipEngine == "ripzip") ArchiveSettings.RIPZIP_METHOD
+                else ArchiveSettings.RAWZIP_METHOD, method)
+            .putBoolean(ArchiveSettings.SEVENZ_SOLID, binding.sevenZSolid.isChecked)
+            .putBoolean(ArchiveSettings.SEVENZ_ENCRYPT_HEADERS,
+                binding.sevenZEncryptHeaders.isChecked)
+            .apply()
         val override = JSONObject()
             .put("zip_engine", zipEngine)
             .put("zip_method", method)
