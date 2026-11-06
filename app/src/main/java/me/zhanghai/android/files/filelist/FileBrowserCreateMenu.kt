@@ -1,26 +1,22 @@
 package me.zhanghai.android.files.filelist
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -38,18 +34,9 @@ fun VFilesCreateMenu(
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled && expanded) { expanded = false }
-    if (!enabled) {
-        expanded = false
-        return
-    }
-    Box(modifier = modifier.fillMaxSize()) {
-        if (expanded) {
-            Box(
-                Modifier.fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.24f))
-                    .clickable { expanded = false }
-            )
-        }
+    LaunchedEffect(enabled) { if (!enabled) expanded = false }
+    if (!enabled) return
+    Box(modifier = modifier) {
         FloatingActionButtonMenu(
             expanded = expanded,
             modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
