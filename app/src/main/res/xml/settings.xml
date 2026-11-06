@@ -135,4 +135,90 @@
             android:defaultValue="@bool/pref_default_value_read_remote_files_for_thumbnail"
             app:singleLineTitle="false" />
     </PreferenceCategory>
+
+    <!-- Keep frequently adjusted settings visible; disclose expert settings on demand. -->
+    <PreferenceCategory android:title="@string/archive_settings_title">
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_archive_zip_engine"
+            android:title="@string/archive_zip_engine_title"
+            android:defaultValue="@string/archive_default_zip_engine"
+            android:entries="@array/archive_zip_engine_entries"
+            android:entryValues="@array/archive_zip_engine_values"
+            app:useSimpleSummaryProvider="true" />
+
+        <SeekBarPreference
+            android:key="@string/pref_key_archive_rawzip_level"
+            android:title="@string/archive_rawzip_level_title"
+            android:defaultValue="@integer/archive_default_level"
+            android:max="9"
+            app:min="0"
+            app:showSeekBarValue="true" />
+        <SeekBarPreference
+            android:key="@string/pref_key_archive_ripzip_level"
+            android:title="@string/archive_ripzip_level_title"
+            android:defaultValue="@integer/archive_default_level"
+            android:max="9"
+            app:min="1"
+            app:showSeekBarValue="true" />
+        <SeekBarPreference
+            android:key="@string/pref_key_archive_sevenz_level"
+            android:title="@string/archive_sevenz_level_title"
+            android:defaultValue="@integer/archive_default_level"
+            android:max="9"
+            app:min="0"
+            app:showSeekBarValue="true" />
+        <SeekBarPreference
+            android:key="@string/pref_key_archive_tar_level"
+            android:title="@string/archive_tar_level_title"
+            android:defaultValue="@integer/archive_default_tar_level"
+            android:max="9"
+            app:min="0"
+            app:showSeekBarValue="true" />
+
+        <Preference
+            android:key="@string/pref_key_archive_advanced_toggle"
+            android:title="@string/archive_advanced_toggle"
+            android:summary="@string/archive_advanced_closed" />
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:key="@string/pref_key_archive_advanced_category"
+        android:title="@string/archive_advanced_category"
+        app:isPreferenceVisible="false">
+
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_archive_rawzip_method"
+            android:title="@string/archive_zip_method_title"
+            android:defaultValue="@string/archive_default_zip_method"
+            android:entries="@array/archive_rawzip_method_entries"
+            android:entryValues="@array/archive_rawzip_method_values"
+            app:useSimpleSummaryProvider="true" />
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_archive_ripzip_method"
+            android:title="@string/archive_zip_method_title"
+            android:defaultValue="@string/archive_default_zip_method"
+            android:entries="@array/archive_ripzip_method_entries"
+            android:entryValues="@array/archive_ripzip_method_values"
+            app:useSimpleSummaryProvider="true" />
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_archive_sevenz_solid"
+            android:title="@string/archive_sevenz_solid_title"
+            android:summary="@string/archive_sevenz_solid_summary"
+            android:defaultValue="@bool/archive_default_false" />
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_archive_sevenz_encrypt_headers"
+            android:title="@string/archive_sevenz_encrypt_headers_title"
+            android:summary="@string/archive_sevenz_encrypt_headers_summary"
+            android:defaultValue="@bool/archive_default_true" />
+        <SwitchPreferenceCompat
+            android:key="@string/pref_key_archive_rar_verify"
+            android:title="@string/archive_rar_verify_title"
+            android:summary="@string/archive_rar_verify_summary"
+            android:defaultValue="@bool/archive_default_true" />
+        <EditTextPreference
+            android:key="@string/pref_key_archive_max_entry_mib"
+            android:title="@string/archive_max_entry_title"
+            android:summary="@string/archive_max_entry_summary"
+            android:defaultValue="@string/archive_default_max_entry" />
+    </PreferenceCategory>
+
 </PreferenceScreen>
