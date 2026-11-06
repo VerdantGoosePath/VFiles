@@ -539,7 +539,6 @@
     <string name="storage_remove_confirmation_title">Remove storage?</string>
     <string name="storage_remove_confirmation_message">Remove this entry from your storage list? Files on the storage device or server will not be deleted.</string>
     <string name="storage_lan_discovery_failed">Could not discover local network servers. You can retry or enter a server manually.</string>
-    <string name="retry">Retry</string>
     <string name="storage_list_title">Storage</string>
     <string name="storage_list_empty">No storage</string>
     <string name="storage_add_storage_title">Add storage</string>
