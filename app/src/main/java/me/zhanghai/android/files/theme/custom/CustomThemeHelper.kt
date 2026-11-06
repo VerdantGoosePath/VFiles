@@ -89,7 +89,10 @@ object CustomThemeHelper {
                     && isBlackThemeChange(currentThemeRes, customThemeRes, activity)) {
                     continue
                 }
-                if (activity is OnThemeChangedListener) {
+                if (isFontChanged) {
+                    // A new font is applied by a fresh view inflation, not by a theme-resource ID.
+                    activity.recreateCompat()
+                } else if (activity is OnThemeChangedListener) {
                     (activity as OnThemeChangedListener).onThemeChanged(customThemeRes)
                 } else {
                     activity.recreateCompat()
