@@ -58,7 +58,7 @@
         <item name="android:background">@android:color/transparent</item>
     </style>
 
-    <style name="Widget.MaterialFiles.Material3Expressive.Toolbar" parent="Widget.Material3.Toolbar">
+    <style name="Widget.MaterialFiles.Material3Expressive.Toolbar" parent="Widget.Material3Expressive.Toolbar">
         <item name="contentInsetStartWithNavigation">@dimen/abc_action_bar_content_inset_with_nav</item>
     </style>
 </resources>

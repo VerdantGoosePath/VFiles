@@ -30,7 +30,7 @@
         <item name="android:textAppearanceListItem">?textAppearanceListItem</item>
         <item name="textAppearanceListItemSmall">@style/TextAppearance.MaterialFiles.Material3Expressive.ListItemSmall</item>
         <item name="android:textAppearanceListItemSmall">?textAppearanceListItemSmall</item>
-        <item name="floatingActionButtonStyle">?floatingActionButtonSecondaryStyle</item>
+        <!-- Inherit the Expressive FAB shape, motion and container style. -->
         <item name="materialCardViewStyle">@style/Widget.MaterialFiles.CardView</item>
         <item name="navigationViewStyle">@style/Widget.MaterialFiles.Material3Expressive.NavigationView</item>
         <item name="simpleMenuPreferenceStyle">@style/Preference.MaterialFiles.Material3Expressive.SimpleMenuPreference</item>
@@ -87,7 +87,7 @@
         <item name="android:textAppearanceListItem">?textAppearanceListItem</item>
         <item name="textAppearanceListItemSmall">@style/TextAppearance.MaterialFiles.Material3Expressive.ListItemSmall</item>
         <item name="android:textAppearanceListItemSmall">?textAppearanceListItemSmall</item>
-        <item name="floatingActionButtonStyle">?floatingActionButtonSecondaryStyle</item>
+        <!-- Inherit the Expressive FAB shape, motion and container style. -->
         <item name="materialCardViewStyle">@style/Widget.MaterialFiles.CardView</item>
         <item name="navigationViewStyle">@style/Widget.MaterialFiles.Material3Expressive.NavigationView</item>
         <item name="simpleMenuPreferenceStyle">@style/Preference.MaterialFiles.Material3Expressive.SimpleMenuPreference</item>
