@@ -45,7 +45,7 @@ jobs:
             echo "::error::Android sdkmanager not found"
             exit 1
           fi
-          "$SDKMANAGER" --install "platforms;android-36" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+          "$SDKMANAGER" --install "platforms;android-37" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
 
       - name: Assemble standard debug and run JVM test task
         run: ./gradlew --no-daemon --warning-mode all :app:assembleDebug :app:testDebugUnitTest
