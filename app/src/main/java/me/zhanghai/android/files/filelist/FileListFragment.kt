@@ -139,6 +139,7 @@ import me.zhanghai.android.files.util.asFileNameOrNull
 import me.zhanghai.android.files.util.checkSelfPermission
 import me.zhanghai.android.files.util.copyText
 import me.zhanghai.android.files.util.create
+import me.zhanghai.android.files.util.createEditIntent
 import me.zhanghai.android.files.util.createInstallPackageIntent
 import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.createManageAppAllFilesAccessPermissionIntent
@@ -1678,6 +1679,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         openFileWithIntent(file, true)
     }
 
+    override fun editFileWith(file: FileItem) {
+        // Do not grant write access to archive entries or read-only providers.
+        if (file.attributes.isDirectory || file.path.isArchivePath ||
+            file.path.fileSystem.isReadOnly) return
+        val edit = file.path.fileProviderUri.createEditIntent(file.mimeType)
+        startActivitySafe(Intent.createChooser(edit, null))
+    }
+
     private fun openFileWithIntent(file: FileItem, withChooser: Boolean) {
         val path = file.path
         val mimeType = file.mimeType
@@ -1685,7 +1694,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             FileJobService.open(path, mimeType, withChooser, requireContext())
         } else {
             val intent = path.fileProviderUri.createViewIntent(mimeType)
-                .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 .apply {
                     extraPath = path
                     if (!withChooser) {
