@@ -63,5 +63,13 @@
                 android:fitsSystemWindows="true"
                 tools:listitem="@layout/file_item_list" />
         </androidx.swiperefreshlayout.widget.ThemedSwipeRefreshLayout>
+
+        <!-- New Compose file content shares this coordinator's existing raw inset boundary.
+             The RecyclerView remains as a compat fallback for TV and external picker flows. -->
+        <androidx.compose.ui.platform.ComposeView
+            android:id="@+id/browserContentView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
     </me.zhanghai.android.files.ui.CoordinatorScrollingFrameLayout>
 </merge>
