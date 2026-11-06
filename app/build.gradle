@@ -17,6 +17,7 @@ android {
     defaultConfig {
         applicationId 'fr.vroot.vfiles.fork'
         minSdk 23
+        testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         // Not supporting foreground service timeout yet.
         //noinspection OldTargetApi
         targetSdk 34
@@ -179,6 +180,8 @@ dependencies {
     debugImplementation 'androidx.compose.ui:ui-tooling'
     debugImplementation 'androidx.compose.ui:ui-test-manifest'
     androidTestImplementation 'androidx.compose.ui:ui-test-junit4'
+    androidTestImplementation 'androidx.test:runner:1.6.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.2.1'
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 

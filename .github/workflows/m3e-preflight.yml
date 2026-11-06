@@ -53,7 +53,7 @@ jobs:
           fi
 
       - name: Assemble standard debug and run JVM test task
-        run: ./gradlew --no-daemon --warning-mode all :app:assembleDebug :app:testDebugUnitTest
+        run: ./gradlew --no-daemon --warning-mode all :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest
 
       - name: Assemble opt-in systemPicker debug and run JVM test task
         run: ./gradlew --no-daemon --warning-mode all -PsystemPicker :app:assembleSystemPickerDebug :app:testSystemPickerDebugUnitTest
