@@ -223,7 +223,8 @@ class FtpServerFragment : Fragment() {
                                     }
                                     val supporting = when (key) {
                                         "username" -> user
-                                        "password" -> if (password.isNotEmpty()) "••••••••" else "Not set"
+                                        "password" -> if (password.isNotEmpty()) "••••••••"
+                                            else getString(R.string.ftp_server_password_not_set)
                                         "port" -> port.toString()
                                         "home" -> home.toUserFriendlyString()
                                         else -> null
@@ -367,7 +368,7 @@ private fun EditServerSettingDialog(
                 ),
                 isError = !valid,
                 supportingText = if (!valid) {
-                    { Text("Port must be between 1 and 65535") }
+                    { Text(androidx.compose.ui.res.stringResource(R.string.ftp_server_port_range_error)) }
                 } else null
             )
         },

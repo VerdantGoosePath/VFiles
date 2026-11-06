@@ -121,14 +121,14 @@ class StorageListFragment : Fragment() {
                                                     enabled = index > 0,
                                                     onClick = { Storages.move(index, index - 1) },
                                                     modifier = Modifier.semantics {
-                                                        contentDescription = "Move $name up"
+                                                        contentDescription = context.getString(R.string.storage_move_up_named_format, name)
                                                     }
                                                 ) { Text("↑", style = MaterialTheme.typography.titleLarge) }
                                                 IconButton(
                                                     enabled = index < storages.lastIndex,
                                                     onClick = { Storages.move(index, index + 1) },
                                                     modifier = Modifier.semantics {
-                                                        contentDescription = "Move $name down"
+                                                        contentDescription = context.getString(R.string.storage_move_down_named_format, name)
                                                     }
                                                 ) { Text("↓", style = MaterialTheme.typography.titleLarge) }
                                             }
@@ -137,7 +137,7 @@ class StorageListFragment : Fragment() {
                                 }
                             }
                         }
-                        FloatingActionButton(
+                        if (storages.isNotEmpty()) FloatingActionButton(
                             onClick = { addStorage() },
                             modifier = Modifier.align(Alignment.BottomEnd).padding(24.dp)
                                 .semantics { contentDescription = addTitle }

@@ -533,6 +533,10 @@
     <string name="storage_file_system_root_title">Root</string>
     <string name="storage_internal_storage">Internal storage</string>
     <string name="storage_reorder">Reorder storage</string>
+    <string name="storage_move_up_named_format">Move %1$s up</string>
+    <string name="storage_move_down_named_format">Move %1$s down</string>
+    <string name="ftp_server_password_not_set">No password set</string>
+    <string name="ftp_server_port_range_error">Port must be between 1 and 65535</string>
     <string name="storage_move_up">Move up</string>
     <string name="storage_move_down">Move down</string>
     <string name="storage_connection_connecting">Connecting to server</string>
