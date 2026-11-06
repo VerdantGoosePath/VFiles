@@ -89,4 +89,17 @@
 
     <string name="pref_key_onboarding_completed">key_onboarding_completed</string>
     <bool name="pref_default_value_onboarding_completed">false</bool>
+    <string name="pref_key_archive_zip_engine">archive_zip_engine</string>
+    <string name="pref_key_archive_rawzip_level">archive_rawzip_level</string>
+    <string name="pref_key_archive_ripzip_level">archive_ripzip_level</string>
+    <string name="pref_key_archive_sevenz_level">archive_sevenz_level</string>
+    <string name="pref_key_archive_tar_level">archive_tar_level</string>
+    <string name="pref_key_archive_rawzip_method">archive_rawzip_method</string>
+    <string name="pref_key_archive_ripzip_method">archive_ripzip_method</string>
+    <string name="pref_key_archive_sevenz_solid">archive_sevenz_solid</string>
+    <string name="pref_key_archive_sevenz_encrypt_headers">archive_sevenz_encrypt_headers</string>
+    <string name="pref_key_archive_rar_verify">archive_rar_verify</string>
+    <string name="pref_key_archive_max_entry_mib">archive_max_entry_mib</string>
+    <string name="pref_key_archive_advanced_category">archive_advanced_category</string>
+    <string name="pref_key_archive_advanced_toggle">archive_advanced_toggle</string>
 </resources>
