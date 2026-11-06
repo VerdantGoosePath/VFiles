@@ -1,5 +1,6 @@
 package me.zhanghai.android.files.compose.components
 
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -23,6 +24,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
 /** Central spacing constraints for C/D/E; widths follow actual window size. */
@@ -152,12 +156,15 @@ fun VFilesRemoteField(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     isError: Boolean = false,
-    supporting: String? = null
+    supporting: String? = null,
+    secret: Boolean = false
 ) {
     OutlinedTextField(
         value = value, onValueChange = onValueChange, label = { Text(label) },
         modifier = modifier.fillMaxWidth(), singleLine = true,
         enabled = enabled, isError = isError,
+        keyboardOptions = KeyboardOptions(keyboardType = if (secret) KeyboardType.Password else KeyboardType.Text),
+        visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
         supportingText = supporting?.let { { Text(it) } }
     )
 }

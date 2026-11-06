@@ -67,11 +67,11 @@ fun VFilesFileRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Column(modifier = Modifier.weight(1f)) {
                 Text(entry.name, style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface, maxLines = 2,
+                    color = if (entry.selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface, maxLines = 2,
                     overflow = TextOverflow.Ellipsis)
                 if (entry.secondary.isNotEmpty()) Text(entry.secondary,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    color = if (entry.selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (entry.selected) Checkbox(checked = true, onCheckedChange = null)
         }

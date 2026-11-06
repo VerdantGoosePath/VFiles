@@ -2,6 +2,7 @@ package me.zhanghai.android.files.compose.components
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.alpha
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +48,8 @@ fun VFilesAdaptivePathNavigation(
                     verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     destinations.forEach { destination ->
                         NavigationDrawerItem(
+                            modifier = Modifier.alpha(if (destination.enabled) 1f else 0.38f)
+                                .semantics { if (!destination.enabled) disabled() },
                             label = {
                                 Column {
                                     Text(destination.title)
