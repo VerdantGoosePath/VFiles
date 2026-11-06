@@ -1,0 +1,54 @@
+name: M3E Phase A debug baseline
+
+on:
+  push:
+    branches:
+      - m3e/integration
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unsigned-debug-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out fork branch
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run SDK-free static contract checks
+        run: python3 scripts/check_phase_a_contracts.py
+
+      - name: Install baseline Android SDK, NDK and CMake
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="$ANDROID_HOME"
+          if [[ -z "$SDK_ROOT" ]]; then SDK_ROOT="$ANDROID_SDK_ROOT"; fi
+          if [[ -z "$SDK_ROOT" ]]; then SDK_ROOT="/usr/local/lib/android/sdk"; fi
+          if command -v sdkmanager >/dev/null 2>&1; then
+            SDKMANAGER="$(command -v sdkmanager)"
+          else
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          fi
+          if [[ -z "$SDKMANAGER" || ! -x "$SDKMANAGER" ]]; then
+            echo "::error::Android sdkmanager not found"
+            exit 1
+          fi
+          "$SDKMANAGER" --install "platforms;android-36" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+
+      - name: Assemble standard debug and run JVM test task
+        run: ./gradlew --no-daemon --warning-mode all :app:assembleDebug :app:testDebugUnitTest
+
+      - name: Assemble opt-in systemPicker debug and run JVM test task
+        run: ./gradlew --no-daemon --warning-mode all -PsystemPicker :app:assembleSystemPickerDebug :app:testSystemPickerDebugUnitTest
