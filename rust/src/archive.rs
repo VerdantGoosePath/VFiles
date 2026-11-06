@@ -366,3 +366,53 @@ fn create_sevenz(source: &Path, target: &Path, password: &str, options: &Options
     writer.finish()?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn sample() -> Result<(tempfile::TempDir, PathBuf)> {
+        let temp = tempfile::tempdir()?;
+        let source = temp.path().join("source");
+        fs::create_dir(&source)?;
+        fs::write(source.join("hello.txt"), b"Rust archive backend round trip")?;
+        fs::create_dir(source.join("nested"))?;
+        fs::write(source.join("nested").join("item.bin"), [1u8, 2, 3, 4, 5])?;
+        Ok((temp, source))
+    }
+    fn roundtrip(extension: &str, options: Options) -> Result<()> {
+        let (temp, source) = sample()?;
+        let archive = temp.path().join(format!("output.{extension}"));
+        create(&source, &archive, extension, "", &options)?;
+        let items = list(&archive, "", &options)?;
+        assert!(items.iter().any(|x| x.name == "hello.txt" && !x.directory));
+        assert!(items.iter().any(|x| x.name == "nested/item.bin" && x.size == 5));
+        let output = temp.path().join("restored.txt");
+        extract_one(&archive, "hello.txt", &output, "", &options)?;
+        assert_eq!(fs::read(output)?, b"Rust archive backend round trip");
+        Ok(())
+    }
+    #[test]
+    fn rawzip_roundtrip() -> Result<()> { roundtrip("zip", Options::default()) }
+    #[test]
+    fn rawzip_store_roundtrip() -> Result<()> {
+        roundtrip("zip", Options { zip_method: "store".into(), ..Options::default() })
+    }
+    #[test]
+    fn ripzip_roundtrip() -> Result<()> {
+        roundtrip("zip", Options { zip_engine: "ripzip".into(), ..Options::default() })
+    }
+    #[test]
+    fn sevenz_roundtrip() -> Result<()> { roundtrip("7z", Options::default()) }
+    #[test]
+    fn sevenz_solid_roundtrip() -> Result<()> {
+        roundtrip("7z", Options { sevenz_solid: true, ..Options::default() })
+    }
+    #[test]
+    fn tar_xz_roundtrip() -> Result<()> { roundtrip("tar.xz", Options::default()) }
+    #[test]
+    fn reject_unsafe_archive_paths() {
+        for path in ["../escape", "/absolute", "folder/../escape", "C:/drive", "a\\b", ""] {
+            assert!(check_name(path).is_err(), "accepted {path:?}");
+        }
+    }
+}
