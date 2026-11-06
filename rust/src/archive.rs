@@ -420,6 +420,19 @@ mod tests {
     #[test]
     fn tar_xz_roundtrip() -> Result<()> { roundtrip("tar.xz", Options::default()) }
     #[test]
+    fn sevenz_password_roundtrip() -> Result<()> {
+        let (temp, source) = sample()?;
+        let archive = temp.path().join("encrypted.7z");
+        let options = Options::default();
+        create(&source, &archive, "7z", "correct horse battery", &options)?;
+        let listing = list(&archive, "correct horse battery", &options)?;
+        assert!(listing.iter().any(|e| e.name == "hello.txt"));
+        let target = temp.path().join("decrypted.txt");
+        extract_one(&archive, "hello.txt", &target, "correct horse battery", &options)?;
+        assert_eq!(fs::read(target)?, b"Rust archive backend round trip");
+        Ok(())
+    }
+    #[test]
     fn reject_unsafe_archive_paths() {
         for path in ["../escape", "/absolute", "folder/../escape", "C:/drive", "a\\b", ""] {
             assert!(check_name(path).is_err(), "accepted {path:?}");
