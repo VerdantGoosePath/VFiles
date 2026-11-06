@@ -135,7 +135,9 @@ class CreateArchiveDialogFragment : FileNameDialogFragment() {
         binding.zipMethodLabel.isGone = !zip
         binding.zipMethodSpinner.isGone = !zip
         binding.zipPasswordNote.isGone = !zip
-        binding.passwordLayout.isGone = !sevenZ
+        binding.passwordLayout.isGone = !(sevenZ || (zip && zipEngine == "rawzip"))
+        binding.zipPasswordNote.setText(if (zipEngine == "rawzip")
+            R.string.archive_zip_password_note else R.string.archive_ripzip_password_note)
         binding.sevenZSolid.isGone = !sevenZ
         binding.sevenZEncryptHeaders.isGone = !sevenZ
         binding.engineHint.setText(
@@ -176,7 +178,8 @@ class CreateArchiveDialogFragment : FileNameDialogFragment() {
             .put("sevenz_solid", binding.sevenZSolid.isChecked)
             .put("sevenz_encrypt_headers", binding.sevenZEncryptHeaders.isChecked)
             .toString()
-        val password = if (format == ArchiveFormats.SEVEN_Z)
+        val password = if (format == ArchiveFormats.SEVEN_Z ||
+            (format == ArchiveFormats.ZIP && zipEngine == "rawzip"))
             binding.passwordEdit.text?.toString()?.takeIfNotEmpty() else null
         listener.archive(args.files, name, format, 0, password, override)
     }

@@ -21,7 +21,8 @@
     <string name="archive_max_entry_title">Maximum extracted entry (MiB)</string>
     <string name="archive_max_entry_summary">Safety limit for opening individual archive members, in MiB</string>
     <string name="archive_engine_label">ZIP engine</string>
-    <string name="archive_password_unavailable">ZIP encryption is not yet available with either Rust engine. For encrypted archives, use 7z.</string>
+    <string name="archive_zip_password_note">rawzip supports legacy ZipCrypto passwords (weak encryption). For sensitive files, use encrypted 7z.</string>
+    <string name="archive_ripzip_password_note">ripzip-rs does not support encrypted ZIP archives. Switch to rawzip to use a ZIP password.</string>
     <string name="archive_sevenz_engine_hint">7z · sevenz-turbo · LZMA2</string>
     <string name="archive_tar_engine_hint">TAR/XZ · Rust tar + lzma-rust2</string>
     <string name="archive_zip_rawzip_hint">rawzip · Standard Deflate or Store, broad compatibility</string>

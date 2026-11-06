@@ -167,7 +167,7 @@ pub fn extract_one(path: &Path, name: &str, target: &Path, password: &str, optio
     ensure_size(entry.size, options)?;
     let operation = match format(path)? {
         "zip" if options.zip_engine == "ripzip" => extract_ripzip(path, name, target, options),
-        "zip" => extract_rawzip(path, name, target, options),
+        "zip" => extract_rawzip(path, name, target, password, options),
         "7z" => extract_sevenz(path, name, target, password, options),
         "rar" => extract_rar(path, name, target, password, options),
         "tar" | "tar.xz" | "tar.gz" => extract_tar(path, name, target, options),
@@ -176,8 +176,8 @@ pub fn extract_one(path: &Path, name: &str, target: &Path, password: &str, optio
     if operation.is_err() { let _ = fs::remove_file(target); }
     operation
 }
-fn extract_rawzip(path: &Path, name: &str, target: &Path, options: &Options) -> Result<()> {
-    use rawzip::CompressionMethod;
+fn extract_rawzip(path: &Path, name: &str, target: &Path, password: &str, options: &Options) -> Result<()> {
+    use rawzip::{CompressionMethod, zipcrypto::Decryptor};
     let mut buffer = vec![0; rawzip::RECOMMENDED_BUFFER_SIZE];
     let archive = rawzip::ZipArchive::from_file(File::open(path)?, &mut buffer)?;
     let mut entries = archive.entries(&mut buffer);
@@ -189,21 +189,51 @@ fn extract_rawzip(path: &Path, name: &str, target: &Path, options: &Options) -> 
         }
     }
     let (location, method, encrypted) = selected.ok_or_else(|| invalid("missing zip entry"))?;
-    if encrypted { return Err(invalid("ZIP password decryption is not supported by this engine").into()); }
     drop(entries);
     let entry = archive.get_entry(location)?;
-    let output = File::create(target)?;
-    match method {
-        CompressionMethod::STORE => copy_limited(entry.verifying_reader(entry.reader()), output, options),
-        CompressionMethod::DEFLATE => copy_limited(
-            entry.verifying_reader(flate2::read::DeflateDecoder::new(entry.reader())), output, options),
-        _ => Err(invalid(format!("unsupported ZIP compression method: {method:?}")).into()),
+    if encrypted {
+        if password.is_empty() {
+            return Err(invalid("password required for encrypted ZIP entry").into());
+        }
+        // Built-in rawzip ZipCrypto handles legacy PKWARE encryption, not WinZip AES.
+        // A wrong check byte rejects most incorrect passwords before decompression;
+        // verifying_reader still validates the full uncompressed size and CRC.
+        let header = entry.local_header();
+        let expected = if header.flags().has_data_descriptor() {
+            (header.last_modified_dos().packed_time() >> 8) as u8
+        } else {
+            (header.crc32() >> 24) as u8
+        };
+        let decrypted = Decryptor::new(entry.reader(), password.as_bytes())?;
+        if decrypted.check_byte() != expected {
+            return Err(invalid("incorrect password for ZIP entry").into());
+        }
+        let output = File::create(target)?;
+        match method {
+            CompressionMethod::STORE =>
+                copy_limited(entry.verifying_reader(decrypted), output, options),
+            CompressionMethod::DEFLATE =>
+                copy_limited(entry.verifying_reader(flate2::read::DeflateDecoder::new(decrypted)), output, options),
+            _ => Err(invalid(format!("unsupported encrypted ZIP compression method: {method:?}")).into()),
+        }
+    } else {
+        let output = File::create(target)?;
+        match method {
+            CompressionMethod::STORE =>
+                copy_limited(entry.verifying_reader(entry.reader()), output, options),
+            CompressionMethod::DEFLATE =>
+                copy_limited(entry.verifying_reader(flate2::read::DeflateDecoder::new(entry.reader())), output, options),
+            _ => Err(invalid(format!("unsupported ZIP compression method: {method:?}")).into()),
+        }
     }
 }
 fn extract_ripzip(path: &Path, name: &str, target: &Path, options: &Options) -> Result<()> {
     // ripzip extracts a complete archive. Isolate it inside a temporary directory
     // and reject oversized or unsafe members before launching its parallel workers.
     let entries = list_ripzip(path)?;
+    if list_rawzip(path)?.iter().any(|e| e.encrypted) {
+        return Err(invalid("encrypted ZIP entries require the rawzip engine").into());
+    }
     let mut total = 0u64;
     for e in &entries {
         check_name(&e.name)?;
@@ -324,26 +354,61 @@ fn write_tar<W: Write>(output: W, source: &Path) -> Result<W> {
     Ok(tar.into_inner()?)
 }
 fn create_rawzip(source: &Path, target: &Path, password: &str, options: &Options) -> Result<()> {
-    if !password.is_empty() { return Err(invalid("rawzip encryption is not enabled in this build; create the archive without a password").into()); }
+    use rawzip::{CompressionMethod, zipcrypto::Encryptor};
     let mut archive = rawzip::ZipArchiveWriter::new(File::create(target)?);
     for (path, name, directory) in members(source)? {
-        if directory { archive.new_dir(format!("{name}/")).create()?; continue; }
-        let method = options.zip_method.as_str();
-        if method == "store" {
-            let (mut entry, config) = archive.new_file(name.as_str()).start()?;
-            let mut writer = config.wrap(&mut entry);
-            io::copy(&mut File::open(&path)?, &mut writer)?;
-            let (_, descriptor) = writer.finish()?;
-            entry.finish(descriptor)?;
+        if directory {
+            archive.new_dir(format!("{name}/")).create()?;
+            continue;
+        }
+        let compressed = options.zip_method != "store";
+        if password.is_empty() {
+            if !compressed {
+                let (mut entry, config) = archive.new_file(name.as_str()).start()?;
+                let mut writer = config.wrap(&mut entry);
+                io::copy(&mut File::open(&path)?, &mut writer)?;
+                let (_, descriptor) = writer.finish()?;
+                entry.finish(descriptor)?;
+            } else {
+                let (mut entry, config) = archive.new_file(name.as_str())
+                    .compression_method(CompressionMethod::DEFLATE).start()?;
+                let encoder = flate2::write::DeflateEncoder::new(
+                    &mut entry, flate2::Compression::new(options.level.min(9)));
+                let mut writer = config.wrap(encoder);
+                io::copy(&mut File::open(&path)?, &mut writer)?;
+                let (encoder, descriptor) = writer.finish()?;
+                encoder.finish()?;
+                entry.finish(descriptor)?;
+            }
         } else {
-            let (mut entry, config) = archive.new_file(name.as_str())
-                .compression_method(rawzip::CompressionMethod::DEFLATE).start()?;
-            let encoder = flate2::write::DeflateEncoder::new(&mut entry, flate2::Compression::new(options.level.min(9)));
-            let mut writer = config.wrap(encoder);
-            io::copy(&mut File::open(&path)?, &mut writer)?;
-            let (encoder, descriptor) = writer.finish()?;
-            encoder.finish()?;
-            entry.finish(descriptor)?;
+            // ZipCrypto is included in rawzip for legacy compatibility. Generate
+            // a unique, unpredictable 11-byte header for each encrypted file.
+            // New sensitive archives should use the 7z AES-256 backend instead.
+            let mut random = [0u8; 11];
+            getrandom::fill(&mut random).map_err(|e| invalid(format!("system randomness: {e}")))?;
+            if !compressed {
+                let (mut entry, config) = archive.new_file(name.as_str()).encrypted(true).start()?;
+                let check = (entry.last_modified_dos().packed_time() >> 8) as u8;
+                let crypt = Encryptor::new(&mut entry, password.as_bytes(), random, check)?;
+                let mut writer = config.wrap(crypt);
+                io::copy(&mut File::open(&path)?, &mut writer)?;
+                let (crypt, descriptor) = writer.finish()?;
+                drop(crypt);
+                entry.finish(descriptor)?;
+            } else {
+                let (mut entry, config) = archive.new_file(name.as_str())
+                    .compression_method(CompressionMethod::DEFLATE).encrypted(true).start()?;
+                let check = (entry.last_modified_dos().packed_time() >> 8) as u8;
+                let crypt = Encryptor::new(&mut entry, password.as_bytes(), random, check)?;
+                let encoder = flate2::write::DeflateEncoder::new(
+                    crypt, flate2::Compression::new(options.level.min(9)));
+                let mut writer = config.wrap(encoder);
+                io::copy(&mut File::open(&path)?, &mut writer)?;
+                let (encoder, descriptor) = writer.finish()?;
+                let crypt = encoder.finish()?;
+                drop(crypt);
+                entry.finish(descriptor)?;
+            }
         }
     }
     archive.finish()?;
@@ -451,6 +516,24 @@ mod tests {
         assert_eq!(fs::read(target)?, b"Rust archive backend round trip");
         Ok(())
     }
+    #[test]
+    fn rawzip_password_roundtrip() -> Result<()> {
+        for method in ["deflate", "store"] {
+            let (temp, source) = sample()?;
+            let archive = temp.path().join("encrypted.zip");
+            let options = Options { zip_method: method.to_string(), ..Options::default() };
+            create(&source, &archive, "zip", "secret password", &options)?;
+            let entries = list(&archive, "", &options)?;
+            assert!(entries.iter().find(|entry| entry.name == "hello.txt").unwrap().encrypted);
+            let destination = temp.path().join("secret.txt");
+            assert!(extract_one(&archive, "hello.txt", &destination, "", &options).is_err());
+            assert!(extract_one(&archive, "hello.txt", &destination, "wrong", &options).is_err());
+            extract_one(&archive, "hello.txt", &destination, "secret password", &options)?;
+            assert_eq!(fs::read(destination)?, b"Rust archive backend round trip");
+        }
+        Ok(())
+    }
+
     #[test]
     fn enforce_extraction_size_limit() -> Result<()> {
         let (temp, source) = sample()?;

@@ -111,7 +111,7 @@
                 android:layout_marginStart="?dialogPreferredPadding"
                 android:layout_marginEnd="?dialogPreferredPadding"
                 android:layout_marginBottom="4dp"
-                android:text="@string/archive_password_unavailable"
+                android:text="@string/archive_zip_password_note"
                 android:textAppearance="?attr/textAppearanceCaption" />
             <TextView
                 android:id="@+id/compressionLevelLabel"

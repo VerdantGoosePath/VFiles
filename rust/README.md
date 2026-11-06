@@ -10,8 +10,8 @@ This Android library replaces the previous libarchive-based archive reader and w
 | TAR, TAR.GZ, TAR.XZ | `tar`, `flate2`, `lzma-rust2` | Yes | Yes |
 
 ZIP implementation is selected globally in VFiles settings, and can be overridden
-for an individual compression operation. ZIP encryption is not implemented in the
-current Rust backends. Encrypted 7z is supported, including optional file-name
+for an individual compression operation. rawzip supports legacy ZipCrypto passwords for compatibility;
+ripzip-rs remains unencrypted. Prefer AES-encrypted 7z for sensitive data. Encrypted 7z is supported, including optional file-name
 encryption. Other formats previously read by libarchive need separate format
 adapters rather than silently falling back to an obsolete native backend.
 
@@ -44,7 +44,7 @@ later files.
 
 - Remote archive access is not seek-streamed across JNI. Each archive
   inspection or entry open currently stages the complete source archive.
-- ZIP encryption and formats outside the table require further Rust work.
+- ZIP WinZip AES encryption and formats outside the table require further Rust work.
 - RAR checksum verification and maximum extraction size are configurable.
 - Unsupported symlinks are rejected when compressing staged selections,
   rather than silently following them.
