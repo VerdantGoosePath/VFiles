@@ -5,6 +5,15 @@
 
 package me.zhanghai.android.files.navigation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.view.isInvisible
+import androidx.core.view.isVisible
+import me.zhanghai.android.files.compose.theme.VFilesTheme
+import me.zhanghai.android.files.util.isTelevision
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -24,6 +33,10 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
     private lateinit var binding: NavigationFragmentBinding
 
     private lateinit var adapter: NavigationListAdapter
+
+    private var composeItems by mutableStateOf<List<NavigationItem?>>(emptyList())
+    private var composePath by mutableStateOf<Path?>(null)
+    private var composeRevision by mutableIntStateOf(0)
 
     lateinit var listener: Listener
 
@@ -46,6 +59,35 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
         binding.recyclerView.layoutManager = LinearLayoutManager(context)
         adapter = NavigationListAdapter(this, context)
         binding.recyclerView.adapter = adapter
+        // The original NavigationRecyclerView retains inset dispatch and remains measured
+        // while the Compose pane is shown; TV retains its precise D-pad focus model.
+        val useCompose = !context.isTelevision
+        binding.recyclerView.isInvisible = useCompose
+        binding.composeNavigationView.isVisible = useCompose
+        if (useCompose) {
+            val composeView = binding.composeNavigationView
+            composeView.setViewCompositionStrategy(
+                ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+            )
+            binding.recyclerView.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+                composeView.setPadding(
+                    binding.recyclerView.paddingLeft,
+                    binding.recyclerView.paddingTop,
+                    binding.recyclerView.paddingRight,
+                    binding.recyclerView.paddingBottom
+                )
+            }
+            composeView.setContent {
+                VFilesTheme {
+                    VFilesNavigationPane(
+                        items = composeItems,
+                        currentPath = composePath,
+                        revision = composeRevision,
+                        listener = this@NavigationFragment
+                    )
+                }
+            }
+        }
 
         val viewLifecycleOwner = viewLifecycleOwner
         NavigationItemListLiveData.observe(viewLifecycleOwner) { onNavigationItemsChanged(it) }
@@ -54,6 +96,7 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
 
     private fun onNavigationItemsChanged(navigationItems: List<NavigationItem?>) {
         adapter.replace(navigationItems)
+        composeItems = navigationItems.toList()
     }
 
     // Rebuild the items so the live free-space subtitles (e.g. "Internal storage") are recomputed.
@@ -61,6 +104,8 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
     fun refresh() {
         if (::adapter.isInitialized) {
             adapter.replace(navigationItems)
+            composeItems = navigationItems.toList()
+            composeRevision++
         }
     }
 
@@ -70,6 +115,7 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
     fun refreshSubtitles() {
         if (::adapter.isInitialized) {
             adapter.notifySubtitleChanged()
+            composeRevision++
         }
     }
 
@@ -95,6 +141,7 @@ class NavigationFragment : Fragment(), NavigationItem.Listener {
 
     private fun onCurrentPathChanged(path: Path) {
         adapter.notifyCheckedChanged()
+        composePath = path
     }
 
     override val currentPath: Path
