@@ -12,6 +12,7 @@ import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -58,7 +59,7 @@ fun VFilesCreateMenu(
                     onExpandedChange(false)
                     onCreateDirectory()
                 },
-                text = { Text("New folder") },
+                text = { Text(stringResource(R.string.file_create_directory_title)) },
                 icon = {
                     Icon(
                         painterResource(R.drawable.folder_icon_control_normal_24dp),
@@ -71,7 +72,7 @@ fun VFilesCreateMenu(
                     onExpandedChange(false)
                     onCreateFile()
                 },
-                text = { Text("New file") },
+                text = { Text(stringResource(R.string.file_create_file_title)) },
                 icon = {
                     Icon(
                         painterResource(R.drawable.file_icon_white_24dp),
