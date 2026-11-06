@@ -2128,8 +2128,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         button.isVisible = true
         // Overall ring = average of the operations that have a determinate progress.
         val fractions = progresses.mapNotNull { it.fraction }
-        val overall = if (fractions.isNotEmpty()) (fractions.average() * 100).roundToInt() else 0
-        binding.fileJobProgressIndicator.setProgressCompat(overall, true)
+        binding.fileJobProgressIndicator.isIndeterminate = fractions.isEmpty()
+        if (fractions.isNotEmpty()) {
+            binding.fileJobProgressIndicator.setProgressCompat(
+                (fractions.average() * 100).roundToInt(), true
+            )
+        }
         binding.fileJobProgressCount.text = progresses.size.toString()
         if (fileJobProgressPopup?.isShowing == true) {
             updateFileJobProgressPopupRows(progresses)
@@ -2147,7 +2151,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     private fun showFileJobProgressPopup() {
         val density = resources.displayMetrics.density
-        val widthPx = (320 * density).toInt()
+        val widthPx = minOf((360 * density).toInt(),
+            resources.displayMetrics.widthPixels - (32 * density).toInt())
         val popupBinding = FileJobProgressPopupBinding.inflate(layoutInflater)
         fileJobProgressRows.clear()
         fileJobProgressListView = popupBinding.fileJobProgressList
@@ -2185,7 +2190,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         for (progress in progresses) {
             val row = fileJobProgressRows.getOrPut(progress.id) {
                 FileJobProgressItemBinding.inflate(layoutInflater, container, false).also {
-                    it.progressIndicator.isIndeterminate = false
                     it.cancelButton.setOnClickListener { FileJobService.cancelJob(progress.id) }
                     container.addView(it.root)
                 }
@@ -2193,9 +2197,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             row.titleText.text = progress.title
             row.detailText.text = progress.detail
             row.detailText.isVisible = !progress.detail.isNullOrEmpty()
-            row.progressIndicator.setProgressCompat(
-                ((progress.fraction ?: 0f) * 100).roundToInt(), true
-            )
+            row.progressIndicator.isIndeterminate = progress.fraction == null
+            progress.fraction?.let { fraction ->
+                row.progressIndicator.setProgressCompat((fraction * 100).roundToInt(), true)
+            }
         }
     }
 
