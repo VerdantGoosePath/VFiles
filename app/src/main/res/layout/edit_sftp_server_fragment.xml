@@ -39,6 +39,7 @@
 
             <ProgressBar
                 android:id="@+id/progress"
+                android:contentDescription="@string/storage_connection_connecting"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
@@ -190,7 +191,7 @@
                                 android:id="@+id/privateKeyEdit"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:inputType="textMultiLine" />
+                                android:inputType="textMultiLine|textPassword" />
                         </com.google.android.material.textfield.TextInputLayout>
 
                         <com.google.android.material.textfield.TextInputLayout

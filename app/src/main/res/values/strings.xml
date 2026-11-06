@@ -535,6 +535,7 @@
     <string name="storage_reorder">Reorder storage</string>
     <string name="storage_move_up">Move up</string>
     <string name="storage_move_down">Move down</string>
+    <string name="storage_connection_connecting">Connecting to server</string>
     <string name="storage_connection_failed_title">Connection failed</string>
     <string name="storage_remove_confirmation_title">Remove storage?</string>
     <string name="storage_remove_confirmation_message">Remove this entry from your storage list? Files on the storage device or server will not be deleted.</string>
