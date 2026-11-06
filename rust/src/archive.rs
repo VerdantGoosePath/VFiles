@@ -32,6 +32,8 @@ pub struct Entry {
     pub directory: bool,
     pub encrypted: bool,
     pub symlink: bool,
+    pub modified_ms: Option<u64>,
+    pub link_target: Option<String>,
 }
 
 fn invalid(message: impl Into<String>) -> io::Error {
@@ -78,7 +80,13 @@ pub fn list(path: &Path, password: &str, options: &Options) -> Result<Vec<Entry>
             let reader = ArchiveReader::open(path, pwd)?;
             reader.archive().files.iter().map(|e| Entry {
                 name: e.name.clone(), size: e.size, directory: e.is_directory,
-                encrypted: false, symlink: e.is_symlink()
+                encrypted: false, symlink: e.is_symlink(),
+                modified_ms: if e.has_last_modified_date {
+                    let time: std::time::SystemTime = e.last_modified_date().into();
+                    time.duration_since(std::time::UNIX_EPOCH).ok()
+                        .map(|d| d.as_millis().min(u128::from(u64::MAX)) as u64)
+                } else { None },
+                link_target: None,
             }).collect()
         }
         "rar" => {
@@ -90,7 +98,7 @@ pub fn list(path: &Path, password: &str, options: &Options) -> Result<Vec<Entry>
             rar.entries().enumerate().map(|(i,e)| Entry {
                 name: e.name, size: e.unpacked_size.unwrap_or(0),
                 directory: e.is_directory, encrypted: rar.member_is_encrypted(i),
-                symlink: false
+                symlink: false, modified_ms: None, link_target: None,
             }).collect()
         }
         "tar" | "tar.gz" | "tar.xz" => list_tar(path)?,
@@ -108,14 +116,16 @@ fn list_rawzip(path: &Path) -> Result<Vec<Entry>> {
     while let Some(e) = iter.next_entry()? {
         let name = String::from_utf8_lossy(e.file_path().as_ref()).into_owned();
         entries.push(Entry { name, size: e.uncompressed_size_hint(), directory: e.is_dir(),
-            encrypted: e.flags().is_encrypted(), symlink: false });
+            encrypted: e.flags().is_encrypted(), symlink: false,
+            modified_ms: None, link_target: None });
     }
     Ok(entries)
 }
 fn list_ripzip(path: &Path) -> Result<Vec<Entry>> {
     Ok(ripzip::list_archive(path)?.into_iter().map(|e| Entry {
         name: e.file_name, size: e.uncompressed_size, directory: e.is_dir,
-        encrypted: false, symlink: false
+        encrypted: false, symlink: false,
+        modified_ms: None, link_target: None,
     }).collect())
 }
 fn tar_reader(path: &Path) -> Result<Box<dyn Read>> {
@@ -135,6 +145,8 @@ fn list_tar(path: &Path) -> Result<Vec<Entry>> {
             name: e.path()?.to_string_lossy().to_string(),
             size: e.size(), directory: e.header().entry_type().is_dir(),
             encrypted: false, symlink: e.header().entry_type().is_symlink(),
+            modified_ms: e.header().mtime().ok().map(|seconds| seconds.saturating_mul(1000)),
+            link_target: e.link_name()?.map(|link| link.to_string_lossy().into_owned()),
         });
     }
     Ok(output)
