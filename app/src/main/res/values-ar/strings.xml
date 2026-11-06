@@ -703,18 +703,9 @@
     <string name="navigation_edit_bookmark_directory_name">الاسم</string>
     <string name="navigation_edit_bookmark_directory_path">المسار</string>
     <string name="archive_viewer_title">عارض الأرشيف</string>
-    <string name="image_viewer_title">عارض الصور</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
     <string name="save_as_title">حفظ كـ</string>
     <string name="save_as_error">خطأ أثناء حفظ الملف</string>
     <string name="save_as_success_format">تم حفظ ”%1$s“ إلى ”%2$s“</string>
-    <string name="text_editor_title">محرر النص</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">تم الحفظ</string>
-    <string name="text_editor_reload_message">هل أنت متأكد أنك تريد إعادة التحميل؟ ستفقد التغييرات غير المحفوظة على هذا المستند.</string>
-    <string name="text_editor_encoding">ترميز</string>
-    <string name="text_editor_close_message">هل أنت متأكد أنك تريد تجاهل التغييرات غير المحفوظة في هذا المستند؟</string>
 
     <string name="ftp_server_title">خادم FTP </string>
     <string name="ftp_server_state_title">الحالة</string>
