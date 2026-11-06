@@ -1,7 +1,5 @@
 package me.zhanghai.android.files.compose
 
-import androidx.compose.ui.test.assertExists
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
