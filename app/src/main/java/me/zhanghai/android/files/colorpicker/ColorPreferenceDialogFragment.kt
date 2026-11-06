@@ -119,7 +119,7 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         (super.onCreateDialog(savedInstanceState) as AlertDialog).apply {
-            if (defaultColor in colors) {
+            if (defaultEntryIndex in colors.indices) {
                 // Override the listener here so that we won't close the dialog.
                 setOnShowListener {
                     getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
