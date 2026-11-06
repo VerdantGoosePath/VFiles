@@ -1,6 +1,7 @@
 package me.zhanghai.android.files.provider.archive.archiver
 
 import java8.nio.file.Path
+import java8.nio.file.attribute.FileTime
 import me.zhanghai.android.files.app.application
 import me.zhanghai.android.files.provider.archive.ArchivePasswordRequiredException
 import me.zhanghai.android.files.provider.common.PosixFileMode
@@ -64,9 +65,13 @@ object ArchiveReader {
             symlink -> PosixFileMode.SYMBOLIC_LINK_DEFAULT
             else -> PosixFileMode.FILE_DEFAULT
         }
+        val modifiedTime = if (json.isNull("modified_ms")) null else
+            FileTime.fromMillis(json.optLong("modified_ms"))
+        val linkTarget = if (json.isNull("link_target")) null else
+            json.optString("link_target").takeIf { it.isNotEmpty() }
         return ReadArchive.Entry(json.getString("name"), json.optBoolean("encrypted"),
-            null, null, null, type, json.optLong("size").coerceAtLeast(0),
-            null, null, mode, null)
+            modifiedTime, null, null, type, json.optLong("size").coerceAtLeast(0),
+            null, null, mode, linkTarget)
     }
 
     private fun parse(file: Path, passwords: List<String>): List<ReadArchive.Entry> {
