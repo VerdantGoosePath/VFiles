@@ -48,8 +48,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -71,6 +73,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.core.app.LocaleManagerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.core.os.LocaleListCompat
 import java.nio.charset.Charset
@@ -177,6 +182,17 @@ internal fun ExpressiveSettingsScreen(
     onSetAppLocalesPre33: (LocaleListCompat) -> Unit
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    // API 33's system app-language picker can change outside this activity even if the display
+    // locale remains identical. Re-read its independent system state on every return.
+    var localeRefresh by remember { mutableIntStateOf(0) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) localeRefresh++
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val color by Settings.THEME_COLOR.observeCompose()
     val night by Settings.NIGHT_MODE.observeCompose()
     val black by Settings.BLACK_NIGHT_MODE.observeCompose()
@@ -205,7 +221,9 @@ internal fun ExpressiveSettingsScreen(
         NightMode.OFF -> false
         else -> systemDark
     }
-    val currentLocale = LocaleManagerCompat.getApplicationLocales(context).toList().firstOrNull()
+    val currentLocale = remember(localeRefresh, context) {
+        LocaleManagerCompat.getApplicationLocales(context).toList().firstOrNull()
+    }
     val localeSummary = currentLocale?.getDisplayName(currentLocale)
         ?: stringResource(R.string.system_default)
 
