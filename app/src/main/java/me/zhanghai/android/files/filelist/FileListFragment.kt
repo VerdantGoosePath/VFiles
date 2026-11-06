@@ -219,6 +219,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     // Immutable Compose snapshots: selectedFiles/pasteState themselves mutate in-place.
     private var browserChromeState by mutableStateOf(FileBrowserChromeState())
     private var browserContentState by mutableStateOf(FileBrowserContentState())
+    private var browserJobs by mutableStateOf<List<FileJobProgress>>(emptyList())
     // Preserve the original RecyclerView and D-pad special cases on TVs and in external pickers.
     private val useComposeFileList: Boolean
         get() = isAdded && !requireContext().isTelevision && viewModel.pickOptions == null
@@ -801,6 +802,19 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                         onRefresh = { refresh() },
                         onItemAction = { file, action -> onComposeItemAction(file, action) }
                     )
+                }
+            }
+        }
+        binding.root.findViewById<ComposeView>(R.id.browserJobProgressView).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                VFilesTheme {
+                    if (!requireContext().isTelevision) {
+                        VFilesJobStatus(
+                            jobs = browserJobs,
+                            onCancel = { FileJobService.cancelJob(it) }
+                        )
+                    }
                 }
             }
         }
@@ -2227,6 +2241,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private val fileJobProgressRows = LinkedHashMap<Int, FileJobProgressItemBinding>()
 
     private fun onFileJobProgressChanged(progresses: List<FileJobProgress>) {
+        browserJobs = progresses.toList()
+        if (!requireContext().isTelevision) {
+            binding.fileJobProgressButton.isVisible = false
+            fileJobProgressPopup?.dismiss()
+            return
+        }
         val button = binding.fileJobProgressButton
         if (progresses.isEmpty()) {
             button.isVisible = false
