@@ -1,6 +1,7 @@
 package me.zhanghai.android.files.navigation
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
@@ -22,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
@@ -120,6 +122,7 @@ private fun NavigationDestination(
     // Existing isChecked() consults currentPath and is provider-aware for all item variants.
     // NavigationFragment observes the actual current path; it triggers recomposition on changes.
     val checked = currentPath != null && item.isChecked(listener)
+    val iconTint = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
     val background = if (checked) MaterialTheme.colorScheme.secondaryContainer
         else MaterialTheme.colorScheme.surfaceContainerLow
     Surface(
@@ -144,6 +147,7 @@ private fun NavigationDestination(
                 modifier = Modifier.size(24.dp),
                 update = { image ->
                     image.setImageDrawable(item.getIcon(context))
+                    image.imageTintList = ColorStateList.valueOf(iconTint)
                     image.contentDescription = null
                 }
             )
