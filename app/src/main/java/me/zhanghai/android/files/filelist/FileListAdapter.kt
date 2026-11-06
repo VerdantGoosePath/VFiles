@@ -122,6 +122,22 @@ class FileListAdapter(
         listener.selectFile(file, !selected)
     }
 
+    fun positionOf(file: FileItem): Int? = filePositionMap[file.path]
+
+    fun selectRange() {
+        // Use the currently displayed order; preserve existing selections, including folders.
+        val positions = selectedFiles.mapNotNull { filePositionMap[it.path] }
+        if (positions.size < 2) return
+        val from = positions.minOrNull()!!
+        val to = positions.maxOrNull()!!
+        val files = fileItemSetOf()
+        for (index in from..to) {
+            val file = getItem(index)
+            if (isFileSelectable(file)) files.add(file)
+        }
+        listener.selectFiles(files, true)
+    }
+
     fun selectAllFiles() {
         val files = fileItemSetOf()
         for (index in 0..<itemCount) {

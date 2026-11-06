@@ -1142,6 +1142,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             menu.findItem(R.id.action_open).isVisible = isOpen
             menu.findItem(R.id.action_create).isVisible = !isOpen
             menu.findItem(R.id.action_select_all).isVisible = pickOptions.allowMultiple
+            menu.findItem(R.id.action_select_range).isVisible = pickOptions.allowMultiple && files.size >= 2
         } else {
             overlayActionMode.title = getString(R.string.file_list_select_title_format, files.size)
             overlayActionMode.setMenuResource(R.menu.file_list_select)
@@ -1164,6 +1165,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                         R.string.copy
                     }
                 )
+            menu.findItem(R.id.action_select_range).isVisible = files.size >= 2
             menu.findItem(R.id.action_delete).isVisible = !isAnyFileReadOnly
             val areAllFilesArchiveFiles = files.all { it.isArchiveFile }
             menu.findItem(R.id.action_extract).isVisible = areAllFilesArchiveFiles
@@ -1224,6 +1226,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             R.id.action_select_all -> {
                 selectAllFiles()
+                true
+            }
+            R.id.action_select_range -> {
+                adapter.selectRange()
                 true
             }
             else -> false
