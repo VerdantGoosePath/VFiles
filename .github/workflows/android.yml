@@ -2,12 +2,16 @@ name: Build Files Fork APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, feat/rust-archive-backends]
     tags: ['v*']
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: release-apk-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release-apk:
