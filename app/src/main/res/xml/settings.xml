@@ -23,12 +23,14 @@
             android:summary="@string/settings_theme_color_summary"
             app:singleLineTitle="false" />
 
-        <SwitchPreferenceCompat
-            android:key="@string/pref_key_material_design_3"
-            android:title="@string/settings_material_design_3_title"
-            android:defaultValue="@bool/pref_default_value_material_design_3"
-            android:disableDependentsState="true"
-            app:singleLineTitle="false" />
+        <rikka.preference.SimpleMenuPreference
+            android:key="@string/pref_key_material_design"
+            android:title="@string/settings_material_design_title"
+            android:defaultValue="@string/pref_default_value_material_design"
+            android:entries="@array/settings_material_design_entries"
+            android:entryValues="@array/pref_entry_values_material_design"
+            app:singleLineTitle="false"
+            app:useSimpleSummaryProvider="true" />
 
         <rikka.preference.SimpleMenuPreference
             android:key="@string/pref_key_night_mode"

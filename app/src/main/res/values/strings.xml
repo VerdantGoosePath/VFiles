@@ -762,7 +762,12 @@
     <string name="settings_theme_color_summary">Color that appears most frequently in the app</string>
     <string name="color_picker_dynamic_color_label">Based on wallpaper</string>
     <string name="color_picker_preset_colors_label">Other colors</string>
-    <string name="settings_material_design_3_title">Material Design 3</string>
+    <string name="settings_material_design_title">Material design</string>
+    <string-array name="settings_material_design_entries">
+        <item>Material 2</item>
+        <item>Material 3</item>
+        <item>Material 3 Expressive</item>
+    </string-array>
     <string name="settings_night_mode_title">Night mode</string>
     <string-array name="settings_night_mode_entries">
         <item>Follow system</item>

@@ -106,9 +106,10 @@ object Settings {
             ThemeColor::class.java
         )
 
-    val MATERIAL_DESIGN_3: SettingLiveData<Boolean> =
-        BooleanSettingLiveData(
-            R.string.pref_key_material_design_3, R.bool.pref_default_value_material_design_3
+    val MATERIAL_DESIGN: SettingLiveData<MaterialDesign> =
+        EnumSettingLiveData(
+            R.string.pref_key_material_design, R.string.pref_default_value_material_design,
+            MaterialDesign::class.java
         )
 
     val NIGHT_MODE: SettingLiveData<NightMode> =

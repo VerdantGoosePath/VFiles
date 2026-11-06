@@ -40,11 +40,11 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         // this, always use an instance method reference.
         // https://stackoverflow.com/a/27524543
         //Settings.THEME_COLOR.observe(viewLifecycleOwner) { CustomThemeHelper.sync() }
-        //Settings.MATERIAL_DESIGN_3.observe(viewLifecycleOwner) { CustomThemeHelper.sync() }
+        //Settings.MATERIAL_DESIGN.observe(viewLifecycleOwner) { CustomThemeHelper.sync() }
         //Settings.NIGHT_MODE.observe(viewLifecycleOwner) { NightModeHelper.sync() }
         //Settings.BLACK_NIGHT_MODE.observe(viewLifecycleOwner) { CustomThemeHelper.sync() }
         Settings.THEME_COLOR.observe(viewLifecycleOwner, this::onThemeColorChanged)
-        Settings.MATERIAL_DESIGN_3.observe(viewLifecycleOwner, this::onMaterialDesign3Changed)
+        Settings.MATERIAL_DESIGN.observe(viewLifecycleOwner, this::onMaterialDesignChanged)
         Settings.NIGHT_MODE.observe(viewLifecycleOwner, this::onNightModeChanged)
         Settings.BLACK_NIGHT_MODE.observe(viewLifecycleOwner, this::onBlackNightModeChanged)
         Settings.EDGE_TO_EDGE.observe(viewLifecycleOwner, this::onEdgeToEdgeChanged)
@@ -54,7 +54,7 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
         CustomThemeHelper.sync()
     }
 
-    private fun onMaterialDesign3Changed(isMaterialDesign3: Boolean) {
+    private fun onMaterialDesignChanged(materialDesign: MaterialDesign) {
         CustomThemeHelper.sync()
     }
 

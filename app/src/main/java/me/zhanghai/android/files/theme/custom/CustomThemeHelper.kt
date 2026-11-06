@@ -18,6 +18,7 @@ import me.zhanghai.android.files.compat.recreateCompat
 import me.zhanghai.android.files.compat.setThemeCompat
 import me.zhanghai.android.files.compat.themeResIdCompat
 import me.zhanghai.android.files.settings.Settings
+import me.zhanghai.android.files.settings.MaterialDesign
 import me.zhanghai.android.files.theme.night.NightModeHelper
 import me.zhanghai.android.files.util.SimpleActivityLifecycleCallbacks
 import me.zhanghai.android.files.util.valueCompat
@@ -60,7 +61,7 @@ object CustomThemeHelper {
     // wallpaper color can't be read (older API, or the read failed).
     private fun applyWallpaperDynamicColors(activity: Activity) {
         if (Settings.THEME_COLOR.valueCompat != ThemeColor.DYNAMIC
-            || !Settings.MATERIAL_DESIGN_3.valueCompat) {
+            || Settings.MATERIAL_DESIGN.valueCompat == MaterialDesign.MATERIAL2) {
             return
         }
         val seedColor = activity.wallpaperAccentColor() ?: return
@@ -96,7 +97,8 @@ object CustomThemeHelper {
         val resources = context.resources
         val baseThemeName = resources.getResourceName(baseThemeRes)
         val themeColor = Settings.THEME_COLOR.valueCompat
-        val isMaterial3 = Settings.MATERIAL_DESIGN_3.valueCompat
+        val design = Settings.MATERIAL_DESIGN.valueCompat
+        val isMaterial3 = design != MaterialDesign.MATERIAL2
         // With Material Design 3, the "dynamic" color follows the system/wallpaper colors, which the
         // base Material3 theme already applies; so we leave it without a color suffix in that case.
         val isDynamic = themeColor == ThemeColor.DYNAMIC && isMaterial3
@@ -108,7 +110,13 @@ object CustomThemeHelper {
         val customThemeName = if (isMaterial3) {
             val defaultThemeName = resources.getResourceEntryName(R.style.Theme_MaterialFiles)
             val material3ThemeName =
-                resources.getResourceEntryName(R.style.Theme_MaterialFiles_Material3)
+                resources.getResourceEntryName(
+                    if (design == MaterialDesign.MATERIAL3_EXPRESSIVE) {
+                        R.style.Theme_MaterialFiles_Material3Expressive
+                    } else {
+                        R.style.Theme_MaterialFiles_Material3
+                    }
+                )
             baseThemeName.replace(defaultThemeName, material3ThemeName) +
                 if (isDynamic) "" else ".$themeColorName"
         } else {
