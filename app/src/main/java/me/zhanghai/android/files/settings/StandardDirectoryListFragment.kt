@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.fragment.app.Fragment
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compose.theme.VFilesTheme
@@ -74,9 +75,7 @@ private fun StandardDirectorySettingsScreen(onNavigateUp: () -> Unit) {
                 scrollBehavior = scroll
             )
         },
-        modifier = Modifier.fillMaxSize().then(
-            androidx.compose.ui.Modifier.nestedScrollCompat(scroll)
-        )
+        modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection)
     ) { insets ->
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -89,7 +88,7 @@ private fun StandardDirectorySettingsScreen(onNavigateUp: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             item {
-                Box(Modifier.fillMaxWidth().widthIn(max = 760.dp)) {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
                         context.getString(R.string.settings_standard_directories_title),
                         directories.map { directory ->
@@ -120,8 +119,3 @@ private fun setDirectoryEnabled(directory: StandardDirectory, enabled: Boolean) 
     Settings.STANDARD_DIRECTORY_SETTINGS.putValue(overrides)
 }
 
-private fun Modifier.nestedScrollCompat(
-    scroll: androidx.compose.material3.TopAppBarScrollBehavior
-): Modifier = this.then(
-    androidx.compose.ui.input.nestedscroll.nestedScroll(scroll.nestedScrollConnection)
-)
