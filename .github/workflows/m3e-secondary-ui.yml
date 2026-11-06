@@ -23,6 +23,7 @@ jobs:
       - name: Check secondary UI and viewer removal contracts
         run: |
           python3 scripts/check_phase_a_contracts.py
+          python3 scripts/check_secondary_ui_contracts.py
           python3 - <<'PY'
           from pathlib import Path
           manifest = Path('app/src/main/AndroidManifest.xml').read_text()
