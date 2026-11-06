@@ -25,7 +25,6 @@ import me.zhanghai.android.files.provider.common.ByteStringBuilder
 import me.zhanghai.android.files.provider.common.ByteStringListPathCreator
 import me.zhanghai.android.files.provider.common.IsDirectoryException
 import me.zhanghai.android.files.provider.common.toByteString
-import me.zhanghai.android.libarchive.ArchiveException
 import java.io.IOException
 import java.io.InputStream
 
@@ -80,12 +79,8 @@ internal class ArchiveFileSystem(
             if (entry.isDirectory) {
                 throw IsDirectoryException(file.toString())
             }
-            val inputStream = try {
-                ArchiveReader.newInputStream(archiveFile, passwords, entry)
-            } catch (e: ArchiveException) {
-                throw e.toFileSystemOrInterruptedIOException(file)
-            } ?: throw NoSuchFileException(file.toString())
-            ArchiveExceptionInputStream(inputStream, file)
+            ArchiveReader.newInputStream(archiveFile, passwords, entry)
+                ?: throw NoSuchFileException(file.toString())
         }
 
     @Throws(IOException::class)
@@ -134,11 +129,7 @@ internal class ArchiveFileSystem(
             throw ClosedFileSystemException()
         }
         if (isRefreshNeeded) {
-            val entriesAndTree = try {
-                ArchiveReader.readEntries(archiveFile, passwords, rootDirectory)
-            } catch (e: ArchiveException) {
-                throw e.toFileSystemOrInterruptedIOException(file)
-            }
+            val entriesAndTree = ArchiveReader.readEntries(archiveFile, passwords, rootDirectory)
             entries = entriesAndTree.first
             tree = entriesAndTree.second
             isRefreshNeeded = false
