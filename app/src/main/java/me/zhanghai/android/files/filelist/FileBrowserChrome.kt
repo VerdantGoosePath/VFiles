@@ -30,7 +30,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,7 +55,7 @@ data class FileBrowserChromeState(
     val selectedReadOnly: Boolean = false,
     val selectedArchivePaths: Boolean = false,
     val selectedArchiveFiles: Boolean = false,
-    val currentReadOnly: Boolean = false,
+    val currentReadOnly: Boolean = true,
     val picker: Boolean = false,
     val pickerCanSelectMultiple: Boolean = false,
     val pasteCount: Int = 0,
@@ -161,7 +161,7 @@ fun VFilesBrowserChrome(
                                 onClick = { onSortBy(by); sortMenuOpen = false },
                                 trailingIcon = { if (checked) Text("✓") },
                                 modifier = Modifier.semantics {
-                                    stateDescription = if (checked) "Selected" else "Not selected"
+                                    selected = checked
                                 }
                             )
                         }
