@@ -774,7 +774,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                         onDirectoriesFirst = { viewModel.setSortDirectoriesFirst(it) },
                         onPathSpecificSort = { viewModel.isViewSortPathSpecific = it },
                         onShowHiddenFiles = { setShowHiddenFiles(it) },
-                        onSelection = { onComposeSelection(it) }
+                        onSelection = {
+                            // Compose cannot bypass the same read-only/picker restrictions as
+                            // the legacy contextual menus; recheck at command dispatch time.
+                            updateBrowserChrome()
+                            if (it in browserChromeState.commandContext().availableCommands()) {
+                                onComposeSelection(it)
+                            }
+                        }
                     )
                 }
             }
