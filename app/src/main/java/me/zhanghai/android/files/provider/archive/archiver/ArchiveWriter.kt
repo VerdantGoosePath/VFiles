@@ -56,6 +56,10 @@ class ArchiveWriter(
                 }
             }
         }
+        // Preserve the source modified timestamp for Rust writers that derive
+        // archive metadata from the staged filesystem (7z, TAR and ripzip).
+        // The provider may not support timestamps; do not fail compression for that.
+        runCatching { staged.setLastModified(attributes.lastModifiedTime().toMillis()) }
     }
 
     override fun close() {
