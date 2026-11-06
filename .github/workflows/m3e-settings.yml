@@ -31,6 +31,9 @@ jobs:
           test -f app/src/main/java/me/zhanghai/android/files/settings/ExpressiveSettingsScreen.kt
           test ! -e app/src/main/java/me/zhanghai/android/files/settings/SettingsPreferenceFragment.kt
           test ! -e app/src/main/res/xml/settings.xml
+          test ! -e app/src/main/res/xml/ftp_server.xml
+          test ! -e app/src/main/java/me/zhanghai/android/files/ftpserver/FtpServerPreferenceFragment.kt
+          test -f app/src/main/java/me/zhanghai/android/files/ftpserver/ExpressiveFtpServerScreen.kt
           ! grep -q 'Settings.MATERIAL_DESIGN_3.valueCompat' app/src/main/java/me/zhanghai/android/files/theme/custom/CustomThemeHelper.kt
           grep -q 'MaterialExpressiveTheme' app/src/main/java/me/zhanghai/android/files/compose/theme/VFilesTheme.kt
       - name: Install Android 37, build tools, NDK and CMake
