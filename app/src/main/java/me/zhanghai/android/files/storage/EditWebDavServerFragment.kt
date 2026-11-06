@@ -261,6 +261,12 @@ class EditWebDavServerFragment : Fragment() {
                 binding.progress.fadeToVisibilityUnsafe(isConnecting)
                 binding.scrollView.alpha = if (isConnecting) 0.55f else 1f
                 binding.scrollView.isEnabled = !isConnecting
+                binding.connectingInputBlocker.isVisible = isConnecting
+                binding.scrollView.importantForAccessibility = if (isConnecting) {
+                    View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                } else {
+                    View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+                }
                 binding.saveOrConnectAndAddButton.isEnabled = !isConnecting
                 binding.removeOrAddButton.isEnabled = !isConnecting
                 binding.cancelButton.isEnabled = true

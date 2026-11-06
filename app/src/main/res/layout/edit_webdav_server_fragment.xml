@@ -37,14 +37,6 @@
             android:layout_height="0dp"
             android:layout_weight="1">
 
-            <ProgressBar
-                android:id="@+id/progress"
-                android:contentDescription="@string/storage_connection_connecting"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:visibility="gone" />
-
             <androidx.core.widget.NestedScrollView
                 android:id="@+id/scrollView"
                 android:layout_width="match_parent"
@@ -210,6 +202,24 @@
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
             </androidx.core.widget.NestedScrollView>
+        
+            <!-- A transparent click barrier keeps a tested server snapshot immutable in the form.
+                 Progress remains above the barrier, and the Cancel action stays accessible. -->
+            <View
+                android:id="@+id/connectingInputBlocker"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="@string/storage_connection_connecting"
+                android:visibility="gone" />
+            <ProgressBar
+                android:id="@+id/progress"
+                android:contentDescription="@string/storage_connection_connecting"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:visibility="gone" />
         </FrameLayout>
 
         <LinearLayout
