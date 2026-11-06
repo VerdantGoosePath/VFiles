@@ -32,6 +32,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
@@ -87,6 +88,7 @@ fun VFilesBrowserChrome(
 ) {
     var sortMenuOpen by remember { mutableStateOf(false) }
     BackHandler(state.searchExpanded) { onSearchExpanded(false) }
+    val clearSearchDescription = stringResource(R.string.file_browser_clear_search)
     val keyboard = LocalSoftwareKeyboardController.current
     val searchFocus = remember { FocusRequester() }
     LaunchedEffect(state.searchExpanded) {
@@ -116,7 +118,12 @@ fun VFilesBrowserChrome(
                         }),
                         trailingIcon = {
                             if (state.searchQuery.isNotEmpty()) {
-                                TextButton(onClick = { onSearchQuery("") }) { Text("×") }
+                                TextButton(
+                                    onClick = { onSearchQuery("") },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = clearSearchDescription
+                                    }
+                                ) { Text("×") }
                             }
                         }
                     )

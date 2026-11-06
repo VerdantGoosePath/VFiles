@@ -174,7 +174,7 @@ fun VFilesBrowserContent(
                     VFilesMessageState(
                         title = if (state.searching) stringResource(R.string.search)
                             else stringResource(R.string.file_list_empty),
-                        detail = if (state.searching) "No matching files" else "This folder is empty",
+                        detail = stringResource(if (state.searching) R.string.file_browser_search_no_results else R.string.file_browser_empty_description),
                         actionLabel = stringResource(R.string.refresh),
                         onAction = onRefresh
                     )
@@ -440,21 +440,21 @@ private fun FileBrowserBadges(file: FileItem) {
             Icon(
                 painter = painterResource(badge),
                 contentDescription = if (file.attributesNoFollowLinks.isSymbolicLink)
-                    "Symbolic link" else "Encrypted",
+                    stringResource(R.string.file_browser_badge_symbolic_link) else stringResource(R.string.file_browser_badge_encrypted),
                 modifier = Modifier.size(18.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         if (file.isArchiveFile || file.path.isArchivePath) {
             Text(
-                "Archive",
+                stringResource(R.string.file_browser_badge_archive),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         if (file.path.fileSystem.isReadOnly) {
             Text(
-                "Read-only",
+                stringResource(R.string.file_browser_badge_read_only),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -476,7 +476,7 @@ private fun FileBrowserItemMenu(
         IconButton(onClick = { onExpanded(true) }) {
             Icon(
                 painterResource(R.drawable.more_vertical_icon_white_24dp),
-                contentDescription = "File actions"
+                contentDescription = stringResource(R.string.file_browser_item_actions)
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { onExpanded(false) }) {

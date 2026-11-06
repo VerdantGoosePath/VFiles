@@ -31,6 +31,9 @@ fun VFilesCreateMenu(
     modifier: Modifier = Modifier
 ) {
     BackHandler(enabled && expanded) { onExpandedChange(false) }
+    val menuDescription = stringResource(
+        if (expanded) R.string.file_browser_create_close else R.string.file_browser_create_open
+    )
     if (!enabled) return
     Box(modifier = modifier) {
         FloatingActionButtonMenu(
@@ -41,7 +44,7 @@ fun VFilesCreateMenu(
                     checked = expanded,
                     onCheckedChange = onExpandedChange,
                     modifier = Modifier.semantics {
-                        contentDescription = if (expanded) "Close create menu" else "Create file or folder"
+                        contentDescription = menuDescription
                     }
                 ) {
                     Icon(
