@@ -105,7 +105,10 @@ pub fn list(path: &Path, password: &str, options: &Options) -> Result<Vec<Entry>
         _ => unreachable!()
     };
     // Never offer paths that could escape the virtual archive root.
-    Ok(entries.into_iter().filter(|e| check_name(&e.name).is_ok()).collect())
+    Ok(entries.into_iter().filter(|e| {
+        check_name(&e.name).is_ok() &&
+            e.link_target.as_deref().map(|target| check_name(target).is_ok()).unwrap_or(true)
+    }).collect())
 }
 
 fn list_rawzip(path: &Path) -> Result<Vec<Entry>> {
@@ -124,7 +127,8 @@ fn list_rawzip(path: &Path) -> Result<Vec<Entry>> {
 fn list_ripzip(path: &Path) -> Result<Vec<Entry>> {
     Ok(ripzip::list_archive(path)?.into_iter().map(|e| Entry {
         name: e.file_name, size: e.uncompressed_size, directory: e.is_dir,
-        encrypted: false, symlink: false,
+        encrypted: false,
+        symlink: ((e.external_attributes >> 16) & 0o170000) == 0o120000,
         modified_ms: None, link_target: None,
     }).collect())
 }
@@ -203,6 +207,9 @@ fn extract_ripzip(path: &Path, name: &str, target: &Path, options: &Options) -> 
     let mut total = 0u64;
     for e in &entries {
         check_name(&e.name)?;
+        if e.symlink {
+            return Err(invalid("ripzip does not safely support symlink archive entries").into());
+        }
         ensure_size(e.size, options)?;
         total = total.checked_add(e.size).ok_or_else(|| invalid("archive size overflow"))?;
     }
