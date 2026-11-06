@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.parcelize.Parcelize
@@ -123,7 +124,8 @@ class FilePropertiesDialogFragment : AppCompatDialogFragment() {
             .map { getString(it.first) to it.second }
             .toTypedArray()
         val tabAdapter = TabFragmentPagerAdapter(childFragmentManager, *tabs)
-        binding.viewPager.offscreenPageLimit = tabAdapter.count - 1
+        binding.viewPager.offscreenPageLimit = (tabAdapter.count - 1).coerceAtLeast(1)
+        binding.tabLayout.isVisible = tabAdapter.count > 1
         binding.viewPager.adapter = tabAdapter
         binding.tabLayout.setupWithViewPager(binding.viewPager)
     }
