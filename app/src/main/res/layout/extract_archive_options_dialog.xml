@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="false"
+    android:paddingStart="?dialogPreferredPadding"
+    android:paddingEnd="?dialogPreferredPadding"
+    android:paddingBottom="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:text="@string/archive_extract_destination_hint"
+            android:textAppearance="?attr/textAppearanceBody2" />
+
+        <LinearLayout
+            android:id="@+id/zipPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/archive_zip_engine_title"
+                android:textAppearance="?attr/textAppearanceSubtitle1" />
+            <Spinner
+                android:id="@+id/zipEngineSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+            <TextView
+                android:id="@+id/zipEngineHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:textAppearance="?attr/textAppearanceCaption" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/rarPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/archive_rar_engine_hint"
+                android:textAppearance="?attr/textAppearanceBody2" />
+            <CheckBox
+                android:id="@+id/rarVerify"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/archive_rar_verify_title" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/sevenZHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:text="@string/archive_sevenz_read_hint"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/advancedToggle"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:gravity="center_vertical"
+            android:text="@string/archive_advanced_toggle"
+            android:textAppearance="?attr/textAppearanceSubtitle2"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <LinearLayout
+            android:id="@+id/advancedPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone">
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/archive_max_entry_title"
+                android:textAppearance="?attr/textAppearanceSubtitle1" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/archive_max_entry_summary"
+                android:textAppearance="?attr/textAppearanceCaption" />
+            <Spinner
+                android:id="@+id/maxEntrySpinner"
+                android:layout_width="match_parent"
+                android:layout_height="48dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>
