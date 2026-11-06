@@ -140,7 +140,7 @@ private fun ExternalDefaultAppsScreen(onNavigateUp: () -> Unit) {
         }
         val choices: List<Pair<String?, String>> =
             listOf(null to context.getString(R.string.settings_default_apps_ask)) +
-                candidates.map { it.first as String? to it.second }
+                candidates.map { Pair<String?, String>(it.first, it.second) }
         ExpressiveChoiceDialog(
             title = context.getString(category.titleRes),
             options = choices,
