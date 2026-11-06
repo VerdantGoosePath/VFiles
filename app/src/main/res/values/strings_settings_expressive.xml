@@ -21,4 +21,8 @@
     <string name="settings_expressive_add_bookmark">Add bookmark</string>
     <string name="settings_expressive_move_up">Move up</string>
     <string name="settings_expressive_move_down">Move down</string>
+    <string name="ftp_server_expressive_password_set">Password set</string>
+    <string name="ftp_server_expressive_password_unset">No password</string>
+    <string name="ftp_server_expressive_password_clipboard">Copy the stored password to the clipboard</string>
+    <string name="ftp_server_expressive_invalid_port">Enter a non-negative whole number</string>
 </resources>
