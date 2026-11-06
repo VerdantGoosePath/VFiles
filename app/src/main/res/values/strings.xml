@@ -532,6 +532,9 @@
 
     <string name="storage_file_system_root_title">Root</string>
     <string name="storage_internal_storage">Internal storage</string>
+    <string name="storage_reorder">Reorder storage</string>
+    <string name="storage_move_up">Move up</string>
+    <string name="storage_move_down">Move down</string>
     <string name="storage_list_title">Storage</string>
     <string name="storage_list_empty">No storage</string>
     <string name="storage_add_storage_title">Add storage</string>
