@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import me.zhanghai.android.files.about.AboutActivity
 import me.zhanghai.android.files.compose.theme.VFilesTheme
 import me.zhanghai.android.files.filelist.FileListActivity
+import me.zhanghai.android.files.ftpserver.FtpServerActivity
 import me.zhanghai.android.files.storage.StorageListActivity
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
 import me.zhanghai.android.files.theme.night.NightModeHelper
@@ -60,6 +61,9 @@ class SettingsFragment : Fragment() {
                     },
                     onOpenDefaultApps = {
                         requireContext().startActivitySafe(DefaultAppsActivity::class.createIntent())
+                    },
+                    onOpenFtpServer = {
+                        requireContext().startActivitySafe(FtpServerActivity::class.createIntent())
                     },
                     onOpenAbout = {
                         requireContext().startActivitySafe(AboutActivity::class.createIntent())
