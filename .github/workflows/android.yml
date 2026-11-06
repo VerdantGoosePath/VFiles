@@ -45,6 +45,14 @@ jobs:
           fi
           "$SDKMANAGER" --install "platforms;android-36" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
 
+      - name: Install Rust and cargo-ndk for native archive libraries
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: armv7-linux-androideabi,aarch64-linux-android,i686-linux-android,x86_64-linux-android
+
+      - name: Install cargo-ndk
+        run: cargo install cargo-ndk --locked
+
       - name: Prepare release signing
         env:
           KEYSTORE_BASE64: ${{ secrets.FILES_FORK_KEYSTORE_BASE64 }}
