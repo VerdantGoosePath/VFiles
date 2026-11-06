@@ -15,4 +15,7 @@
     <string name="settings_expressive_black_explanation">Use black backgrounds when night mode is active</string>
     <string name="settings_expressive_standard_description">Choose which common folders appear in the navigation list</string>
     <string name="settings_expressive_external_apps">External apps for opening files</string>
+    <string name="settings_expressive_add_bookmark">Add bookmark</string>
+    <string name="settings_expressive_move_up">Move up</string>
+    <string name="settings_expressive_move_down">Move down</string>
 </resources>
