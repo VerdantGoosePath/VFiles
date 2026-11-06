@@ -16,6 +16,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -81,7 +84,8 @@ class DefaultAppsFragment : Fragment() {
                     onBack = { requireActivity().onBackPressedDispatcher.onBackPressed() }
                 ) { innerPadding ->
                     Column(
-                        modifier = Modifier.fillMaxWidth().padding(innerPadding)
+                        modifier = Modifier.fillMaxSize().padding(innerPadding)
+                            .verticalScroll(rememberScrollState())
                             .padding(horizontal = 16.dp, vertical = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
