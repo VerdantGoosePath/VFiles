@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Debug-only, no access to real files/settings. Inspect with adb am start. -->
+        <activity
+            android:name="me.zhanghai.android.files.compose.pilot.ExpressivePilotActivity"
+            android:exported="true"
+            android:label="Expressive interop pilot" />
+    </application>
+</manifest>
