@@ -118,7 +118,13 @@ class EditSmbServerFragment : Fragment() {
                 connectAndAdd()
             }
         }
-        binding.cancelButton.setOnClickListener { finish() }
+        binding.cancelButton.setOnClickListener {
+            if (viewModel.connectState.value is ActionState.Running) {
+                viewModel.cancelConnecting()
+            } else {
+                finish()
+            }
+        }
         binding.removeOrAddButton.setText(
             if (args.server != null) R.string.remove else R.string.storage_edit_smb_server_add
         )
@@ -239,9 +245,11 @@ class EditSmbServerFragment : Fragment() {
             is ActionState.Ready, is ActionState.Running -> {
                 val isConnecting = state is ActionState.Running
                 binding.progress.fadeToVisibilityUnsafe(isConnecting)
-                binding.scrollView.fadeToVisibilityUnsafe(!isConnecting)
+                binding.scrollView.alpha = if (isConnecting) 0.55f else 1f
+                binding.scrollView.isEnabled = !isConnecting
                 binding.saveOrConnectAndAddButton.isEnabled = !isConnecting
                 binding.removeOrAddButton.isEnabled = !isConnecting
+                binding.cancelButton.isEnabled = true
             }
             is ActionState.Success -> {
                 Storages.addOrReplace(state.argument)
