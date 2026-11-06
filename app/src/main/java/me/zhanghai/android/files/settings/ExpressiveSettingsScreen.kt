@@ -175,6 +175,7 @@ internal fun ExpressiveSettingsScreen(
     onOpenStandardDirectories: () -> Unit,
     onOpenBookmarks: () -> Unit,
     onOpenDefaultApps: () -> Unit,
+    onOpenFtpServer: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenSystemLocales: () -> Unit,
     onSetAppLocalesPre33: (LocaleListCompat) -> Unit
@@ -274,13 +275,14 @@ internal fun ExpressiveSettingsScreen(
                                 stringResource(R.string.settings_theme_color_summary),
                                 value = if (color == ThemeColor.DYNAMIC)
                                     stringResource(R.string.color_picker_dynamic_color_label)
-                                else color.name.replace('_', ' ').lowercase()
-                                    .replaceFirstChar { it.titlecase() },
+                                else color.settingsLabel(context),
+                                iconRes = R.drawable.tune_icon_control_normal_24dp,
                                 onClick = { dialog = "color" }
                             ),
                             ExpressiveSettingRow(
                                 "night", stringResource(R.string.settings_night_mode_title),
                                 value = nightNames.getOrElse(night.ordinal) { night.name },
+                                iconRes = R.drawable.alarm_icon_white_24dp,
                                 onClick = { dialog = "night" }
                             ),
                             ExpressiveSettingRow(
@@ -300,6 +302,7 @@ internal fun ExpressiveSettingsScreen(
                             add(ExpressiveSettingRow(
                                 "animation", stringResource(R.string.settings_file_list_animation_title),
                                 checked = animation,
+                                iconRes = R.drawable.view_list_icon_control_normal_24dp,
                                 onClick = { Settings.FILE_LIST_ANIMATION.putValue(!animation) }
                             ))
                             add(ExpressiveSettingRow(
@@ -308,6 +311,7 @@ internal fun ExpressiveSettingsScreen(
                                     listOf(TextUtils.TruncateAt.START, TextUtils.TruncateAt.MIDDLE,
                                         TextUtils.TruncateAt.END, TextUtils.TruncateAt.MARQUEE).indexOf(ellipsis)
                                 ) { ellipsis.name },
+                                iconRes = R.drawable.text_file_icon_white_24dp,
                                 onClick = { dialog = "ellipsis" }
                             ))
                             // Target SDK 34 still allows this user choice. Hide it only once the
@@ -317,6 +321,7 @@ internal fun ExpressiveSettingsScreen(
                                     "edge", stringResource(R.string.settings_edge_to_edge_title),
                                     stringResource(R.string.settings_edge_to_edge_summary),
                                     checked = edgeToEdge,
+                                    iconRes = R.drawable.device_mobile_icon_white_24dp,
                                     onClick = { Settings.EDGE_TO_EDGE.putValue(!edgeToEdge) }
                                 ))
                             }
@@ -331,12 +336,14 @@ internal fun ExpressiveSettingsScreen(
                         listOf(
                             ExpressiveSettingRow(
                                 "folder", stringResource(R.string.settings_default_directory_title),
-                                directory.toUserFriendlyString(), onClick = onOpenDefaultDirectory
+                                directory.toUserFriendlyString(),
+                                iconRes = R.drawable.folder_icon_control_normal_24dp, onClick = onOpenDefaultDirectory
                             ),
                             ExpressiveSettingRow(
                                 "storages", stringResource(R.string.settings_storages_title),
                                 storages.filter { it.isVisible }.joinToString { it.getName(context) }
                                     .ifBlank { context.getString(R.string.settings_storages_summary_empty) },
+                                iconRes = R.drawable.device_icon_white_24dp,
                                 onClick = onOpenStorages
                             ),
                             ExpressiveSettingRow(
@@ -344,12 +351,14 @@ internal fun ExpressiveSettingsScreen(
                                 standardDirectories.filter { it.isEnabled }
                                     .joinToString { it.getTitle(context) }
                                     .ifBlank { context.getString(R.string.settings_standard_directories_summary_empty) },
+                                iconRes = R.drawable.directory_icon_white_24dp,
                                 onClick = onOpenStandardDirectories
                             ),
                             ExpressiveSettingRow(
                                 "bookmarks", stringResource(R.string.settings_bookmark_directories_title),
                                 bookmarks.joinToString { it.name }
                                     .ifBlank { context.getString(R.string.settings_bookmark_directories_summary_empty) },
+                                iconRes = R.drawable.bookmark_icon_control_normal_24dp,
                                 onClick = onOpenBookmarks
                             )
                         )
@@ -363,16 +372,20 @@ internal fun ExpressiveSettingsScreen(
                         buildList {
                             add(ExpressiveSettingRow(
                                 "apps", stringResource(R.string.settings_default_apps_title),
-                                stringResource(R.string.settings_default_apps_summary), onClick = onOpenDefaultApps
+                                stringResource(R.string.settings_default_apps_summary),
+                                iconRes = R.drawable.open_with_icon_control_normal_24dp,
+                                onClick = onOpenDefaultApps
                             ))
                             add(ExpressiveSettingRow(
                                 "apk", stringResource(R.string.settings_open_apk_default_action_title),
                                 value = apkNames.getOrElse(apkAction.ordinal) { apkAction.name },
+                                iconRes = R.drawable.install_unknown_apps_icon_white_24dp,
                                 onClick = { dialog = "apk" }
                             ))
                             add(ExpressiveSettingRow(
                                 "encoding", stringResource(R.string.settings_archive_file_name_encoding_title),
-                                value = encoding, onClick = { dialog = "encoding" }
+                                value = encoding, iconRes = R.drawable.archive_icon_control_normal_24dp,
+                                onClick = { dialog = "encoding" }
                             ))
                             if (Build.VERSION.SDK_INT < 28) {
                                 add(ExpressiveSettingRow(
@@ -393,10 +406,18 @@ internal fun ExpressiveSettingsScreen(
             item(key = "advanced") {
                 Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
-                        stringResource(R.string.settings_expressive_advanced),
-                        listOf(ExpressiveSettingRow(
+                        stringResource(R.string.settings_expressive_network_advanced),
+                        listOf(
+                            ExpressiveSettingRow(
+                                "ftp", stringResource(R.string.ftp_server_title),
+                                stringResource(R.string.settings_expressive_ftp_summary),
+                                iconRes = R.drawable.ftp_server_icon_white_24dp,
+                                onClick = onOpenFtpServer
+                            ),
+                            ExpressiveSettingRow(
                             "root", stringResource(R.string.settings_root_strategy_title),
                             value = rootNames.getOrElse(root.ordinal) { root.name },
+                            iconRes = R.drawable.terminal_icon_control_normal_24dp,
                             onClick = {
                                 confirmRoot = FileJobService.runningJobCount > 0
                                 if (!confirmRoot) dialog = "root"
@@ -411,7 +432,9 @@ internal fun ExpressiveSettingsScreen(
                         stringResource(R.string.about_title),
                         listOf(ExpressiveSettingRow(
                             "about", stringResource(R.string.about_title),
-                            stringResource(R.string.app_version), onClick = onOpenAbout
+                            stringResource(R.string.app_version),
+                            iconRes = R.drawable.information_icon_control_normal_24dp,
+                            onClick = onOpenAbout
                         ))
                     )
                 }
@@ -455,7 +478,7 @@ internal fun ExpressiveSettingsScreen(
                     ThemeColor.DYNAMIC to context.getString(R.string.color_picker_dynamic_color_label)
                 )
                 addAll(ThemeColor.entries.filter { it != ThemeColor.DYNAMIC }.map {
-                    it to it.name.replace('_', ' ').lowercase().replaceFirstChar(Char::titlecase)
+                    it to it.settingsLabel(context)
                 })
             },
             color, { Settings.THEME_COLOR.putValue(it) }, { dialog = null },
@@ -626,3 +649,10 @@ internal fun <T> ExpressiveChoiceDialog(
     )
 }
 
+
+private fun ThemeColor.settingsLabel(context: android.content.Context): String = when (this) {
+    ThemeColor.DYNAMIC -> context.getString(R.string.color_picker_dynamic_color_label)
+    ThemeColor.COLOR_PRIMARY -> context.getString(R.string.settings_expressive_default_accent)
+    else -> name.removePrefix("MATERIAL_").replace('_', ' ').lowercase()
+        .replaceFirstChar { it.titlecase() }
+}
