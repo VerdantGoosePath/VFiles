@@ -41,6 +41,8 @@
     <string name="select">Select</string>
     <string name="select_all">Select all</string>
     <string name="select_range">Select range</string>
+    <string name="settings_drag_select_title">Long-press and drag to select</string>
+    <string name="settings_drag_select_summary">Slide over files and folders to select them. Hold at the edge to scroll.</string>
     <string name="share">Share</string>
     <string name="show">Show</string>
     <string name="skip">Skip</string>

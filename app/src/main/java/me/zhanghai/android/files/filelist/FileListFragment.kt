@@ -210,6 +210,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private lateinit var layoutManager: GridLayoutManager
 
     private lateinit var adapter: FileListAdapter
+    private lateinit var dragSelectTouchListener: FileDragSelectTouchListener
+    private var dragSelectionBefore = fileItemSetOf()
 
     private val debouncedSearchRunnable = DebouncedRunnable(Handler(Looper.getMainLooper()), 1000) {
         if (!isResumed || !viewModel.isSearchViewExpanded) {
@@ -289,6 +291,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.recyclerView.layoutManager = layoutManager
         adapter = FileListAdapter(this)
         binding.recyclerView.adapter = adapter
+        dragSelectTouchListener = FileDragSelectTouchListener(binding.recyclerView) { from, to ->
+            val selection = fileItemSetOf().apply { addAll(dragSelectionBefore) }
+            if (adapter.itemCount > 0) {
+                for (index in from..to) selection.add(adapter.getItem(index))
+            }
+            viewModel.replaceSelectedFiles(selection)
+        }
+        binding.recyclerView.addOnItemTouchListener(dragSelectTouchListener)
         val fastScroller = ThemedFastScroller.create(binding.recyclerView)
         binding.recyclerView.setOnApplyWindowInsetsListener(
             ScrollingViewOnApplyWindowInsetsListener(binding.recyclerView, fastScroller)
@@ -723,6 +733,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun onCurrentPathChanged(path: Path) {
+        dragSelectTouchListener.stop()
         updateOverlayToolbar()
         updateBottomToolbar()
     }
@@ -1472,6 +1483,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
     override fun clearSelectedFiles() {
         viewModel.clearSelectedFiles()
+    }
+
+    override fun startDragSelection(file: FileItem) {
+        val position = adapter.positionOf(file) ?: return
+        if (viewModel.pickOptions?.allowMultiple == false) return
+        dragSelectionBefore = fileItemSetOf().apply { addAll(viewModel.selectedFiles) }
+        viewModel.selectFile(file, true)
+        dragSelectTouchListener.start(position)
     }
 
     override fun selectFile(file: FileItem, selected: Boolean) {

@@ -316,7 +316,11 @@ class FileListAdapter(
                 }
             }
             setOnLongClickListener {
-                if (selectedFiles.isEmpty()) {
+                if (Settings.FILE_LIST_DRAG_SELECTION.valueCompat &&
+                    (pickOptions == null || pickOptions?.allowMultiple == true) &&
+                    isFileSelectable(file)) {
+                    listener.startDragSelection(file)
+                } else if (selectedFiles.isEmpty()) {
                     selectFile(file)
                 } else {
                     listener.openFile(file)
@@ -542,6 +546,7 @@ class FileListAdapter(
         fun clearSelectedFiles()
         fun selectFile(file: FileItem, selected: Boolean)
         fun selectFiles(files: FileItemSet, selected: Boolean)
+        fun startDragSelection(file: FileItem)
         fun openFile(file: FileItem)
         fun openFileWith(file: FileItem)
         fun cutFile(file: FileItem)

@@ -46,6 +46,13 @@
             app:singleLineTitle="false" />
 
         <SwitchPreferenceCompat
+            android:key="@string/pref_key_file_list_drag_selection"
+            android:title="@string/settings_drag_select_title"
+            android:summary="@string/settings_drag_select_summary"
+            android:defaultValue="@bool/pref_default_value_file_list_drag_selection"
+            app:singleLineTitle="false" />
+
+        <SwitchPreferenceCompat
             android:key="@string/pref_key_file_list_animation"
             android:title="@string/settings_file_list_animation_title"
             android:defaultValue="@bool/pref_default_value_file_list_animation"
