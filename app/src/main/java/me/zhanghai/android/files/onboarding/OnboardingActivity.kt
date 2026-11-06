@@ -2,7 +2,6 @@
  * Copyright (c) 2024 Hai Zhang <dreaming.in.code.zh@gmail.com>
  * All Rights Reserved.
  */
-
 package me.zhanghai.android.files.onboarding
 
 import android.Manifest
@@ -13,17 +12,43 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import androidx.activity.compose.setContent
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.app.AppActivity
-import me.zhanghai.android.files.databinding.OnboardingActivityBinding
-import me.zhanghai.android.files.databinding.OnboardingPermissionItemBinding
+import me.zhanghai.android.files.compose.theme.VFilesTheme
 import me.zhanghai.android.files.filelist.FileListActivity
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.createIntent
@@ -31,53 +56,89 @@ import me.zhanghai.android.files.util.createManageAppAllFilesAccessPermissionInt
 import me.zhanghai.android.files.util.isExternalStorageAccessGranted
 import me.zhanghai.android.files.util.supportsExternalStorageManager
 
+/**
+ * First run is an adaptive permission checklist rather than an image-only wizard.
+ * Android owns all permission dialogs. Optional grants never gate continuation.
+ */
 class OnboardingActivity : AppActivity() {
-
-    private lateinit var binding: OnboardingActivityBinding
-
     private var finishing = false
-
-    // The pages actually shown, paired with the card each one drives.
-    private lateinit var cards: List<Pair<OnboardingPage, OnboardingPermissionItemBinding>>
+    private var permissionRevision by mutableIntStateOf(0)
+    private val pages by lazy {
+        buildList {
+            add(OnboardingPage.FilesAccess)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                add(OnboardingPage.Notifications)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                add(OnboardingPage.InstallApps)
+            }
+        }
+    }
 
     private val requestNotificationPermissionLauncher: ActivityResultLauncher<String> =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { refresh() }
-
     private val requestSystemSettingsLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { refresh() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        binding = OnboardingActivityBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-
-        binding.welcomeTitleText.text =
-            getString(R.string.onboarding_welcome_title, getString(R.string.app_name))
-
-        cards = buildList {
-            add(OnboardingPage.FilesAccess to binding.cardFiles)
-            // POST_NOTIFICATIONS only exists on Android 13+. Below that there is nothing to ask
-            // for, so hide the card rather than show it as already granted, which just reads as a
-            // step the user never took.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                add(OnboardingPage.Notifications to binding.cardNotifications)
-            } else {
-                binding.cardNotifications.root.isVisible = false
-            }
-            // canRequestPackageInstalls() only exists on Android 8+. Below that, installing an
-            // APK from the file list needs no special grant, so hide the card instead of showing
-            // it as already granted.
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                add(OnboardingPage.InstallApps to binding.cardInstall)
-            } else {
-                binding.cardInstall.root.isVisible = false
+        setContent {
+            VFilesTheme {
+                val revision = permissionRevision
+                val statuses = remember(revision) { pages.map { it to it.isGranted(this) } }
+                val requiredGranted = statuses.none { (page, granted) ->
+                    page.isRequired && !granted
+                }
+                Scaffold(
+                    contentWindowInsets = WindowInsets.safeDrawing,
+                    bottomBar = {
+                        Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Button(
+                                    onClick = ::finishOnboarding,
+                                    enabled = requiredGranted,
+                                    modifier = Modifier.fillMaxWidth().widthIn(max = 760.dp)
+                                ) { Text(getString(R.string.onboarding_finish)) }
+                            }
+                        }
+                    }
+                ) { padding ->
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(padding),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().widthIn(max = 760.dp)
+                                .verticalScroll(rememberScrollState())
+                                .padding(horizontal = 16.dp, vertical = 24.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                getString(R.string.onboarding_welcome_title, getString(R.string.app_name)),
+                                style = MaterialTheme.typography.headlineMediumEmphasized,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                getString(R.string.onboarding_welcome_description),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(bottom = 16.dp)
+                            )
+                            statuses.forEach { (page, granted) ->
+                                PermissionCard(
+                                    page = page,
+                                    granted = granted,
+                                    onGrant = { page.requestGrant(this@OnboardingActivity) }
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
-        cards.forEach { (page, card) -> bindCard(card, page) }
-
-        binding.continueButton.setOnClickListener { finishOnboarding() }
-
         refresh()
     }
 
@@ -86,57 +147,70 @@ class OnboardingActivity : AppActivity() {
         refresh()
     }
 
-    private fun bindCard(card: OnboardingPermissionItemBinding, page: OnboardingPage) {
-        card.iconImage.setImageResource(page.iconRes)
-        card.titleText.setText(page.titleRes)
-        card.descriptionText.text = page.getDescription(this)
-        card.badgeText.setText(
-            if (page.isRequired) R.string.onboarding_required else R.string.onboarding_optional
-        )
-        card.grantButton.setText(R.string.onboarding_grant)
-        card.grantButton.setOnClickListener { page.requestGrant(this) }
-        card.grantedIcon.setColorFilter(
-            ContextCompat.getColor(this, android.R.color.holo_green_dark)
-        )
-    }
-
     private fun refresh() {
-        if (finishing) {
-            return
-        }
-
-        cards.forEach { (page, card) -> updateCard(card, page) }
-
-        // Only the required pages gate the button; the optional ones can be skipped. Granting the
-        // last permission deliberately does not leave on its own: FileListActivity already skips
-        // this screen when there is nothing to ask for, so an automatic exit here could only ever
-        // happen mid-flow, throwing the user into the file list without them ever confirming.
-        binding.continueButton.isEnabled =
-            cards.none { (page, _) -> page.isRequired && !page.isGranted(this) }
-    }
-
-    private fun updateCard(card: OnboardingPermissionItemBinding, page: OnboardingPage) {
-        val granted = page.isGranted(this)
-        card.grantButton.isVisible = !granted
-        card.grantedIcon.isVisible = granted
+        if (!finishing) permissionRevision++
     }
 
     private fun finishOnboarding() {
-        if (finishing) {
-            return
-        }
+        if (finishing || pages.any { it.isRequired && !it.isGranted(this) }) return
         finishing = true
         Settings.ONBOARDING_COMPLETED.putValue(true)
         startActivity(FileListActivity::class.createIntent())
         finish()
     }
 
-    // ── permission launchers (called by pages) ────────────────────────────────
+    @Composable
+    private fun PermissionCard(
+        page: OnboardingPage,
+        granted: Boolean,
+        onGrant: () -> Unit
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraLarge,
+            color = if (page.isRequired && !granted)
+                MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.surfaceContainer
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(page.iconRes),
+                        contentDescription = null
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            getString(page.titleRes),
+                            style = MaterialTheme.typography.titleLargeEmphasized
+                        )
+                        Text(
+                            if (granted) getString(R.string.onboarding_granted)
+                            else getString(
+                                if (page.isRequired) R.string.onboarding_required
+                                else R.string.onboarding_optional
+                            ),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
+                Text(page.getDescription(this@OnboardingActivity),
+                    style = MaterialTheme.typography.bodyMedium)
+                if (!granted) {
+                    Button(onClick = onGrant, modifier = Modifier.align(Alignment.End)) {
+                        Text(getString(R.string.onboarding_grant))
+                    }
+                }
+            }
+        }
+    }
 
     fun openStorageSettings() {
-        // Must follow the same condition as isExternalStorageAccessGranted(), otherwise a device
-        // with no "All files access" page would be sent to a screen that does not exist while
-        // being checked for the permission it was never asked for.
         val intent = if (Environment::class.supportsExternalStorageManager()) {
             Environment::class.createManageAppAllFilesAccessPermissionIntent(packageName)
         } else {
