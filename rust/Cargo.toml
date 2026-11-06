@@ -15,7 +15,7 @@ serde_json = "1"
 rawzip = "0.5.2"
 ripzip = "0.1.0"
 flate2 = "1"
-sevenz-turbo = { version = "0.23.2", default-features = false, features = ["compress", "aes256", "util", "deflate", "bzip2", "zstd", "lz4", "ppmd"] }
+sevenz-turbo = { version = "0.23.2", default-features = false, features = ["compress", "aes256", "native-crypto", "util", "deflate", "bzip2", "zstd", "lz4", "ppmd"] }
 unrar-rs = { version = "0.10", default-features = false, features = ["crypto-rust"] }
 tar = "0.4"
 lzma-rust2 = { version = "0.22", features = ["xz", "encoder"] }
