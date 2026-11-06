@@ -7,6 +7,9 @@
     <string name="settings_expressive_storage">Storage &amp; bookmarks</string>
     <string name="settings_expressive_opening">File opening &amp; archives</string>
     <string name="settings_expressive_advanced">Advanced</string>
+    <string name="settings_expressive_network_advanced">Network &amp; advanced</string>
+    <string name="settings_expressive_ftp_summary">Run and configure the FTP server</string>
+    <string name="settings_expressive_default_accent">Default</string>
     <string name="settings_expressive_preview">Appearance preview</string>
     <string name="settings_expressive_preview_sample">Your files</string>
     <string name="settings_expressive_preview_row">Folder preview</string>
