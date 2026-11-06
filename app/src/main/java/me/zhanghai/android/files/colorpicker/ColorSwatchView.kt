@@ -54,5 +54,9 @@ class ColorSwatchView : CheckableView {
             mutate()
             setColor(color)
         }
+        contentDescription = context.getString(
+            R.string.color_picker_swatch_hex_format,
+            String.format(java.util.Locale.ROOT, "#%06X", color and 0xFFFFFF)
+        )
     }
 }

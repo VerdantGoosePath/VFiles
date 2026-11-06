@@ -544,6 +544,7 @@
     <string name="navigation_change_bookmark_path">Choose bookmark folder</string>
     <string name="navigation_remove_bookmark_title">Remove bookmark?</string>
     <string name="navigation_remove_bookmark_message">Remove “%1$s” from your bookmarks? The folder and its files will not be deleted.</string>
+    <string name="color_picker_swatch_hex_format">Color %1$s</string>
     <string name="storage_lan_discovery_failed">Could not discover local network servers. You can retry or enter a server manually.</string>
     <string name="storage_list_title">Storage</string>
     <string name="storage_list_empty">No storage</string>
