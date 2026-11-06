@@ -12,6 +12,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -65,6 +66,7 @@ fun VFilesScreenScaffold(
 }
 
 /** Indeterminate short wait vs determinate real file byte progress. */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun VFilesFileProgress(
     title: String,

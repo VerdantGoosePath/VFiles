@@ -162,7 +162,9 @@ configurations.all {
 dependencies {
     // Compose 1.12+ is compiled with API 37; targetSdk intentionally stays 34 until final QA.
     // Stable BOM controls Compose runtime/UI. Material3 explicitly overrides the BOM's
-    // 1.4 stable to enable MaterialExpressiveTheme and native segmented lists.\n    // Pinned at 1.5.0-alpha23 because alpha24+ adds material3-ripple with minSdk 24;\n    // VFiles must retain minSdk 23. Do not force-override that library's minSdk.
+    // 1.4 stable to enable MaterialExpressiveTheme and native segmented lists.
+    // Pinned at 1.5.0-alpha23 because alpha24+ adds material3-ripple with minSdk 24;
+    // VFiles must retain minSdk 23. Do not force-override that library's minSdk.
     def composeBom = platform('androidx.compose:compose-bom:2026.09.00')
     implementation composeBom
     androidTestImplementation composeBom

@@ -203,7 +203,7 @@ class EnumSettingLiveData<E : Enum<*>?>(
         key: String,
         defaultValue: E
     ): E {
-        val valueOrdinal = sharedPreferences.getString(key, null)?.toInt() ?: return defaultValue
+        val valueOrdinal = sharedPreferences.getString(key, null)?.toIntOrNull() ?: return defaultValue
         return if (valueOrdinal in enumValues.indices) enumValues[valueOrdinal] else defaultValue
     }
 
