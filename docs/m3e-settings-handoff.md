@@ -17,12 +17,12 @@ Existing typed `SettingLiveData` and resource-derived preference key/default val
 | `FILE_LIST_VIEW_TYPE` | Enum ordinal string | Browser list/grid; unchanged; path overrides `PathSettings.getFileListViewType` preserved. |
 | `FILE_LIST_SORT_OPTIONS` | Parcelled `FileSortOptions` | Browser sorting; unchanged; per-path overrides preserved. |
 | `CREATE_ARCHIVE_TYPE` | Resource-name string through `ResourceIdSettingLiveData` | Archive creation dialog, unchanged. |
-| `FTP_SERVER_ANONYMOUS_LOGIN` | Boolean | Existing FTP server screen; retained intact through Settings network link. |
-| `FTP_SERVER_USERNAME` | String | Existing FTP screen, never rendered in main Settings. |
-| `FTP_SERVER_PASSWORD` | String | Existing FTP screen; **never rendered, logged or summarized by the Compose settings screen**. |
-| `FTP_SERVER_PORT` | Integer | Existing FTP screen. |
-| `FTP_SERVER_HOME_DIRECTORY` | Parcelled Path | Existing FTP screen and directory picker. |
-| `FTP_SERVER_WRITABLE` | Boolean | Existing FTP server screen. |
+| `FTP_SERVER_ANONYMOUS_LOGIN` | Boolean | Expressive `FtpServerFragment`/screen, accessible from Network & advanced; retained state/credentials contracts. |
+| `FTP_SERVER_USERNAME` | String | Expressive FTP configuration, not rendered on the main Settings page. |
+| `FTP_SERVER_PASSWORD` | String | Expressive FTP configuration; secret is masked while editing and **never shown, logged or summarized in plaintext**. An explicit Copy password action is retained. |
+| `FTP_SERVER_PORT` | Integer | Expressive FTP configuration; edits disabled while server is active. |
+| `FTP_SERVER_HOME_DIRECTORY` | Parcelled Path | Expressive FTP settings and `FileListActivity.OpenDirectoryContract` picker, unchanged typed Path persistence. |
+| `FTP_SERVER_WRITABLE` | Boolean | Expressive FTP settings; writes disabled while server is active. |
 | `THEME_COLOR` | Enum ordinal string (`ThemeColor.DYNAMIC` last) | Expressive swatches, wallpaper sampling, `CustomThemeHelper.sync()` for legacy View surfaces; live preview from real `VFilesTheme` resolver. |
 | `MATERIAL_DESIGN_3` | Boolean | Obsolete legacy key retained inert. Modern view theme no longer obeys its false value; removed from all user-facing settings. |
 | `NIGHT_MODE` | Enum ordinal string (5 old values kept) | Expressive single choice; `NightModeHelper.sync()` owns recreation; system/time/battery modes still supported. |
@@ -49,7 +49,8 @@ Locale is a separate `LocaleManagerCompat` / AppCompat persistence contract, **n
 - `StandardDirectoryListActivity` → `StandardDirectoryListFragment` (Compose, original typed overrides).
 - `DefaultAppsActivity` → `DefaultAppsFragment` (Compose, external package choices only).
 - `BookmarkDirectoryListActivity` → `BookmarkDirectoryListFragment` (Compose, accessible reorder buttons).
-- Storage management, FTP server operation/settings and bookmark edit dialogs keep their existing activities/contracts; these involve storage/network functionality beyond this settings entry/selection workstream.
+- `FtpServerActivity` → `FtpServerFragment` → `ExpressiveFtpServerScreen`: state-aware start/stop, username/password/port/root/writable/anonymous, live URL with network receiver, explicit URL/password copying, Quick Settings tile on API33+. Original FTP service and typed state storage are retained.
+- Storage management and bookmark edit dialogs keep their existing activities/contracts; those involve file/storage operations beyond the settings entry/selection workstream.
 - About screen remains the original `AboutActivity` accessed from settings.
 
 ## Regression verification
@@ -69,6 +70,6 @@ Instrumentation source `ExpressiveSettingsTest` checks a visible appearance prev
 
 Shared file deliberately edited: `theme/custom/CustomThemeHelper.kt`. It now treats M3 as always-on for *View* themes and applies wallpaper palette only when `ThemeColor.DYNAMIC` was selected; it retains old stored switch data. Other agents may be migrating the View root; reconcile any edits to this helper carefully. No Gradle, browser or secondary-viewer/editor files changed.
 
-The other old preference-fragment classes (for example standalone FTP preference widgets) remain because some storage/network screens still use them. They do **not** provide an alternate entry into the now-removed main XML settings route.
+The replaced main and FTP preference-fragment/XML routes have been removed. Some independent storage-editing screens still use existing preference-style controls and dialogs and are outside the settings entry/screen replacement.
 
 Bookmark ordering is kept with explicit move-up/move-down buttons rather than the former drag-handle gesture, increasing accessibility at the cost of drag interaction. The actual running tests and emulators, rather than this note, determine release readiness.
