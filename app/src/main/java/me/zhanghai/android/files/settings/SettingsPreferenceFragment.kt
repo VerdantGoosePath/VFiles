@@ -8,6 +8,8 @@ package me.zhanghai.android.files.settings
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import androidx.preference.Preference
+import me.zhanghai.android.files.provider.archive.archiver.ArchiveSettings
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
 import me.zhanghai.android.files.theme.custom.ThemeColor
@@ -21,6 +23,30 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
     override fun onCreatePreferencesFix(savedInstanceState: Bundle?, rootKey: String?) {
         addPreferencesFromResource(R.xml.settings)
 
+        val zipPreference = preferenceScreen.findPreference<Preference>(
+            getString(R.string.pref_key_archive_zip_engine)
+        )!!
+        zipPreference.onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, value ->
+            updateArchivePreferences(value.toString())
+            true
+        }
+        updateArchivePreferences(ArchiveSettings.zipEngine())
+
+        val advancedToggle = preferenceScreen.findPreference<Preference>(
+            getString(R.string.pref_key_archive_advanced_toggle)
+        )!!
+        val advancedCategory = preferenceScreen.findPreference<Preference>(
+            getString(R.string.pref_key_archive_advanced_category)
+        )!!
+        advancedToggle.setOnPreferenceClickListener {
+            advancedCategory.isVisible = !advancedCategory.isVisible
+            advancedToggle.setSummary(
+                if (advancedCategory.isVisible) R.string.archive_advanced_open
+                else R.string.archive_advanced_closed
+            )
+            true
+        }
+
         localePreference = preferenceScreen.findPreference(getString(R.string.pref_key_locale))!!
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             localePreference.setApplicationLocalesPre33 = { locales ->
@@ -28,6 +54,23 @@ class SettingsPreferenceFragment : PreferenceFragmentCompat() {
                 activity.setApplicationLocalesPre33(locales)
             }
         }
+    }
+
+
+    private fun updateArchivePreferences(engine: String) {
+        val rawzip = engine != "ripzip"
+        preferenceScreen.findPreference<Preference>(
+            getString(R.string.pref_key_archive_rawzip_level)
+        )?.isVisible = rawzip
+        preferenceScreen.findPreference<Preference>(
+            getString(R.string.pref_key_archive_ripzip_level)
+        )?.isVisible = !rawzip
+        preferenceScreen.findPreference<Preference>(
+            getString(R.string.pref_key_archive_rawzip_method)
+        )?.isVisible = rawzip
+        preferenceScreen.findPreference<Preference>(
+            getString(R.string.pref_key_archive_ripzip_method)
+        )?.isVisible = !rawzip
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
