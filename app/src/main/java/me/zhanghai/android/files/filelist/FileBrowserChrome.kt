@@ -214,7 +214,8 @@ fun VFilesBrowserChrome(
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
             }
-            if (state.selectedCount > 0) {
+            // Picker retains its contractual action mode and URI result/permission controls.
+            if (state.selectedCount > 0 && !state.picker) {
                 Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
