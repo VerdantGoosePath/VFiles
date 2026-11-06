@@ -16,9 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -111,7 +108,7 @@ private fun BookmarkSettingsScreen(
                 title = { Text(stringResource(R.string.settings_bookmark_directory_list_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack,
+                        Icon(painterResource(R.drawable.settings_expressive_back_24dp),
                             contentDescription = stringResource(R.string.settings_expressive_back))
                     }
                 },
@@ -121,7 +118,7 @@ private fun BookmarkSettingsScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onAddBookmark,
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                icon = { Icon(painterResource(R.drawable.add_icon_white_24dp), contentDescription = null) },
                 text = { Text(stringResource(R.string.settings_expressive_add_bookmark)) }
             )
         }
