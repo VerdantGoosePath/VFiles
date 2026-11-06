@@ -800,7 +800,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     VFilesBrowserContent(
                         state = browserContentState,
                         onRefresh = { refresh() },
-                        onItemAction = { file, action -> onComposeItemAction(file, action) }
+                        onItemAction = { file, action -> onComposeItemAction(file, action) },
+                        onRangeSelect = { onComposeRangeSelect(it) },
+                        onListReachedTop = { focusToolbar() }
                     )
                 }
             }
@@ -905,6 +907,20 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             pickOptions = viewModel.pickOptions,
             nameEllipsize = Settings.FILE_NAME_ELLIPSIZE.valueCompat
         )
+    }
+
+    private fun onComposeRangeSelect(files: List<FileItem>) {
+        val eligible = files.filter { canSelectBrowserFile(it, viewModel.pickOptions) }
+        if (eligible.isEmpty()) return
+        val pick = viewModel.pickOptions
+        if (pick != null && !pick.allowMultiple) {
+            viewModel.clearSelectedFiles()
+            viewModel.selectFile(eligible.last(), true)
+        } else {
+            val selection = fileItemSetOf()
+            selection.addAll(eligible)
+            viewModel.selectFiles(selection, true)
+        }
     }
 
     private fun onComposeItemAction(file: FileItem, action: FileBrowserItemAction) {
