@@ -431,7 +431,7 @@ private fun FileBrowserItemMenu(
     Box {
         IconButton(onClick = { onExpanded(true) }) {
             Icon(
-                painterResource(R.drawable.more_vert_icon_control_normal_24dp),
+                painterResource(R.drawable.more_vertical_icon_white_24dp),
                 contentDescription = "File actions"
             )
         }
