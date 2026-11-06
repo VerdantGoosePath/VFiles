@@ -33,4 +33,34 @@ for protocol in ("Ftp", "Sftp", "Smb", "WebDav"):
     for contract in ("port !in 1..65535", "confirmRemoveStorage",
                      "showRemoteConnectionError", "Storages.addOrReplace"):
         assert contract in code, protocol + ": " + contract
+# Phase E post-migration screens keep one expressive root and original data writes.
+for file in (
+    "about/AboutFragment.kt",
+    "storage/StorageListFragment.kt",
+    "ftpserver/FtpServerFragment.kt",
+    "settings/DefaultAppsFragment.kt",
+    "settings/StandardDirectoryListFragment.kt",
+):
+    source = (src / file).read_text()
+    assert "VFilesTheme" in source and "VFilesScreenScaffold" in source, file
+assert "VFilesTheme" in (src / "onboarding/OnboardingActivity.kt").read_text()
+assert "Storages.move" in (src / "storage/StorageListFragment.kt").read_text()
+assert "Storages.addOrReplace" in (src / "storage/EditFtpServerFragment.kt").read_text()
+for protocol in ("Ftp", "Sftp", "Smb", "WebDav"):
+    vm = (src / f"storage/Edit{protocol}ServerViewModel.kt").read_text()
+    assert "fun cancelConnecting()" in vm, protocol
+    assert "ensureActive()" in vm, protocol
+    ui = (src / f"storage/Edit{protocol}ServerFragment.kt").read_text()
+    assert "binding.connectingInputBlocker.isVisible" in ui, protocol
+    layout = (root / f"res/layout/edit_{protocol.lower()}_server_fragment.xml").read_text()
+    assert layout.index("connectingInputBlocker") > layout.index("</androidx.core.widget.NestedScrollView>"), protocol
+    assert layout.index('android:id="@+id/progress"') > layout.index("connectingInputBlocker"), protocol
+
+# Internal viewer extras are intentionally absent from external intents.
+jobs = (src / "filejob/FileJobs.kt").read_text()
+shortcut = (src / "filelist/OpenFileActivity.kt").read_text()
+assert "applyExternalDefaultOpenApp(mimeType, service)" in jobs
+assert ".apply { extraPath = file }" not in jobs
+assert "applyExternalDefaultOpenApp(mimeType, this)" in shortcut
+assert "viewer.saveas.SaveAsActivity" in manifest  # Save As remains file management.
 print("Secondary UI contract checks passed")
