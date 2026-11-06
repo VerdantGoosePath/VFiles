@@ -9,6 +9,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.ShapeDrawable;
 import android.util.AttributeSet;
+import android.util.TypedValue;
+import com.google.android.material.loadingindicator.LoadingIndicator;
+import com.google.android.material.loadingindicator.LoadingIndicatorDrawable;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -19,6 +22,7 @@ import me.zhanghai.android.files.compat.ContextCompatKt;
 import me.zhanghai.android.files.util.ContextExtensionsKt;
 
 public class ThemedSwipeRefreshLayout extends SwipeRefreshLayout {
+    private LoadingIndicatorDrawable expressiveRefreshDrawable;
     public ThemedSwipeRefreshLayout(@NonNull Context context) {
         super(context);
 
@@ -49,6 +53,14 @@ public class ThemedSwipeRefreshLayout extends SwipeRefreshLayout {
         ((ShapeDrawable) mCircleView.getBackground()).getPaint().setColor(backgroundColor);
         setColorSchemeColors(ContextExtensionsKt.getColorByAttr(context,
                 androidx.appcompat.R.attr.colorAccent));
+        TypedValue expressiveAttr = new TypedValue();
+        if (context.getTheme().resolveAttribute(R.attr.isMaterial3Expressive,
+                expressiveAttr, true) && expressiveAttr.data != 0) {
+            // Use the same circular refresh container, but replace its spinning arc with
+            // Material 3 Expressive's morphing loading shape.
+            expressiveRefreshDrawable = new LoadingIndicator(context).getDrawable();
+            mCircleView.setImageDrawable(expressiveRefreshDrawable);
+        }
     }
 
     @Override

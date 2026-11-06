@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import me.zhanghai.android.files.theme.custom.CustomThemeHelper
 import me.zhanghai.android.files.font.FontHelper
+import me.zhanghai.android.files.theme.expressive.ExpressiveLoadingHelper
 import me.zhanghai.android.files.theme.night.NightModeHelper
 
 abstract class AppActivity : AppCompatActivity() {
@@ -30,6 +31,7 @@ abstract class AppActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
         FontHelper.install(this)
+        ExpressiveLoadingHelper.install(this)
     }
 
     override fun onSupportNavigateUp(): Boolean {

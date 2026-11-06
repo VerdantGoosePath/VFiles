@@ -12,6 +12,7 @@
     </style>
     <style name="Platform.Theme.MaterialFiles.Material3Expressive" parent="Platform.V21.Theme.MaterialFiles.Material3Expressive" />
     <style name="Base.Theme.MaterialFiles.Material3Expressive" parent="Platform.Theme.MaterialFiles.Material3Expressive">
+        <item name="isMaterial3Expressive">true</item>
 
         <item name="actionBarTheme">@style/ThemeOverlay.MaterialFiles.ActionBar</item>
         <item name="actionBarPopupTheme">@style/ThemeOverlay.MaterialFiles.ActionBarPopup</item>
@@ -67,6 +68,7 @@
     </style>
     <style name="Platform.Theme.MaterialFiles.Material3Expressive.Immersive" parent="Platform.V21.Theme.MaterialFiles.Material3Expressive.Immersive" />
     <style name="Base.Theme.MaterialFiles.Material3Expressive.Immersive" parent="Platform.Theme.MaterialFiles.Material3Expressive.Immersive">
+        <item name="isMaterial3Expressive">true</item>
 
         <item name="actionBarTheme">@style/ThemeOverlay.MaterialFiles.ActionBar</item>
         <item name="actionBarPopupTheme">@style/ThemeOverlay.MaterialFiles.ActionBarPopup</item>
