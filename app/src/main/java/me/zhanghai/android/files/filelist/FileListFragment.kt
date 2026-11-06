@@ -518,6 +518,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         tintOverflowMenuIcons(menu)
         setUpSearchView()
+        menuBinding.searchItem.isVisible = false // Compose owns visible search.
     }
 
     private fun tintOverflowMenuIcons(menu: Menu) {
