@@ -55,8 +55,7 @@ fun VFilesAdaptivePathNavigation(
                                 }
                             },
                             selected = destination.id == activeId,
-                            onClick = { onSelect(destination.id) },
-                            enabled = destination.enabled
+                            onClick = { if (destination.enabled) onSelect(destination.id) }
                         )
                     }
                 }
