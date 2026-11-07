@@ -53,6 +53,9 @@ browser = (src / "filelist/FileBrowserContent.kt").read_text()
 assert "key(state.pathKey, state.files" in browser
 assert "produceState<List<FileItem>?>(initialValue = null)" in browser
 assert "visibleResult == null" in browser
+fragment = (src / "filelist/FileListFragment.kt").read_text()
+assert "getSubtitle(files.orEmpty())" in fragment
+assert "throwable.printStackTrace()" not in fragment
 assert "Modifier.clearAndSetSemantics { }" in browser
 chrome = (src / "filelist/FileBrowserChrome.kt").read_text()
 assert "modifier = Modifier.clearAndSetSemantics { }" in chrome
@@ -63,6 +66,7 @@ assert "settings_expressive_back_24dp" in scaffold
 
 ftp = (src / "ftpserver/ExpressiveFtpServerScreen.kt").read_text()
 assert "parseFtpListeningPort" in ftp and "it in 1..65535" in ftp
+assert "rememberSaveable(title)" in ftp and "if (secret) remember(title)" in ftp
 assert (Path("app/src/test/java/me/zhanghai/android/files/ftpserver/FtpPortValidationTest.kt")).exists()
 save_as = (src / "viewer/saveas/SaveAsActivity.kt").read_text()
 assert "if (savedInstanceState != null) return" in save_as

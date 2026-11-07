@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -100,7 +101,7 @@ internal fun ExpressiveFtpServerScreen(
         FtpServerService.State.STOPPED -> stringResource(R.string.ftp_server_state_summary_stopped)
     }
 
-    var editKey by remember { mutableStateOf<String?>(null) }
+    var editKey by rememberSaveable { mutableStateOf<String?>(null) }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scroll.nestedScrollConnection),
@@ -285,7 +286,10 @@ private fun FtpScalarEditDialog(
     onSave: (String) -> Unit
 ) {
     // Do not save transient password text in SavedStateRegistry / rememberSaveable.
-    var input by remember(title) { mutableStateOf(initial) }
+    // Save ordinary port/username drafts on rotation, but never persist typed passwords.
+    val inputState = if (secret) remember(title) { mutableStateOf(initial) }
+        else rememberSaveable(title) { mutableStateOf(initial) }
+    val input by inputState
     val valid = !numeric || parseFtpListeningPort(input) != null
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -294,7 +298,7 @@ private fun FtpScalarEditDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = input,
-                    onValueChange = { input = it },
+                    onValueChange = { inputState.value = it },
                     label = { Text(title) },
                     isError = !valid,
                     singleLine = true,

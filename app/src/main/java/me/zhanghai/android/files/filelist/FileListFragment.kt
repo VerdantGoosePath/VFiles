@@ -1072,8 +1072,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val isSearching = viewModel.searchState.isSearching
         when {
             stateful is Failure -> binding.toolbar.setSubtitle(R.string.error)
-            stateful is Loading && !isSearching -> binding.toolbar.setSubtitle(R.string.loading)
-            else -> binding.toolbar.subtitle = getSubtitle(files!!)
+            stateful is Loading && (!isSearching || files == null) ->
+                binding.toolbar.setSubtitle(R.string.loading)
+            else -> binding.toolbar.subtitle = getSubtitle(files.orEmpty())
         }
         val hasFiles = !files.isNullOrEmpty()
         binding.swipeRefreshLayout.isRefreshing = stateful is Loading && (hasFiles || isSearching)
@@ -1081,7 +1082,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasFiles)
         val throwable = (stateful as? Failure)?.throwable
         if (throwable != null) {
-            throwable.printStackTrace()
+            // Provider exceptions can embed credentials or authenticated remote URLs.
             val error = getReadableErrorMessage(throwable)
             if (hasFiles) {
                 showToast(error)

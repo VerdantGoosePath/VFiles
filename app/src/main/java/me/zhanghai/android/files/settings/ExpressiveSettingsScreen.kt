@@ -51,6 +51,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -208,8 +209,8 @@ internal fun ExpressiveSettingsScreen(
     val showPdf by Settings.SHOW_PDF_THUMBNAIL_PRE_28.observeCompose()
     val remoteThumbs by Settings.READ_REMOTE_FILES_FOR_THUMBNAIL.observeCompose()
 
-    var dialog by remember { mutableStateOf<String?>(null) }
-    var confirmRoot by remember { mutableStateOf(false) }
+    var dialog by rememberSaveable { mutableStateOf<String?>(null) }
+    var confirmRoot by rememberSaveable { mutableStateOf(false) }
     val nightNames = remember(context) { context.resources.getStringArray(R.array.settings_night_mode_entries).toList() }
     val ellipsisNames = remember(context) { context.resources.getStringArray(R.array.settings_file_name_ellipsize_entries).toList() }
     val rootNames = remember(context) { context.resources.getStringArray(R.array.settings_root_strategy_entries).toList() }
