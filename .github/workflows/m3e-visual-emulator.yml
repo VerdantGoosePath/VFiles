@@ -52,17 +52,38 @@ jobs:
           disable-animations: true
           script: |
             set +e
-            ./gradlew --no-daemon :app:connectedDebugAndroidTest
-            result=$?
             mkdir -p m3e-screenshots
-            adb logcat -d -t 1500 -v threadtime > m3e-screenshots/emulator-tail.log || true
-            for image in browser-light browser-dark settings ftp; do
-              adb exec-out run-as fr.vroot.vfiles.fork cat "files/m3e-screenshots/${image}.png" > "m3e-screenshots/${image}.png"
-              if [[ ! -s "m3e-screenshots/${image}.png" ]]; then
-                rm -f "m3e-screenshots/${image}.png"
-              fi
-            done
-            exit "$result"
+            capture_images() {
+              local label="$1"
+              for image in browser-light browser-dark settings ftp; do
+                adb exec-out run-as fr.vroot.vfiles.fork cat "files/m3e-screenshots/${image}.png" > "m3e-screenshots/${image}-${label}.png"
+                if [[ ! -s "m3e-screenshots/${image}-${label}.png" ]]; then
+                  rm -f "m3e-screenshots/${image}-${label}.png"
+                fi
+              done
+            }
+            # Actual phone-sized, system-default typography and target 34.
+            ./gradlew --no-daemon :app:connectedDebugAndroidTest
+            phone_result=$?
+            capture_images phone
+            adb logcat -d -t 1500 -v threadtime > m3e-screenshots/emulator-phone.log || true
+            # A second screen-size / font-scale / target-SDK canary tests real runtime
+            # reflow, not a synthetic Compose preview. Only advance if basic UI tests pass.
+            wide_result=0
+            if [[ "$phone_result" -eq 0 ]]; then
+              adb shell wm size 840x1200
+              adb shell wm density 160
+              adb shell settings put system font_scale 2.0
+              adb shell am force-stop fr.vroot.vfiles.fork
+              ./gradlew --no-daemon -PtargetApi37 :app:connectedDebugAndroidTest
+              wide_result=$?
+              capture_images wide-200-target37
+              adb logcat -d -t 1500 -v threadtime > m3e-screenshots/emulator-wide.log || true
+              adb shell wm size reset
+              adb shell wm density reset
+              adb shell settings put system font_scale 1.0
+            fi
+            if [[ "$phone_result" -ne 0 || "$wide_result" -ne 0 ]]; then exit 1; fi
       - name: Upload instrumentation results and screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -70,7 +91,7 @@ jobs:
           name: m3e-api35-emulator-ui-evidence
           path: |
             m3e-screenshots/*.png
-            m3e-screenshots/emulator-tail.log
+            m3e-screenshots/emulator-*.log
             app/build/reports/androidTests/connected/
             app/build/outputs/androidTest-results/connected/
           if-no-files-found: warn
