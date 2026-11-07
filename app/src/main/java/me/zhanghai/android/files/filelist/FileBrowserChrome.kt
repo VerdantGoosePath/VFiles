@@ -3,6 +3,7 @@ package me.zhanghai.android.files.filelist
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
@@ -289,7 +289,8 @@ private fun BrowserSortSheet(
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 28.dp),
+            modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp).padding(bottom = 28.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
