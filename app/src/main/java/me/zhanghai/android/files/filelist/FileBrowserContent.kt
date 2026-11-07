@@ -161,7 +161,7 @@ fun VFilesBrowserContent(
         onRefresh = onRefresh,
         modifier = Modifier.fillMaxSize()
     ) {
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             if (state.error != null && visible.isNotEmpty()) {
                 Surface(color = MaterialTheme.colorScheme.errorContainer) {
                     Row(
@@ -210,9 +210,12 @@ fun VFilesBrowserContent(
                     savedState.SaveableStateProvider(state.pathKey + ":" + state.viewType.name) {
                         if (state.viewType == FileViewType.LIST) {
                             val listState = rememberLazyListState()
+                            // Long file names and metadata should not span an entire
+                            // expanded Android 17 window: bound the *list* but retain
+                            // full-width adaptive media grids.
                             LazyColumn(
                                 state = listState,
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
                                 contentPadding = PaddingValues(
                                     start = 16.dp, end = 16.dp, top = 8.dp, bottom = contentBottomPadding
                                 ),
@@ -378,15 +381,14 @@ private fun FileBrowserItem(
                 onClickLabel = if (hasSelection) stringResource(
                     if (selected) R.string.file_browser_deselect else R.string.select
                 ) else null,
-                onLongClickLabel = stringResource(R.string.select),
+                onLongClickLabel = if (selectable) stringResource(R.string.select) else null,
                 onClick = {
                     if (hasSelection && selectable) onAction(FileBrowserItemAction.SELECT)
                     else onAction(FileBrowserItemAction.OPEN)
                 },
-                onLongClick = {
-                    if (selectable) onAction(FileBrowserItemAction.SELECT)
-                    else if (directory) onAction(FileBrowserItemAction.OPEN)
-                }
+                onLongClick = if (selectable) {
+                    { onAction(FileBrowserItemAction.SELECT) }
+                } else null
             )
     ) {
         if (grid) {
