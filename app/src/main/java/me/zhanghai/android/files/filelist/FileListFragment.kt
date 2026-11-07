@@ -867,7 +867,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             setContent {
                 VFilesTheme {
                     VFilesCreateMenu(
-                        enabled = !browserChromeState.picker && !browserChromeState.currentReadOnly,
+                        enabled = !browserChromeState.picker && !browserChromeState.currentReadOnly &&
+                            browserChromeState.selectedCount == 0 && browserChromeState.pasteCount == 0 &&
+                            !browserChromeState.searchExpanded,
                         expanded = browserFabExpanded,
                         onExpandedChange = { browserFabExpanded = it },
                         onCreateFile = { showCreateFileDialog() },
@@ -908,7 +910,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             pasteCount = paste?.files?.size ?: 0,
             pasteIsCopy = paste?.copy == true
         )
-        if (browserChromeState.picker || browserChromeState.currentReadOnly) {
+        if (browserChromeState.picker || browserChromeState.currentReadOnly ||
+            browserChromeState.selectedCount > 0 || browserChromeState.pasteCount > 0 ||
+            browserChromeState.searchExpanded) {
             browserFabExpanded = false
         }
         updateBrowserContent()
@@ -1157,7 +1161,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             return
         }
         val searchViewExpanded = viewModel.isSearchViewExpanded
-        menuBinding.viewSortItem.isVisible = !searchViewExpanded
+        // Compose already exposes sorting and layout in the browser. Do not repeat their
+        // controls in the legacy Toolbar when Compose is rendering file content.
+        menuBinding.viewSortItem.isVisible = !searchViewExpanded && !useComposeFileList
         if (searchViewExpanded) {
             return
         }
