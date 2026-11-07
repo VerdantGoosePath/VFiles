@@ -257,11 +257,7 @@ fun VFilesBrowserChrome(
                     }
                 }
             }
-            if (state.selectedCount > 0 && !state.picker) {
-                BrowserSelectionBar(state, onSelection)
-            } else if (state.pasteCount > 0 && !state.picker) {
-                BrowserPasteBar(state, onSelection)
-            }
+            // Contextual file operations are docked over content, not stacked beneath search.
         }
     }
     if (sortSheetOpen) {
@@ -384,14 +380,17 @@ private fun BrowserSwitchRow(title: String, checked: Boolean, onChange: (Boolean
 }
 
 @Composable
-private fun BrowserSelectionBar(
+internal fun BrowserSelectionBar(
     state: FileBrowserChromeState,
-    onSelection: (FileBrowserSelectionCommand) -> Unit
+    onSelection: (FileBrowserSelectionCommand) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var moreOpen by remember { mutableStateOf(false) }
     Surface(
+        modifier = modifier,
         color = MaterialTheme.colorScheme.secondaryContainer,
-        shape = MaterialTheme.shapes.extraLarge
+        shape = MaterialTheme.shapes.extraLarge,
+        shadowElevation = 8.dp
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -462,13 +461,16 @@ private fun BrowserSelectionBar(
 }
 
 @Composable
-private fun BrowserPasteBar(
+internal fun BrowserPasteBar(
     state: FileBrowserChromeState,
-    onSelection: (FileBrowserSelectionCommand) -> Unit
+    onSelection: (FileBrowserSelectionCommand) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Surface(
+        modifier = modifier,
         color = MaterialTheme.colorScheme.tertiaryContainer,
-        shape = MaterialTheme.shapes.extraLarge
+        shape = MaterialTheme.shapes.extraLarge,
+        shadowElevation = 8.dp
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
