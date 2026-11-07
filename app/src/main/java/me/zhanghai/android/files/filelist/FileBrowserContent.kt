@@ -356,7 +356,9 @@ private fun FileBrowserItem(
             }
             .combinedClickable(
                 enabled = enabled,
-                onClickLabel = if (hasSelection) stringResource(R.string.select) else null,
+                onClickLabel = if (hasSelection) stringResource(
+                    if (selected) R.string.file_browser_deselect else R.string.select
+                ) else null,
                 onLongClickLabel = stringResource(R.string.select),
                 onClick = {
                     if (hasSelection && selectable) onAction(FileBrowserItemAction.SELECT)
@@ -379,6 +381,7 @@ private fun FileBrowserItem(
                 ) {
                     FileBrowserThumbnail(
                         file = file,
+                        grid = true,
                         modifier = if (directory || !file.supportsThumbnail) Modifier.size(80.dp)
                             else Modifier.fillMaxSize()
                     )
@@ -392,7 +395,7 @@ private fun FileBrowserItem(
                     Box(Modifier.align(Alignment.TopEnd)) {
                         FileBrowserItemMenu(
                             file, readOnly, archivePath,
-                            pickOptions != null, selectable, menuExpanded,
+                            pickOptions != null, selectable, selected, menuExpanded,
                             { menuExpanded = it }, onAction
                         )
                     }
@@ -414,7 +417,7 @@ private fun FileBrowserItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                FileBrowserThumbnail(file, Modifier.size(44.dp))
+                FileBrowserThumbnail(file, Modifier.size(44.dp), grid = false)
                 Column(Modifier.weight(1f)) {
                     Text(
                         file.name,
@@ -443,7 +446,7 @@ private fun FileBrowserItem(
                 }
                 FileBrowserItemMenu(
                     file, readOnly, archivePath,
-                    pickOptions != null, selectable, menuExpanded, { menuExpanded = it }, onAction
+                    pickOptions != null, selectable, selected, menuExpanded, { menuExpanded = it }, onAction
                 )
             }
         }
@@ -456,7 +459,7 @@ private fun FileBrowserItem(
  * Never paint a square gray ImageView background behind every folder glyph.
  */
 @Composable
-private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier) {
+private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier, grid: Boolean = false) {
     val directory = file.attributes.isDirectory
     val thumbnail = !directory && file.supportsThumbnail
     val iconTint = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
@@ -474,7 +477,7 @@ private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier) 
                     painter = painterResource(R.drawable.file_browser_icon_folder),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.fillMaxSize().padding(10.dp)
+                    modifier = Modifier.size(if (grid) 40.dp else 26.dp)
                 )
             }
         } else {
@@ -504,7 +507,8 @@ private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier) 
                         else ColorStateList.valueOf(iconTint)
                     image.scaleType = if (thumbnail) ImageView.ScaleType.CENTER_CROP
                         else ImageView.ScaleType.FIT_CENTER
-                    val p = if (thumbnail) 0 else (image.resources.displayMetrics.density * 8).toInt()
+                    val p = if (thumbnail) 0 else
+                        (image.resources.displayMetrics.density * if (grid) 18 else 8).toInt()
                     if (image.paddingLeft != p) image.setPadding(p, p, p, p)
                 },
                 onRelease = { image -> image.dispose(); image.tag = null }
@@ -559,6 +563,7 @@ private fun FileBrowserItemMenu(
     archivePath: Boolean,
     picker: Boolean,
     selectable: Boolean,
+    selected: Boolean,
     expanded: Boolean,
     onExpanded: (Boolean) -> Unit,
     onAction: (FileBrowserItemAction) -> Unit
@@ -573,7 +578,8 @@ private fun FileBrowserItemMenu(
         DropdownMenu(expanded = expanded, onDismissRequest = { onExpanded(false) }) {
             if (selectable) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.select)) },
+                    text = { Text(stringResource(if (selected)
+                        R.string.file_browser_deselect else R.string.select)) },
                     onClick = { onExpanded(false); onAction(FileBrowserItemAction.SELECT) }
                 )
             }
