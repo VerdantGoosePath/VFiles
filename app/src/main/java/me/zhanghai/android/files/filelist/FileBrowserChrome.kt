@@ -257,7 +257,7 @@ fun VFilesBrowserChrome(
                     }
                 }
             }
-            if (state.selectedCount > 0) {
+            if (state.selectedCount > 0 && !state.picker) {
                 BrowserSelectionBar(state, onSelection)
             } else if (state.pasteCount > 0 && !state.picker) {
                 BrowserPasteBar(state, onSelection)
@@ -332,7 +332,7 @@ private fun BrowserSortSheet(
                 }
             }
             Text(
-                stringResource(R.string.file_list_action_view_sort),
+                stringResource(R.string.file_browser_sort_options),
                 style = MaterialTheme.typography.titleSmallEmphasized,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
@@ -455,14 +455,6 @@ private fun BrowserSelectionBar(
                             action(R.string.share, FileBrowserSelectionCommand.SHARE)
                         }
                     }
-                }
-            } else if (state.pickerCanSelectMultiple) {
-                FilledTonalButton(onClick = { onSelection(FileBrowserSelectionCommand.PICK) }) {
-                    Text(stringResource(R.string.select))
-                }
-            } else {
-                FilledTonalButton(onClick = { onSelection(FileBrowserSelectionCommand.PICK) }) {
-                    Text(stringResource(R.string.select))
                 }
             }
         }
