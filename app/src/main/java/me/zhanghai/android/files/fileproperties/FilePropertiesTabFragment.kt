@@ -13,6 +13,19 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.core.view.forEach
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import me.zhanghai.android.files.compose.theme.VFilesTheme
 import androidx.fragment.app.Fragment
 import androidx.viewbinding.ViewBinding
 import me.zhanghai.android.files.databinding.FilePropertiesTabFragmentBinding
@@ -36,10 +49,29 @@ abstract class FilePropertiesTabFragment : Fragment() {
             .also { binding = it }
             .root
 
+    @OptIn(ExperimentalMaterial3ExpressiveApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         binding.swipeRefreshLayout.setOnRefreshListener { refresh() }
+        binding.progress.setViewCompositionStrategy(
+            ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+        )
+        binding.progress.setContent {
+            VFilesTheme {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    LoadingIndicator(Modifier.size(48.dp))
+                    Text(
+                        stringResource(me.zhanghai.android.files.R.string.loading),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
     }
 
     abstract fun refresh()
@@ -57,9 +89,13 @@ abstract class FilePropertiesTabFragment : Fragment() {
             if (hasValue) {
                 showToast(getString(me.zhanghai.android.files.R.string.file_properties_refresh_failed))
             } else {
-                binding.errorText.text = getString(
+                val failureDescription = getString(
                     me.zhanghai.android.files.R.string.file_properties_load_failed,
                     description
+                )
+                binding.errorText.text = getString(
+                    me.zhanghai.android.files.R.string.file_properties_expressive_retry,
+                    failureDescription
                 )
                 binding.errorText.setOnClickListener { refresh() }
             }

@@ -17,7 +17,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.file.FileItem
@@ -35,6 +34,8 @@ import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.util.Stateful
 import me.zhanghai.android.files.util.getQuantityString
 import me.zhanghai.android.files.util.viewModels
+import android.os.Handler
+import android.os.Looper
 import java.io.IOException
 
 class FilePropertiesBasicTabFragment : FilePropertiesTabFragment() {
@@ -114,16 +115,13 @@ class FilePropertiesBasicTabFragment : FilePropertiesTabFragment() {
         withContext(Dispatchers.IO) {
             var count = 0
             var size = 0L
+            val main = Handler(Looper.getMainLooper())
             fun notifyListener() {
-                // kotlinc: Suspension functions can be called only within coroutine body
-                //withContext(Dispatchers.Main.immediate) {
-                // We need to keep our job alive to know if it has been canceled before notifying
-                // our listener on main thread.
-                //mainExecutor.execute {
-                runBlocking(Dispatchers.Main.immediate) {
-                    if (this@withContext.isActive) {
-                        listener(count to size)
-                    }
+                // Snapshot the IO counters. Never block a provider traversal while waiting
+                // for main; canceled fragment jobs must not update a detached TextView.
+                val snapshot = count to size
+                main.post {
+                    if (this@withContext.isActive) listener(snapshot)
                 }
             }
             Files.walkFileTree(directory, object : FileVisitor<Path> {
@@ -162,7 +160,8 @@ class FilePropertiesBasicTabFragment : FilePropertiesTabFragment() {
                     }
                     path?.let { ++count }
                     attributes?.let { size += it.size() }
-                    exception?.printStackTrace()
+                    // Paths and authenticated provider URLs may appear in IOException messages.
+                    // Continue counting readable entries without logging private provider data.
                     val currentTimeMillis = System.currentTimeMillis()
                     if (currentTimeMillis >= lastTimeMillis + intervalMillis) {
                         notifyListener()
