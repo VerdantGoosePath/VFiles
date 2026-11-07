@@ -10,7 +10,9 @@ import android.app.Application
 import android.content.Context
 import android.os.Bundle
 import androidx.annotation.StyleRes
+import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
+import me.zhanghai.android.files.BuildConfig
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
 import me.zhanghai.android.files.R
@@ -31,6 +33,12 @@ object CustomThemeHelper {
     fun initialize(application: Application) {
         application.registerActivityLifecycleCallbacks(object : SimpleActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                // Compose's createComposeRule() starts the bare ComponentActivity test host,
+                // not an app route. Permit that exact test-only class in debuggable builds;
+                // all production activities still require AppActivity theme initialization.
+                if (BuildConfig.DEBUG && activity.javaClass == ComponentActivity::class.java) {
+                    return
+                }
                 check(activityBaseThemes.containsKey(activity)) {
                     "Activity must extend AppActivity: $activity"
                 }
