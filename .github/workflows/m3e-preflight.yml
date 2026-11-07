@@ -74,8 +74,26 @@ jobs:
         run: ./gradlew --no-daemon --warning-mode all :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest
 
       - name: Collect Android lint diagnostics (advisory until legacy View debt is triaged)
+        id: legacy_lint
         continue-on-error: true
         run: ./gradlew --no-daemon :app:lintDebug
+
+      - name: Publish explicit lint outcome
+        if: always()
+        shell: bash
+        run: |
+          echo "Android lint command outcome: **\${{ steps.legacy_lint.outcome }}** (non-blocking; see report)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Android lint audit evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3e-phase-f-lint-report
+          path: |
+            app/build/reports/lint-results-debug.*
+            app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Assemble opt-in systemPicker debug and run JVM test task
         run: ./gradlew --no-daemon --warning-mode all -PsystemPicker :app:assembleSystemPickerDebug :app:testSystemPickerDebugUnitTest
