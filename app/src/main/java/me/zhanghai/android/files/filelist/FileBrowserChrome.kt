@@ -299,7 +299,10 @@ private fun BrowserSortSheet(
                 style = MaterialTheme.typography.headlineSmallEmphasized,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            FileSortOptions.By.entries.forEachIndexed { index, by ->
+            // Native segmented shapes work as a coherent *group* only when their
+            // seams use SegmentedGap instead of the section's large spacing.
+            Column(verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
+                FileSortOptions.By.entries.forEachIndexed { index, by ->
                 val label = when (by) {
                     FileSortOptions.By.NAME -> R.string.file_list_action_sort_by_name
                     FileSortOptions.By.TYPE -> R.string.file_list_action_sort_by_type
@@ -319,6 +322,7 @@ private fun BrowserSortSheet(
                         Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
                     }
                 )
+                }
             }
             Text(
                 stringResource(R.string.file_browser_sort_options),
@@ -326,6 +330,7 @@ private fun BrowserSortSheet(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
             )
+            Column(verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
             BrowserSwitchRow(
                 stringResource(R.string.file_list_action_sort_order_ascending),
                 state.sortOptions.order == FileSortOptions.Order.ASCENDING,
@@ -348,6 +353,7 @@ private fun BrowserSortSheet(
                 state.showHiddenFiles,
                 index = 3, count = 4, onChange = onShowHiddenFiles
             )
+            }
         }
     }
 }
