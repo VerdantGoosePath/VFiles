@@ -56,10 +56,10 @@ jobs:
             result=$?
             mkdir -p m3e-screenshots
             adb logcat -d -t 1500 -v threadtime > m3e-screenshots/emulator-tail.log || true
-            for variant in light dark; do
-              adb exec-out run-as fr.vroot.vfiles.fork cat "files/m3e-screenshots/browser-${variant}.png" > "m3e-screenshots/browser-${variant}.png"
-              if [[ ! -s "m3e-screenshots/browser-${variant}.png" ]]; then
-                rm -f "m3e-screenshots/browser-${variant}.png"
+            for image in browser-light browser-dark settings ftp; do
+              adb exec-out run-as fr.vroot.vfiles.fork cat "files/m3e-screenshots/${image}.png" > "m3e-screenshots/${image}.png"
+              if [[ ! -s "m3e-screenshots/${image}.png" ]]; then
+                rm -f "m3e-screenshots/${image}.png"
               fi
             done
             exit "$result"
