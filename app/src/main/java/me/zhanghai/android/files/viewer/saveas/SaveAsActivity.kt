@@ -25,6 +25,10 @@ class SaveAsActivity : AppActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // The ActivityResultRegistry restores a pending picker after rotation/process death.
+        // Launching again would duplicate CREATE_DOCUMENT requests and lose the first result.
+        if (savedInstanceState != null) return
+
         val intent = intent
         val mimeType = intent.type?.asMimeTypeOrNull() ?: MimeType.ANY
         val path = intent.saveAsPath

@@ -260,7 +260,7 @@ internal fun ExpressiveFtpServerScreen(
                             }
                         )
                         "password" -> Settings.FTP_SERVER_PASSWORD.putValue(newValue)
-                        "port" -> newValue.toIntOrNull()?.takeIf { it >= 0 }?.let {
+                        "port" -> parseFtpListeningPort(newValue)?.let {
                             Settings.FTP_SERVER_PORT.putValue(it)
                         }
                     }
@@ -270,6 +270,10 @@ internal fun ExpressiveFtpServerScreen(
         )
     }
 }
+
+/** FTP binds a concrete TCP port; zero and values above 65535 are invalid here. */
+internal fun parseFtpListeningPort(text: String): Int? =
+    text.toIntOrNull()?.takeIf { it in 1..65535 }
 
 @Composable
 private fun FtpScalarEditDialog(
@@ -282,7 +286,7 @@ private fun FtpScalarEditDialog(
 ) {
     // Do not save transient password text in SavedStateRegistry / rememberSaveable.
     var input by remember(title) { mutableStateOf(initial) }
-    val valid = !numeric || (input.toIntOrNull()?.let { it >= 0 } == true)
+    val valid = !numeric || parseFtpListeningPort(input) != null
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },

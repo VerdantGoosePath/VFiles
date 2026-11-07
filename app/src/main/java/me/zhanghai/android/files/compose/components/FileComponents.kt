@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,7 +74,11 @@ fun VFilesFileRow(
                     style = MaterialTheme.typography.bodySmall,
                     color = if (entry.selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (entry.selected) Checkbox(checked = true, onCheckedChange = null)
+            if (entry.selected) Checkbox(
+                checked = true,
+                onCheckedChange = null,
+                modifier = Modifier.clearAndSetSemantics { }
+            )
         }
     }
 }

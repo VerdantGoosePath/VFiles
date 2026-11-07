@@ -67,6 +67,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -130,15 +131,17 @@ fun VFilesBrowserContent(
     onListReachedTop: () -> Boolean,
     modifier: Modifier = Modifier
 ) {
-    val visible by produceState(
-        initialValue = emptyList<FileItem>(),
-        state.pathKey, state.files, state.sort, state.showHidden, state.searching
-    ) {
-        value = withContext(Dispatchers.Default) {
-            val files = if (state.showHidden) state.files else state.files.filterNot { it.isHidden }
-            if (state.searching) files else files.sortedWith(state.sort.createComparator())
+    // Do not briefly display the previous folder's items while an asynchronous sort runs.
+    // A null result means preparing, never an empty directory eligible for user actions.
+    val visibleResult by key(state.pathKey, state.files, state.sort, state.showHidden, state.searching) {
+        produceState<List<FileItem>?>(initialValue = null) {
+            value = withContext(Dispatchers.Default) {
+                val files = if (state.showHidden) state.files else state.files.filterNot { it.isHidden }
+                if (state.searching) files else files.sortedWith(state.sort.createComparator())
+            }
         }
     }
+    val visible = visibleResult.orEmpty()
     val savedState = rememberSaveableStateHolder()
     // The contextual dock can be two lines tall; active file-job progress is anchored at
     // bottom-start. Reserve enough scroll space for both rather than obscuring the last file.
@@ -176,7 +179,7 @@ fun VFilesBrowserContent(
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
             when {
-                state.loading && visible.isEmpty() -> {
+                (visibleResult == null || state.loading) && visible.isEmpty() -> {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         LoadingIndicator(Modifier.size(48.dp))
                     }
@@ -400,7 +403,9 @@ private fun FileBrowserItem(
                     if (selected || hasSelection) {
                         Box(Modifier.align(Alignment.TopStart)) {
                             Checkbox(
-                                checked = selected, onCheckedChange = null
+                                checked = selected,
+                                onCheckedChange = null,
+                                modifier = Modifier.clearAndSetSemantics { }
                             )
                         }
                     }
@@ -454,7 +459,10 @@ private fun FileBrowserItem(
                     FileBrowserBadges(file)
                 }
                 if (selected || hasSelection) {
-                    Checkbox(checked = selected, onCheckedChange = null)
+                    Checkbox(
+                        checked = selected, onCheckedChange = null,
+                        modifier = Modifier.clearAndSetSemantics { }
+                    )
                 }
                 FileBrowserItemMenu(
                     file, readOnly, archivePath,

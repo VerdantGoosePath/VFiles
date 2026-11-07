@@ -43,7 +43,10 @@ jobs:
             echo "::error::Android sdkmanager not found on runner"
             exit 1
           fi
-          "$SDKMANAGER" --install "platforms;android-36" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+          "$SDKMANAGER" --install "platforms;android-37.0" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+          if [[ ! -e "$SDK_ROOT/platforms/android-37" && -d "$SDK_ROOT/platforms/android-37.0" ]]; then
+            ln -s android-37.0 "$SDK_ROOT/platforms/android-37"
+          fi
 
       - name: Prepare release signing
         env:
