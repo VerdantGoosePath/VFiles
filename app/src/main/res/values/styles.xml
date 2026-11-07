@@ -16,7 +16,7 @@
     </style>
 
     <style name="TextAppearance.AppCompat.Widget.ActionBar.Subtitle.Small">
-        <item name="android:textSize" tools:ignore="SpUsage">12dp</item>
+        <item name="android:textSize">12sp</item>
     </style>
 
     <!--

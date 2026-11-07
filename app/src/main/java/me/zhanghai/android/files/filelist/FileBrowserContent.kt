@@ -48,6 +48,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -56,6 +57,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -143,15 +146,15 @@ fun VFilesBrowserContent(
     }
     val visible = visibleResult.orEmpty()
     val savedState = rememberSaveableStateHolder()
-    // The contextual dock can be two lines tall; active file-job progress is anchored at
-    // bottom-start. Reserve enough scroll space for both rather than obscuring the last file.
+    // Reserve the *measured* contextual dock height. A fixed 196dp estimate clips the
+    // final file at 200% font, with translated strings or the IME visible.
     val hasContextDock = (chromeState.selectedCount > 0 || chromeState.pasteCount > 0) &&
         state.pickOptions == null
-    val contentBottomPadding = when {
-        hasContextDock && hasActiveJobs -> 260.dp
-        hasContextDock -> 196.dp
-        else -> 120.dp
-    }
+    var measuredDockHeight by remember { mutableIntStateOf(0) }
+    val dockHeight = with(LocalDensity.current) { measuredDockHeight.toDp() }
+    val contentBottomPadding = (if (hasContextDock) {
+        maxOf(120.dp, dockHeight + 16.dp)
+    } else 120.dp) + if (hasActiveJobs) 76.dp else 0.dp
     Box(modifier = modifier.fillMaxSize()) {
     PullToRefreshBox(
         isRefreshing = state.loading && state.files.isNotEmpty(),
@@ -295,6 +298,7 @@ fun VFilesBrowserContent(
     // [C34] Contextual actions belong near the thumb, independent of the scrolling app bar.
     // Existing 120dp lazy-content bottom padding keeps the final item reachable above this dock.
     val dockModifier = Modifier.align(Alignment.BottomCenter)
+        .onSizeChanged { measuredDockHeight = it.height }
         .navigationBarsPadding().imePadding()
         .padding(start = 16.dp, end = 16.dp, top = 12.dp,
             bottom = if (hasActiveJobs) 76.dp else 12.dp).widthIn(max = 520.dp)

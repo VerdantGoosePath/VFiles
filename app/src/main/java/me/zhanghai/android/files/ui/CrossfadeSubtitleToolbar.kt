@@ -11,6 +11,7 @@ import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.animation.ValueAnimator.AnimatorUpdateListener
 import android.content.Context
+import android.provider.Settings
 import android.util.AttributeSet
 import android.view.View
 import android.widget.TextView
@@ -42,6 +43,18 @@ class CrossfadeSubtitleToolbar : Toolbar {
 
     override fun setSubtitle(subtitle: CharSequence?) {
         if (getSubtitle() == subtitle) {
+            return
+        }
+        // Platform animator-off is also an accessibility preference. Never run the
+        // reflection-based crossfade when transitions are disabled.
+        if (runCatching {
+            Settings.Global.getFloat(
+                context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f
+            )
+        }.getOrDefault(1f) == 0f) {
+            subtitleAnimator.cancel()
+            nextSubtitle = null
+            super.setSubtitle(subtitle)
             return
         }
         nextSubtitle = subtitle

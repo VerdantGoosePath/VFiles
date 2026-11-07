@@ -57,6 +57,7 @@ fragment = (src / "filelist/FileListFragment.kt").read_text()
 assert "getSubtitle(files.orEmpty())" in fragment
 assert "throwable.printStackTrace()" not in fragment
 assert "Modifier.clearAndSetSemantics { }" in browser
+assert "measuredDockHeight" in browser and "onSizeChanged" in browser
 chrome = (src / "filelist/FileBrowserChrome.kt").read_text()
 assert "modifier = Modifier.clearAndSetSemantics { }" in chrome
 assert "Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())" in chrome
@@ -88,4 +89,6 @@ assert "android.permission.MANAGE_DOCUMENTS" in picker
 assert "android.permission.MANAGE_DOCUMENTS" not in (root / "AndroidManifest.xml").read_text().split("<application", 1)[0]
 release = Path(".github/workflows/android.yml").read_text()
 assert 'platforms;android-37.0' in release and 'platforms;android-36' not in release
+assert 'minTouchTargetSize">0dp' not in (root / "res/values/themes_material3.xml").read_text()
+assert "systemContrast(context)" in theme
 print(f"Phase F source contracts: PASS ({len(activities)} activities, {len(providers)} providers, {len(services)} services); not a device test.")
