@@ -12,24 +12,13 @@ abstract class FileNameDialogFragment : NameDialogFragment() {
     override val listener: Listener
         get() = super.listener as Listener
 
-    override fun isNameValid(name: String): Boolean {
-        if (!super.isNameValid(name)) {
-            return false
-        }
-        if (name.isEmpty()) {
-            binding.nameLayout.error = getString(R.string.file_name_error_empty)
-            return false
-        }
-        if (name.asFileNameOrNull() == null) {
-            binding.nameLayout.error = getString(R.string.file_name_error_invalid)
-            return false
-        }
-        val listener = listener
-        if (listener.hasFileWithName(name)) {
-            binding.nameLayout.error = getString(R.string.file_name_error_already_exists)
-            return false
-        }
-        return true
+    override val labelRes: Int = R.string.file_browser_dialog_name_label
+
+    override fun validateName(name: String): String? = when {
+        name.isEmpty() -> getString(R.string.file_name_error_empty)
+        name.asFileNameOrNull() == null -> getString(R.string.file_name_error_invalid)
+        listener.hasFileWithName(name) -> getString(R.string.file_name_error_already_exists)
+        else -> null
     }
 
     interface Listener : NameDialogFragment.Listener {

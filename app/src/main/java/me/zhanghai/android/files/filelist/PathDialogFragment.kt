@@ -14,19 +14,13 @@ import me.zhanghai.android.files.util.asPathNameOrNull
 import java.net.URI
 
 abstract class PathDialogFragment : NameDialogFragment() {
-    override fun isNameValid(name: String): Boolean {
-        if (!super.isNameValid(name)) {
-            return false
-        }
-        if (name.isEmpty()) {
-            binding.nameLayout.error = getString(R.string.file_list_path_error_empty)
-            return false
-        }
-        if (name.asPathNameOrNull() == null || name.toPathOrNull() == null) {
-            binding.nameLayout.error = getString(R.string.file_list_path_error_invalid)
-            return false
-        }
-        return true
+    override val labelRes: Int = R.string.file_browser_dialog_path_label
+
+    override fun validateName(name: String): String? = when {
+        name.isEmpty() -> getString(R.string.file_list_path_error_empty)
+        name.asPathNameOrNull() == null || name.toPathOrNull() == null ->
+            getString(R.string.file_list_path_error_invalid)
+        else -> null
     }
 
     final override fun onOk(name: String) {

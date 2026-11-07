@@ -27,9 +27,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -95,6 +95,7 @@ import me.zhanghai.android.files.theme.custom.wallpaperAccentColor
 import me.zhanghai.android.files.theme.night.NightMode
 import me.zhanghai.android.files.util.toList
 import me.zhanghai.android.files.util.valueCompat
+import me.zhanghai.android.files.compose.components.VFilesListDefaults
 
 /**
  * Settings use existing typed SettingLiveData exclusively. Neither a second SharedPreferences
@@ -119,7 +120,8 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
         Text(
             title,
             modifier = Modifier.padding(start = 16.dp, bottom = 4.dp).semantics { heading() },
-            style = MaterialTheme.typography.titleMediumEmphasized
+            style = MaterialTheme.typography.titleSmallEmphasized,
+            color = MaterialTheme.colorScheme.primary
         )
         Column(verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
             rows.forEachIndexed { index, row ->
@@ -127,15 +129,14 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
                     onClick = row.onClick,
                     enabled = row.enabled,
                     shapes = ListItemDefaults.segmentedShapes(index, rows.size),
+                    colors = VFilesListDefaults.segmentedColors(),
                     modifier = if (row.checked != null) {
                         Modifier.semantics {
                             role = Role.Switch
                             toggleableState = ToggleableState(row.checked)
                         }
                     } else Modifier,
-                    leadingContent = row.iconRes?.let { id ->
-                        { Icon(painterResource(id), contentDescription = null, modifier = Modifier.size(24.dp)) }
-                    },
+                    leadingContent = row.iconRes?.let { id -> { SettingsRowIcon(id) } },
                     content = { Text(row.title, style = MaterialTheme.typography.titleMedium) },
                     supportingContent = row.summary?.let { summary ->
                         {
@@ -268,7 +269,7 @@ internal fun ExpressiveSettingsScreen(
                         listOf(
                             ExpressiveSettingRow(
                                 "locale", stringResource(R.string.settings_locale_title),
-                                localeSummary, onClick = {
+                                localeSummary, iconRes = R.drawable.settings_icon_language, onClick = {
                                     if (Build.VERSION.SDK_INT >= 33) onOpenSystemLocales() else dialog = "locale"
                                 }
                             ),
@@ -278,19 +279,20 @@ internal fun ExpressiveSettingsScreen(
                                 value = if (color == ThemeColor.DYNAMIC)
                                     stringResource(R.string.color_picker_dynamic_color_label)
                                 else color.settingsLabel(context),
-                                iconRes = R.drawable.tune_icon_control_normal_24dp,
+                                iconRes = R.drawable.settings_icon_palette,
                                 onClick = { dialog = "color" }
                             ),
                             ExpressiveSettingRow(
                                 "night", stringResource(R.string.settings_night_mode_title),
                                 value = nightNames.getOrElse(night.ordinal) { night.name },
-                                iconRes = R.drawable.alarm_icon_white_24dp,
+                                iconRes = R.drawable.settings_icon_dark_mode,
                                 onClick = { dialog = "night" }
                             ),
                             ExpressiveSettingRow(
                                 "black", stringResource(R.string.settings_black_night_mode),
                                 stringResource(R.string.settings_expressive_black_explanation),
-                                checked = black, onClick = { Settings.BLACK_NIGHT_MODE.putValue(!black) }
+                                checked = black, iconRes = R.drawable.settings_icon_contrast,
+                                onClick = { Settings.BLACK_NIGHT_MODE.putValue(!black) }
                             )
                         )
                     )
@@ -393,12 +395,14 @@ internal fun ExpressiveSettingsScreen(
                                 add(ExpressiveSettingRow(
                                     "pdf", stringResource(R.string.settings_show_pdf_thumbnail_pre_28_title),
                                     stringResource(R.string.settings_show_pdf_thumbnail_pre_28_summary),
-                                    checked = showPdf, onClick = { Settings.SHOW_PDF_THUMBNAIL_PRE_28.putValue(!showPdf) }
+                                    checked = showPdf, iconRes = R.drawable.image_icon_white_24dp,
+                                    onClick = { Settings.SHOW_PDF_THUMBNAIL_PRE_28.putValue(!showPdf) }
                                 ))
                             }
                             add(ExpressiveSettingRow(
                                 "remote", stringResource(R.string.settings_read_remote_files_for_thumbnail_title),
                                 checked = remoteThumbs,
+                                iconRes = R.drawable.image_icon_white_24dp,
                                 onClick = { Settings.READ_REMOTE_FILES_FOR_THUMBNAIL.putValue(!remoteThumbs) }
                             ))
                         }
@@ -546,7 +550,8 @@ private fun AppearancePreview(color: ThemeColor, dark: Boolean, black: Boolean) 
         Text(
             stringResource(R.string.settings_expressive_preview),
             modifier = Modifier.padding(start = 16.dp).semantics { heading() },
-            style = MaterialTheme.typography.titleMediumEmphasized
+            style = MaterialTheme.typography.titleSmallEmphasized,
+            color = MaterialTheme.colorScheme.primary
         )
         VFilesTheme(appearance = VFilesAppearance(color = color, dark = dark, black = black)) {
             Surface(
@@ -599,33 +604,21 @@ private fun AppearancePreview(color: ThemeColor, dark: Boolean, black: Boolean) 
                             )
                         }
                     }
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.secondaryContainer
-                    ) {
-                        Row(
-                            modifier = Modifier.heightIn(min = 60.dp)
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.file_browser_icon_folder),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        PreviewRow(
+                            title = stringResource(R.string.settings_expressive_preview_row),
+                            selected = true,
+                            shape = RoundedCornerShape(
+                                topStart = 20.dp, topEnd = 20.dp, bottomStart = 4.dp, bottomEnd = 4.dp
                             )
-                            Text(
-                                stringResource(R.string.settings_expressive_preview_row),
-                                style = MaterialTheme.typography.titleMedium,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.weight(1f)
+                        )
+                        PreviewRow(
+                            title = stringResource(R.string.settings_expressive_preview_sample),
+                            selected = false,
+                            shape = RoundedCornerShape(
+                                topStart = 4.dp, topEnd = 4.dp, bottomStart = 20.dp, bottomEnd = 20.dp
                             )
-                            Checkbox(
-                                checked = true, onCheckedChange = null,
-                                modifier = Modifier.clearAndSetSemantics { }
-                            )
-                        }
+                        )
                     }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -649,8 +642,71 @@ private fun AppearancePreview(color: ThemeColor, dark: Boolean, black: Boolean) 
     }
 }
 
-/** Single selection owner for entire row, with one radio semantics tree. */
+/** Mirrors a browser row: selection swaps the folder thumbnail for a check badge. */
 @Composable
+private fun PreviewRow(
+    title: String,
+    selected: Boolean,
+    shape: androidx.compose.ui.graphics.Shape,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = shape,
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer
+            else MaterialTheme.colorScheme.surfaceContainer
+    ) {
+        Row(
+            modifier = Modifier.heightIn(min = 60.dp).padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Surface(
+                shape = if (selected) CircleShape else MaterialTheme.shapes.medium,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = if (selected) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painterResource(
+                            if (selected) R.drawable.check_icon_control_normal_24dp
+                            else R.drawable.file_browser_icon_folder
+                        ),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
+                    else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+/** Tonal icon container shared by every settings row, so titles always share one keyline. */
+@Composable
+internal fun SettingsRowIcon(iconRes: Int) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.size(40.dp)
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(painterResource(iconRes), contentDescription = null, modifier = Modifier.size(24.dp))
+        }
+    }
+}
+
+/** Single selection owner for entire row, with one radio semantics tree. */@Composable
 internal fun <T> ExpressiveChoiceDialog(
     title: String,
     options: List<Pair<T, String>>,

@@ -13,4 +13,28 @@
     <string name="file_browser_selected">selected</string>
     <string name="file_browser_sort_options">Preferences</string>
     <string name="file_browser_deselect">Deselect</string>
+    <string name="file_browser_sort_by">Sort by</string>
+    <string name="file_browser_more_actions">More actions</string>
+    <string name="file_browser_more_options">More options</string>
+    <string name="file_browser_paste_here">Paste here</string>
+    <string name="file_browser_clear_selection">Clear selection</string>
+    <string name="file_browser_close_search">Close search</string>
+    <string name="file_browser_search_in_format">Search in %1$s</string>
+    <string name="file_browser_search_hint_title">Search files and folders</string>
+    <string name="file_browser_search_hint_detail">Results include everything inside %1$s and its subfolders</string>
+    <string name="file_browser_navigation_expand">Expand navigation</string>
+    <string name="file_browser_navigation_collapse">Collapse navigation</string>
+    <plurals name="file_browser_jobs_running">
+        <item quantity="one">%d operation running</item>
+        <item quantity="other">%d operations running</item>
+    </plurals>
+    <plurals name="file_browser_selected_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <string name="file_browser_dialog_name_label">Name</string>
+    <string name="file_browser_dialog_path_label">Path</string>
+    <string name="file_create_archive_type_label">Format</string>
+    <string name="file_browser_password_show">Show password</string>
+    <string name="file_browser_password_hide">Hide password</string>
 </resources>

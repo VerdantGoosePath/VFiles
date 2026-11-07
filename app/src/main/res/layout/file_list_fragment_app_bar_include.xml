@@ -57,11 +57,6 @@
                     app:popupTheme="?actionBarPopupTheme" />
             </FrameLayout>
 
-            <androidx.compose.ui.platform.ComposeView
-                android:id="@+id/browserChromeView"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content" />
-
             <me.zhanghai.android.files.filelist.BreadcrumbLayout
                 android:id="@+id/breadcrumbLayout"
                 android:layout_width="match_parent"

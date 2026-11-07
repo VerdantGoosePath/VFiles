@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -27,14 +31,8 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import me.zhanghai.android.files.app.AppActivity
-import me.zhanghai.android.files.compose.components.BreadcrumbUi
-import me.zhanghai.android.files.compose.components.FileEntryUi
 import me.zhanghai.android.files.compose.components.PreferenceRowUi
-import me.zhanghai.android.files.compose.components.StorageDestinationUi
-import me.zhanghai.android.files.compose.components.VFilesAdaptivePathNavigation
-import me.zhanghai.android.files.compose.components.VFilesBreadcrumbs
 import me.zhanghai.android.files.compose.components.VFilesFileProgress
-import me.zhanghai.android.files.compose.components.VFilesFileRow
 import me.zhanghai.android.files.compose.components.VFilesPreferenceGroup
 import me.zhanghai.android.files.compose.theme.VFilesAppearance
 import me.zhanghai.android.files.compose.theme.VFilesTheme
@@ -79,7 +77,6 @@ fun ExpressivePilot(forced: VFilesAppearance? = null) {
     var followPrefs by rememberSaveable { mutableStateOf(true) }
     var selected by rememberSaveable { mutableStateOf(false) }
     var enabled by rememberSaveable { mutableStateOf(true) }
-    var active by rememberSaveable { mutableStateOf("local") }
     val chosen = forced ?: if (followPrefs) null else VFilesAppearance(
         color = ThemeColor.MATERIAL_TEAL, dark = dark, black = black
     )
@@ -108,27 +105,20 @@ fun ExpressivePilot(forced: VFilesAppearance? = null) {
                     onSelect = { selected = !selected }
                 )
                 Toggle("File row enabled", enabled) { enabled = it }
-                VFilesBreadcrumbs(
-                    segments = listOf(BreadcrumbUi("root", "Storage"), BreadcrumbUi("docs", "Documents")),
-                    onNavigate = { active = "local" }
+                ListItem(
+                    headlineContent = { Text("Financial report.pdf") },
+                    supportingContent = { Text("2.3 MB · PDF") },
+                    trailingContent = { Checkbox(checked = selected, onCheckedChange = null) },
+                    colors = ListItemDefaults.colors(
+                        containerColor = if (selected) MaterialTheme.colorScheme.secondaryContainer
+                            else MaterialTheme.colorScheme.surfaceContainer
+                    ),
+                    modifier = Modifier.clickable(enabled = enabled) { selected = !selected }
                 )
-                VFilesFileRow(FileEntryUi("example", "Financial report.pdf",
-                    "2.3 MB · PDF", selected = selected, enabled = enabled),
-                    onOpen = { selected = !selected }, onLongPress = { selected = !selected })
                 VFilesFileProgress(
                     title = "Copy (sample progress, no file operation)",
                     transferredBytes = 25L, totalBytes = 100L, onCancel = {}
                 )
-                VFilesAdaptivePathNavigation(
-                    destinations = listOf(
-                        StorageDestinationUi("local", "Local"),
-                        StorageDestinationUi("remote", "Remote"),
-                        StorageDestinationUi("bookmarks", "Bookmarks")
-                    ),
-                    activeId = active, onSelect = { active = it }
-                ) {
-                    Text("Selected: $active", style = MaterialTheme.typography.bodyMedium)
-                }
             }
         }
     }

@@ -107,6 +107,7 @@ import me.zhanghai.android.files.fileproperties.FilePropertiesDialogFragment
 import me.zhanghai.android.files.navigation.BookmarkDirectories
 import me.zhanghai.android.files.navigation.BookmarkDirectory
 import me.zhanghai.android.files.navigation.NavigationFragment
+import me.zhanghai.android.files.navigation.NavigationItemListLiveData
 import me.zhanghai.android.files.navigation.NavigationRootMapLiveData
 import me.zhanghai.android.files.provider.archive.createArchiveRootPath
 import me.zhanghai.android.files.provider.archive.isArchivePath
@@ -224,6 +225,11 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private val useComposeFileList: Boolean
         get() = isAdded && !requireContext().isTelevision && viewModel.pickOptions == null
     private var browserFabExpanded by mutableStateOf(false)
+    private var browserNavigationState by mutableStateOf(FileBrowserNavigationState())
+    private var browserScreenView: ComposeView? = null
+    // The inflated View browser: the drawer (or persistent bar) layout under the fragment root.
+    private val legacyBrowserView: View
+        get() = (binding.root as ViewGroup).children.first { it !== browserScreenView }
 
     private val debouncedSearchRunnable = DebouncedRunnable(Handler(Looper.getMainLooper()), 1000) {
         if (!isResumed || !viewModel.isSearchViewExpanded) {
@@ -450,6 +456,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
         }
         viewModel.currentPathLiveData.observe(viewLifecycleOwner) { onCurrentPathChanged(it) }
+        viewModel.currentPathLiveData.observe(viewLifecycleOwner) {
+            browserNavigationState = browserNavigationState.copy(currentPath = it)
+        }
+        NavigationItemListLiveData.observe(viewLifecycleOwner) {
+            browserNavigationState = browserNavigationState.copy(items = it.toList())
+        }
+        Settings.FILE_LIST_PERSISTENT_DRAWER_OPEN.observe(viewLifecycleOwner) {
+            browserNavigationState = browserNavigationState.copy(persistentExpanded = it)
+        }
         viewModel.searchViewExpandedLiveData.observe(viewLifecycleOwner) {
             onSearchViewExpandedChanged(it)
         }
@@ -773,99 +788,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
 
+    // TV keeps the View browser, but still creates files and folders through the Compose FAB menu.
     private fun installComposeBrowser() {
-        binding.root.findViewById<ComposeView>(R.id.browserChromeView).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                VFilesTheme {
-                    VFilesBrowserChrome(
-                        state = browserChromeState,
-                        onBreadcrumb = { id ->
-                            val path = id.toIntOrNull()?.let {
-                                viewModel.breadcrumbLiveData.value?.paths?.getOrNull(it)
-                            }
-                            if (path != null) navigateTo(path)
-                        },
-                        onSearchExpanded = { expanded ->
-                            viewModel.isSearchViewExpanded = expanded
-                            if (!expanded) {
-                                debouncedSearchRunnable.cancel()
-                                viewModel.stopSearching()
-                                viewModel.searchViewQuery = ""
-                            }
-                            updateBrowserChrome()
-                        },
-                        onSearchQuery = { query ->
-                            viewModel.searchViewQuery = query
-                            if (query.isBlank()) {
-                                debouncedSearchRunnable.cancel()
-                                viewModel.stopSearching()
-                            } else {
-                                debouncedSearchRunnable()
-                            }
-                            updateBrowserChrome()
-                        },
-                        onSearchSubmit = {
-                            debouncedSearchRunnable.cancel()
-                            if (viewModel.searchViewQuery.isBlank()) viewModel.stopSearching()
-                            else viewModel.search(viewModel.searchViewQuery)
-                            updateBrowserChrome()
-                        },
-                        onViewType = { viewModel.viewType = it },
-                        onSortBy = { viewModel.setSortBy(it) },
-                        onSortOrder = { viewModel.setSortOrder(it) },
-                        onDirectoriesFirst = { viewModel.setSortDirectoriesFirst(it) },
-                        onPathSpecificSort = { viewModel.isViewSortPathSpecific = it },
-                        onShowHiddenFiles = { setShowHiddenFiles(it) },
-                        onSelection = {
-                            // Compose cannot bypass the same read-only/picker restrictions as
-                            // the legacy contextual menus; recheck at command dispatch time.
-                            updateBrowserChrome()
-                            if (it in browserChromeState.commandContext().availableCommands()) {
-                                onComposeSelection(it)
-                            }
-                        }
-                    )
-                }
-            }
-        }
-        binding.root.findViewById<ComposeView>(R.id.browserContentView).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                VFilesTheme {
-                    VFilesBrowserContent(
-                        state = browserContentState,
-                        chromeState = browserChromeState,
-                        hasActiveJobs = browserJobs.isNotEmpty(),
-                        onSelection = { command ->
-                            // File jobs and selection remain subject to the existing policy
-                            // regardless of which Compose surface dispatched the command.
-                            updateBrowserChrome()
-                            if (command in browserChromeState.commandContext().availableCommands()) {
-                                onComposeSelection(command)
-                            }
-                        },
-                        onRefresh = { refresh() },
-                        onItemAction = { file, action -> onComposeItemAction(file, action) },
-                        onRangeSelect = { onComposeRangeSelect(it) },
-                        onListReachedTop = { focusToolbar() }
-                    )
-                }
-            }
-        }
-        binding.root.findViewById<ComposeView>(R.id.browserJobProgressView).apply {
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            setContent {
-                VFilesTheme {
-                    if (!requireContext().isTelevision) {
-                        VFilesJobStatus(
-                            jobs = browserJobs,
-                            onCancel = { FileJobService.cancelJob(it) }
-                        )
-                    }
-                }
-            }
-        }
         val createView = binding.root.findViewById<ComposeView>(R.id.browserCreateMenuView)
         // Only intercept an outside tap while the menu is open. The legacy content
         // remains fully touchable otherwise (including directory rows and swipe refresh).
@@ -890,6 +814,146 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     )
                 }
             }
+        }
+    }
+
+    /**
+     * The touch browser is one full-screen Compose surface. It is created lazily because picker
+     * options are only known after the launch intent is parsed, and the View tree it replaces
+     * stays inflated (but gone) for TV and external picker sessions.
+     */
+    private fun ensureBrowserScreen(): ComposeView {
+        browserScreenView?.let { return it }
+        val root = binding.root as ViewGroup
+        val screen = ComposeView(requireContext()).apply {
+            id = R.id.browserScreenView
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                VFilesTheme {
+                    FileBrowserScreen(
+                        chrome = browserChromeState,
+                        content = browserContentState,
+                        jobs = browserJobs,
+                        navigation = browserNavigationState,
+                        navigationListener = navigationFragment,
+                        createMenuExpanded = browserFabExpanded,
+                        actions = browserScreenActions
+                    )
+                }
+            }
+        }
+        // First child: window insets reach it before any legacy sibling can consume them.
+        root.addView(
+            screen, 0, ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        browserScreenView = screen
+        return screen
+    }
+
+    private val browserScreenActions = object : FileBrowserScreenActions {
+        override fun onBreadcrumb(id: String) {
+            val path = id.toIntOrNull()?.let {
+                viewModel.breadcrumbLiveData.value?.paths?.getOrNull(it)
+            }
+            if (path != null) navigateTo(path)
+        }
+
+        override fun onViewType(viewType: FileViewType) {
+            viewModel.viewType = viewType
+        }
+
+        override fun onSortBy(by: By) = viewModel.setSortBy(by)
+
+        override fun onSortOrder(order: Order) = viewModel.setSortOrder(order)
+
+        override fun onDirectoriesFirst(directoriesFirst: Boolean) =
+            viewModel.setSortDirectoriesFirst(directoriesFirst)
+
+        override fun onPathSpecificSort(pathSpecific: Boolean) {
+            viewModel.isViewSortPathSpecific = pathSpecific
+        }
+
+        override fun onShowHiddenFiles(show: Boolean) = setShowHiddenFiles(show)
+
+        override fun onSearchActiveChange(active: Boolean) {
+            if (active == viewModel.isSearchViewExpanded) return
+            viewModel.isSearchViewExpanded = active
+            if (!active) {
+                debouncedSearchRunnable.cancel()
+                viewModel.stopSearching()
+                viewModel.searchViewQuery = ""
+            }
+            updateBrowserChrome()
+        }
+
+        override fun onSearchQueryChange(query: String) {
+            viewModel.searchViewQuery = query
+            if (query.isBlank()) viewModel.stopSearching()
+        }
+
+        override fun onSearchSubmit(query: String) {
+            debouncedSearchRunnable.cancel()
+            if (viewModel.isSearchViewExpanded && query.isNotBlank()) viewModel.search(query)
+        }
+
+        override fun onRefresh() = refresh()
+
+        override fun onItemAction(file: FileItem, action: FileBrowserItemAction) =
+            onComposeItemAction(file, action)
+
+        override fun onRangeSelect(files: List<FileItem>) = onComposeRangeSelect(files)
+
+        override fun onSelection(command: FileBrowserSelectionCommand) {
+            // Compose cannot bypass the same read-only/picker restrictions as the legacy
+            // contextual menus; recheck at command dispatch time.
+            updateBrowserChrome()
+            if (command in browserChromeState.commandContext().availableCommands()) {
+                onComposeSelection(command)
+            }
+        }
+
+        override fun onFolderAction(action: FileBrowserFolderAction) {
+            when (action) {
+                FileBrowserFolderAction.NEW_TASK -> newTask()
+                FileBrowserFolderAction.NAVIGATE_UP -> navigateUp()
+                FileBrowserFolderAction.NAVIGATE_TO -> showNavigateToPathDialog()
+                FileBrowserFolderAction.REFRESH -> refresh()
+                FileBrowserFolderAction.SELECT_ALL -> selectAllFiles()
+                FileBrowserFolderAction.SHOW_HIDDEN_FILES ->
+                    setShowHiddenFiles(!Settings.FILE_LIST_SHOW_HIDDEN_FILES.valueCompat)
+                FileBrowserFolderAction.SHARE -> share()
+                FileBrowserFolderAction.COPY_PATH -> copyPath()
+                FileBrowserFolderAction.OPEN_IN_TERMINAL -> openInTerminal()
+                FileBrowserFolderAction.ADD_BOOKMARK -> addBookmark()
+                FileBrowserFolderAction.CREATE_SHORTCUT -> createShortcut()
+            }
+        }
+
+        override fun onCreateMenuExpandedChange(expanded: Boolean) {
+            browserFabExpanded = expanded
+        }
+
+        override fun onCreateFile() = showCreateFileDialog()
+
+        override fun onCreateDirectory() = showCreateDirectoryDialog()
+
+        override fun onCancelJob(id: Int) = FileJobService.cancelJob(id)
+
+        override fun onNavigationOpenChange(open: Boolean) {
+            if (open == browserNavigationState.modalOpen) return
+            browserNavigationState = browserNavigationState.copy(
+                modalOpen = open,
+                // Free space may have changed since the rail was last shown.
+                revision = browserNavigationState.revision + if (open) 1 else 0
+            )
+        }
+
+        override fun onTogglePersistentNavigation() {
+            Settings.FILE_LIST_PERSISTENT_DRAWER_OPEN.putValue(
+                !Settings.FILE_LIST_PERSISTENT_DRAWER_OPEN.valueCompat
+            )
         }
     }
 
@@ -921,7 +985,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             picker = pickOptions != null,
             pickerCanSelectMultiple = pickOptions?.allowMultiple == true,
             pasteCount = paste?.files?.size ?: 0,
-            pasteIsCopy = paste?.copy == true
+            pasteIsCopy = paste?.copy == true,
+            canOpenInTerminal = viewModel.currentPath.isLinuxPath
         )
         if (browserChromeState.picker || browserChromeState.currentReadOnly ||
             browserChromeState.selectedCount > 0 || browserChromeState.pasteCount > 0 ||
@@ -931,16 +996,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         updateBrowserContent()
     }
 
-    // The browser's Compose chrome must never displace the historical SAF picker or TV D-pad UI.
+    // The Compose browser must never displace the historical SAF picker or TV D-pad UI.
     // Reapply when picker state changes so legacy action bars, search and breadcrumbs stay usable.
     private fun updateBrowserModeVisibility() {
         val compose = useComposeFileList
-        binding.breadcrumbLayout.isVisible = !compose
-        binding.root.findViewById<ComposeView>(R.id.browserChromeView).isVisible = compose
-        // The View speed dial was removed; both the Compose browser and TV fallback need creation.
+        if (compose) ensureBrowserScreen()
+        browserScreenView?.isVisible = compose
+        legacyBrowserView.isVisible = !compose
         // External picker sessions use their dedicated bottom CREATE_DOCUMENT controls.
-        binding.root.findViewById<ComposeView>(R.id.browserCreateMenuView).isVisible = viewModel.pickOptions == null
-        binding.root.findViewById<ComposeView>(R.id.browserJobProgressView).isVisible = compose
+        binding.root.findViewById<ComposeView>(R.id.browserCreateMenuView).isVisible =
+            viewModel.pickOptions == null
         if (this::menuBinding.isInitialized) {
             menuBinding.searchItem.isVisible = !compose
         }
@@ -950,7 +1015,6 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         if (!isAdded || !this::binding.isInitialized || !viewModel.hasTrail) return
         updateBrowserModeVisibility()
         val compose = useComposeFileList
-        binding.root.findViewById<ComposeView>(R.id.browserContentView).isVisible = compose
         binding.swipeRefreshLayout.isVisible = !compose
         // Do not mutate the legacy empty/error/progress state in TV or picker mode.
         if (compose) {
@@ -1119,6 +1183,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             // refresh the drawer's storage subtitles in place. This is what keeps a permanently
             // visible sidebar up to date; the sliding drawer also refreshes when it opens.
             navigationFragment.refreshSubtitles()
+            browserNavigationState = browserNavigationState.copy(
+                revision = browserNavigationState.revision + 1
+            )
         }
     }
 
@@ -2089,19 +2156,27 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     override fun closeNavigationDrawer() {
+        if (browserNavigationState.modalOpen) {
+            browserNavigationState = browserNavigationState.copy(modalOpen = false)
+        }
         binding.drawerLayout?.closeDrawer(GravityCompat.START)
     }
 
     // Returns true when there is an overlay drawer to open (i.e. not the persistent side drawer
     // used on large landscape layouts), so the caller knows the D-pad event was consumed.
     fun openNavigationDrawer(): Boolean {
+        if (useComposeFileList) {
+            browserScreenActions.onNavigationOpenChange(true)
+            return true
+        }
         val drawerLayout = binding.drawerLayout ?: return false
         drawerLayout.openDrawer(GravityCompat.START)
         return true
     }
 
     fun isNavigationDrawerOpen(): Boolean =
-        binding.drawerLayout?.isDrawerOpen(GravityCompat.START) ?: false
+        if (useComposeFileList) browserNavigationState.modalOpen
+        else binding.drawerLayout?.isDrawerOpen(GravityCompat.START) ?: false
 
     // True when focus is in the file list area: a row root (direct RecyclerView child) OR the
     // RecyclerView itself (an empty folder, where no rows exist to hold focus). Excludes row child

@@ -44,7 +44,7 @@ def run():
     picker = ET.parse(PICKER).getroot()
     gradle = APP_GRADLE.read_text(encoding="utf-8")
 
-    require(re.search(r"\bminSdk\s+23\b", gradle), "minSdk 23 must be preserved")
+    require(re.search(r"\bminSdk\s+24\b", gradle), "minSdk 24 (required by material3 1.5.0-rc01) must be preserved")
     require("project.hasProperty('systemPicker')" in gradle, "Opt-in systemPicker flavor removed")
 
     main_permissions = {attr(p, "name") for p in main.findall("uses-permission")}

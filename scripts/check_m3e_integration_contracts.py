@@ -4,6 +4,7 @@
 This checks source contracts, not Android runtime behaviour.
 """
 from pathlib import Path
+import re
 
 root = Path("app/src/main")
 java = root / "java/me/zhanghai/android/files"
@@ -29,9 +30,10 @@ assert "FileListActivity" in manifest and "FileSystemDocumentsProvider" in manif
 # Keep the original SAF picker, grants and URI result payloads while using Compose
 # for ordinary non-TV browser sessions.
 assert "viewModel.pickOptions == null" in browser and "isTelevision" in browser
-assert "binding.breadcrumbLayout.isVisible = !compose" in browser
-assert "R.id.browserChromeView).isVisible = compose" in browser
-assert "R.id.browserCreateMenuView).isVisible = viewModel.pickOptions == null" in browser
+# The touch browser is one full-screen Compose surface; the View tree stays for TV/pickers.
+assert "legacyBrowserView.isVisible = !compose" in browser
+assert "browserScreenView?.isVisible = compose" in browser
+assert re.search(r"R\.id\.browserCreateMenuView\)\.isVisible =\s+viewModel\.pickOptions == null", browser)
 assert "menuBinding.searchItem.isVisible = !useComposeFileList" in browser
 assert "menuBinding.viewSortItem.isVisible = !searchViewExpanded && !useComposeFileList" in browser
 assert "if (useComposeFileList)" in browser
@@ -41,8 +43,11 @@ assert "Intent.FLAG_GRANT_READ_URI_PERMISSION" in browser
 assert "Intent.FLAG_GRANT_WRITE_URI_PERMISSION" in browser
 assert "Intent.FLAG_GRANT_PREFIX_URI_PERMISSION" in browser
 assert "extraPathList = paths.toList()" in browser
-assert "browserContentView" in browser and "VFilesBrowserContent(" in browser
-assert "VFilesBrowserChrome(" in browser and "VFilesCreateMenu(" in browser
+screen = (java / "filelist/FileBrowserScreen.kt").read_text()
+assert "FileBrowserScreen(" in browser and "VFilesCreateMenu(" in browser
+assert "VFilesBrowserContent(" in screen and "AppBarWithSearch(" in screen
+assert "ModalWideNavigationRail(" in screen and "WideNavigationRail(" in screen
+assert "NavigationDrawer" not in screen
 
 # ACTION_VIEW must remain external with no internal-viewer private path extras.
 # The original Open-with affordance retains Edit and Open-as alternatives.

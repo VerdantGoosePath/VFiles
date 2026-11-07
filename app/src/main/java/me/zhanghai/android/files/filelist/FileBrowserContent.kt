@@ -1,54 +1,62 @@
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+
 package me.zhanghai.android.files.filelist
 
 import android.content.res.ColorStateList
 import android.text.TextUtils
 import android.widget.ImageView
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed as gridItemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenuGroup
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.MenuDefaults
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -57,22 +65,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -82,13 +94,14 @@ import java8.nio.file.Path
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.zhanghai.android.files.R
-import me.zhanghai.android.files.compose.components.VFilesMessageState
 import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.fileSize
 import me.zhanghai.android.files.file.formatShort
 import me.zhanghai.android.files.file.iconRes
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.provider.common.isEncrypted
+import me.zhanghai.android.files.compose.components.VFilesListDefaults
+import me.zhanghai.android.files.compose.components.singleLineBaseline
 
 /**
  * File data is loaded by the existing provider LiveData; this snapshot only contains metadata
@@ -116,27 +129,10 @@ enum class FileBrowserItemAction {
     EXTRACT, ARCHIVE, SHARE, COPY_PATH, BOOKMARK, SHORTCUT, PROPERTIES
 }
 
-/**
- * Lazy Compose rows and grid; stable path keys + content types, off-main sorting and no provider IO
- * during composition. SaveableStateProvider retains each path/mode scroll position across navigation.
- * Native Android ImageViews remain solely as Coil thumbnail targets to preserve app fetchers/cache.
- */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+/** Hidden-file filtering and sorting happen off the main thread; null means "preparing". */
 @Composable
-fun VFilesBrowserContent(
-    state: FileBrowserContentState,
-    chromeState: FileBrowserChromeState,
-    hasActiveJobs: Boolean,
-    onSelection: (FileBrowserSelectionCommand) -> Unit,
-    onRefresh: () -> Unit,
-    onItemAction: (FileItem, FileBrowserItemAction) -> Unit,
-    onRangeSelect: (List<FileItem>) -> Unit,
-    onListReachedTop: () -> Boolean,
-    modifier: Modifier = Modifier
-) {
-    // Do not briefly display the previous folder's items while an asynchronous sort runs.
-    // A null result means preparing, never an empty directory eligible for user actions.
-    val visibleResult by key(state.pathKey, state.files, state.sort, state.showHidden, state.searching) {
+internal fun rememberVisibleFiles(state: FileBrowserContentState): List<FileItem>? {
+    val visible by key(state.pathKey, state.files, state.sort, state.showHidden, state.searching) {
         produceState<List<FileItem>?>(initialValue = null) {
             value = withContext(Dispatchers.Default) {
                 val files = if (state.showHidden) state.files else state.files.filterNot { it.isHidden }
@@ -144,51 +140,65 @@ fun VFilesBrowserContent(
             }
         }
     }
+    return visible
+}
+
+/**
+ * Lazy Compose rows and grid; stable path keys + content types, off-main sorting and no provider IO
+ * during composition. SaveableStateProvider retains each path/mode scroll position across navigation.
+ * The folder [header] is the first lazy item so it scrolls away with the files on small screens.
+ */
+@Composable
+fun VFilesBrowserContent(
+    state: FileBrowserContentState,
+    onRefresh: () -> Unit,
+    onItemAction: (FileItem, FileBrowserItemAction) -> Unit,
+    onRangeSelect: (List<FileItem>) -> Unit,
+    contentPadding: PaddingValues,
+    modifier: Modifier = Modifier,
+    nestedScrollConnection: NestedScrollConnection? = null,
+    selectionEnabled: Boolean = true,
+    header: @Composable () -> Unit = {}
+) {
+    val layoutDirection = LocalLayoutDirection.current
+    // Do not briefly display the previous folder's items while an asynchronous sort runs.
+    // A null result means preparing, never an empty directory eligible for user actions.
+    val visibleResult = rememberVisibleFiles(state)
     val visible = visibleResult.orEmpty()
     val savedState = rememberSaveableStateHolder()
-    // Reserve the *measured* contextual dock height. A fixed 196dp estimate clips the
-    // final file at 200% font, with translated strings or the IME visible.
-    val hasContextDock = (chromeState.selectedCount > 0 || chromeState.pasteCount > 0) &&
-        state.pickOptions == null
-    var measuredDockHeight by remember { mutableIntStateOf(0) }
-    val dockHeight = with(LocalDensity.current) { measuredDockHeight.toDp() }
-    val contentBottomPadding = (if (hasContextDock) {
-        maxOf(120.dp, dockHeight + 16.dp)
-    } else 120.dp) + if (hasActiveJobs) 76.dp else 0.dp
-    Box(modifier = modifier.fillMaxSize()) {
+    val pullState = rememberPullToRefreshState()
+    val refreshing = state.loading && state.files.isNotEmpty()
     PullToRefreshBox(
-        isRefreshing = state.loading && state.files.isNotEmpty(),
+        isRefreshing = refreshing,
         onRefresh = onRefresh,
-        modifier = Modifier.fillMaxSize()
+        state = pullState,
+        modifier = modifier.fillMaxSize(),
+        indicator = {
+            PullToRefreshDefaults.LoadingIndicator(
+                state = pullState,
+                isRefreshing = refreshing,
+                modifier = Modifier.align(Alignment.TopCenter)
+                    .padding(top = contentPadding.calculateTopPadding())
+            )
+        }
     ) {
-        Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            if (state.error != null && visible.isNotEmpty()) {
-                Surface(color = MaterialTheme.colorScheme.errorContainer) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            state.error,
-                            modifier = Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        TextButton(onClick = onRefresh) { Text(stringResource(R.string.refresh)) }
-                    }
-                }
-            } else if (state.loading && state.files.isNotEmpty()) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+        val scrollModifier = if (nestedScrollConnection != null) {
+            Modifier.nestedScroll(nestedScrollConnection)
+        } else Modifier
+        val listPadding = PaddingValues(
+            start = 16.dp + contentPadding.calculateStartPadding(layoutDirection),
+            end = 16.dp + contentPadding.calculateEndPadding(layoutDirection),
+            top = contentPadding.calculateTopPadding(),
+            bottom = contentPadding.calculateBottomPadding()
+        )
+        val status: (@Composable () -> Unit)? = when {
+            (visibleResult == null || state.loading) && visible.isEmpty() -> {
+                { BrowserLoadingState() }
             }
-            when {
-                (visibleResult == null || state.loading) && visible.isEmpty() -> {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        LoadingIndicator(Modifier.size(48.dp))
-                    }
-                }
-                state.error != null && visible.isEmpty() -> {
-                    VFilesMessageState(
+            state.error != null && visible.isEmpty() -> {
+                {
+                    BrowserEmptyState(
+                        icon = R.drawable.file_browser_icon_error,
                         title = stringResource(R.string.error),
                         detail = state.error,
                         actionLabel = stringResource(R.string.refresh),
@@ -196,124 +206,205 @@ fun VFilesBrowserContent(
                         isError = true
                     )
                 }
-                !state.loading && visible.isEmpty() -> {
-                    VFilesMessageState(
-                        title = if (state.searching) stringResource(R.string.search)
-                            else stringResource(R.string.file_list_empty),
-                        detail = stringResource(if (state.searching) R.string.file_browser_search_no_results else R.string.file_browser_empty_description),
-                        actionLabel = stringResource(R.string.refresh),
-                        onAction = onRefresh
+            }
+            visible.isEmpty() -> {
+                {
+                    BrowserEmptyState(
+                        icon = R.drawable.file_browser_icon_folder,
+                        title = stringResource(
+                            if (state.searching) R.string.file_browser_search_no_results
+                            else R.string.file_list_empty
+                        ),
+                        detail = stringResource(R.string.file_browser_empty_description),
+                        actionLabel = null,
+                        onAction = null
                     )
                 }
-                else -> {
-                    // Keep list and grid scroll states independently, for every visited provider path.
-                    savedState.SaveableStateProvider(state.pathKey + ":" + state.viewType.name) {
-                        if (state.viewType == FileViewType.LIST) {
-                            val listState = rememberLazyListState()
-                            // Long file names and metadata should not span an entire
-                            // expanded Android 17 window: bound the *list* but retain
-                            // full-width adaptive media grids.
-                            LazyColumn(
-                                state = listState,
-                                modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
-                                contentPadding = PaddingValues(
-                                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = contentBottomPadding
-                                ),
-                                verticalArrangement = Arrangement.spacedBy(2.dp)
-                            ) {
-                                itemsIndexed(visible, key = { _, file -> file.path.toString() },
-                                    contentType = { _, file ->
-                                        if (file.attributes.isDirectory) "directory" else "file"
-                                    }) { index, file ->
-                                    FileBrowserItem(
-                                        file = file,
-                                        grid = false,
-                                        index = index,
-                                        count = visible.size,
-                                        selected = file.path in state.selectedPaths,
-                                        hasSelection = state.selectedPaths.isNotEmpty(),
-                                        pickOptions = state.pickOptions,
-                                        ellipsize = state.nameEllipsize,
-                                        onAction = { onItemAction(file, it) },
-                                        onKeyNavigation = { key, shift ->
-                                            val next = index + if (key == Key.DirectionDown) 1 else -1
-                                            when {
-                                                shift && next in visible.indices -> {
-                                                    onRangeSelect(visible.subList(
-                                                        minOf(index, next), maxOf(index, next) + 1
-                                                    ))
-                                                    false // Allow native focus to advance.
-                                                }
-                                                !shift && index == 0 && key == Key.DirectionUp ->
-                                                    onListReachedTop()
-                                                else -> false
-                                            }
-                                        }
-                                    )
-                                }
-                            }
+            }
+            else -> null
+        }
+        val banner: @Composable () -> Unit = {
+            if (state.error != null && visible.isNotEmpty()) {
+                BrowserErrorBanner(state.error, onRefresh)
+            }
+            AnimatedVisibility(refreshing && !pullState.isAnimating) {
+                LinearWavyProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 4.dp))
+            }
+        }
+        // Keep list and grid scroll states independently, for every visited provider path.
+        savedState.SaveableStateProvider(state.pathKey + ":" + state.viewType.name) {
+            if (state.viewType == FileViewType.LIST || status != null) {
+                val listState = rememberLazyListState()
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+                    // Long names should not span an entire expanded window: bound the list.
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.widthIn(max = 960.dp).fillMaxSize().then(scrollModifier),
+                        contentPadding = listPadding,
+                        verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
+                    ) {
+                        item(key = "header", contentType = "header") { header() }
+                        item(key = "banner", contentType = "banner") { banner() }
+                        if (status != null) {
+                            item(key = "status", contentType = "status") { status() }
                         } else {
-                            val gridState = rememberLazyGridState()
-                            LazyVerticalGrid(
-                                columns = GridCells.Adaptive(minSize = 156.dp),
-                                state = gridState,
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(
-                                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = contentBottomPadding
-                                ),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                gridItemsIndexed(visible, key = { _, file -> file.path.toString() },
-                                    contentType = { _, file ->
-                                        if (file.attributes.isDirectory) "directory" else "file"
-                                    }) { index, file ->
-                                    FileBrowserItem(
-                                        file = file,
-                                        grid = true,
-                                        index = index,
-                                        count = visible.size,
-                                        selected = file.path in state.selectedPaths,
-                                        hasSelection = state.selectedPaths.isNotEmpty(),
-                                        pickOptions = state.pickOptions,
-                                        ellipsize = state.nameEllipsize,
-                                        onAction = { onItemAction(file, it) },
-                                        onKeyNavigation = { key, shift ->
-                                            val next = index + if (key == Key.DirectionDown) 1 else -1
-                                            if (shift && next in visible.indices) {
-                                                onRangeSelect(visible.subList(
-                                                    minOf(index, next), maxOf(index, next) + 1
-                                                ))
-                                                false
-                                            } else if (!shift && index == 0 && key == Key.DirectionUp) {
-                                                onListReachedTop()
-                                            } else false
-                                        }
-                                    )
-                                }
+                            itemsIndexed(visible, key = { _, file -> file.path.toString() },
+                                contentType = { _, file ->
+                                    if (file.attributes.isDirectory) "directory" else "file"
+                                }) { index, file ->
+                                FileBrowserItem(
+                                    file = file,
+                                    grid = false,
+                                    index = index,
+                                    count = visible.size,
+                                    selected = file.path in state.selectedPaths,
+                                    hasSelection = state.selectedPaths.isNotEmpty(),
+                                    pickOptions = state.pickOptions,
+                                    ellipsize = state.nameEllipsize,
+                                    onAction = { onItemAction(file, it) },
+                                    onKeyNavigation = { key, shift ->
+                                        rangeSelectOnKey(visible, index, key, shift, onRangeSelect)
+                                    },
+                                    selectionEnabled = selectionEnabled
+                                )
                             }
                         }
+                    }
+                }
+            } else {
+                val gridState = rememberLazyGridState()
+                LazyVerticalGrid(
+                    columns = GridCells.Adaptive(minSize = 148.dp),
+                    state = gridState,
+                    modifier = Modifier.fillMaxSize().then(scrollModifier),
+                    contentPadding = listPadding,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    item(key = "header", span = { GridItemSpan(maxLineSpan) },
+                        contentType = "header") { header() }
+                    item(key = "banner", span = { GridItemSpan(maxLineSpan) },
+                        contentType = "banner") { banner() }
+                    gridItemsIndexed(visible, key = { _, file -> file.path.toString() },
+                        contentType = { _, file ->
+                            if (file.attributes.isDirectory) "directory" else "file"
+                        }) { index, file ->
+                        FileBrowserItem(
+                            file = file,
+                            grid = true,
+                            index = index,
+                            count = visible.size,
+                            selected = file.path in state.selectedPaths,
+                            hasSelection = state.selectedPaths.isNotEmpty(),
+                            pickOptions = state.pickOptions,
+                            ellipsize = state.nameEllipsize,
+                            onAction = { onItemAction(file, it) },
+                            onKeyNavigation = { key, shift ->
+                                rangeSelectOnKey(visible, index, key, shift, onRangeSelect)
+                            },
+                            selectionEnabled = selectionEnabled
+                        )
                     }
                 }
             }
         }
     }
-    // [C34] Contextual actions belong near the thumb, independent of the scrolling app bar.
-    // Existing 120dp lazy-content bottom padding keeps the final item reachable above this dock.
-    val dockModifier = Modifier.align(Alignment.BottomCenter)
-        .onSizeChanged { measuredDockHeight = it.height }
-        .navigationBarsPadding().imePadding()
-        .padding(start = 16.dp, end = 16.dp, top = 12.dp,
-            bottom = if (hasActiveJobs) 76.dp else 12.dp).widthIn(max = 520.dp)
-    if (chromeState.selectedCount > 0 && state.pickOptions == null) {
-        BrowserSelectionBar(
-            state = chromeState, onSelection = onSelection, modifier = dockModifier
-        )
-    } else if (chromeState.pasteCount > 0 && state.pickOptions == null) {
-        BrowserPasteBar(
-            state = chromeState, onSelection = onSelection, modifier = dockModifier
-        )
+}
+
+private fun rangeSelectOnKey(
+    visible: List<FileItem>,
+    index: Int,
+    key: Key,
+    shift: Boolean,
+    onRangeSelect: (List<FileItem>) -> Unit
+): Boolean {
+    val next = index + if (key == Key.DirectionDown) 1 else -1
+    if (shift && next in visible.indices) {
+        onRangeSelect(visible.subList(minOf(index, next), maxOf(index, next) + 1))
     }
+    // Never consume: native focus traversal must still advance.
+    return false
+}
+
+@Composable
+internal fun BrowserLoadingState() {
+    Box(
+        Modifier.fillMaxWidth().padding(vertical = 96.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        LoadingIndicator(Modifier.size(64.dp))
+    }
+}
+
+/** Calm, centred empty and error states with an expressive container shape ([V03]). */
+@Composable
+internal fun BrowserEmptyState(
+    icon: Int,
+    title: String,
+    detail: String,
+    actionLabel: String?,
+    onAction: (() -> Unit)?,
+    isError: Boolean = false
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 56.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        val shape = MaterialShapes.Cookie9Sided.toShape()
+        Surface(
+            shape = shape,
+            color = if (isError) MaterialTheme.colorScheme.errorContainer
+                else MaterialTheme.colorScheme.secondaryContainer,
+            modifier = Modifier.size(120.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painterResource(icon),
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = if (isError) MaterialTheme.colorScheme.onErrorContainer
+                        else MaterialTheme.colorScheme.onSecondaryContainer
+                )
+            }
+        }
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLargeEmphasized,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Text(
+            detail,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (actionLabel != null && onAction != null) {
+            Button(onClick = onAction, shapes = ButtonDefaults.shapes()) { Text(actionLabel) }
+        }
+    }
+}
+
+@Composable
+private fun BrowserErrorBanner(error: String, onRefresh: () -> Unit) {
+    Surface(
+        color = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+        shape = MaterialTheme.shapes.large,
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(error, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+            TextButton(onClick = onRefresh, shapes = ButtonDefaults.shapes()) {
+                Text(stringResource(R.string.refresh))
+            }
+        }
     }
 }
 
@@ -326,15 +417,15 @@ internal fun canSelectBrowserFile(file: FileItem, pick: PickOptions?): Boolean {
     }
 }
 
-/** Context menu actions mirror res/menu/file_item.xml and use the same fragment listener API. */
 /**
- * Expressive [C10] list rows share an intentional segmented group shape; the selection expands
- * into a distinct tonal state instead of permanently displaying checkboxes on every file.
- * Tiles are media-first, with the action menu over the preview and no redundant "Select" button.
+ * List rows are native expressive segmented list items ([C10]): one grouped surface with small
+ * inner seams, a morphing selected shape and tonal selected colours. Selection swaps the leading
+ * thumbnail for a check badge instead of permanently showing checkboxes on every file.
+ * Grid tiles are media-first with the action menu over the preview.
  */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FileBrowserItem(
+internal fun FileBrowserItem(
     file: FileItem,
     grid: Boolean,
     index: Int,
@@ -344,166 +435,213 @@ private fun FileBrowserItem(
     pickOptions: PickOptions?,
     ellipsize: TextUtils.TruncateAt,
     onAction: (FileBrowserItemAction) -> Unit,
-    onKeyNavigation: (Key, Boolean) -> Boolean
+    onKeyNavigation: (Key, Boolean) -> Boolean,
+    selectionEnabled: Boolean = true
 ) {
     val directory = file.attributes.isDirectory
-    val selectable = canSelectBrowserFile(file, pickOptions)
-    val enabled = selectable || directory
+    val selectable = selectionEnabled && canSelectBrowserFile(file, pickOptions)
+    val enabled = selectable || directory || !selectionEnabled
     val readOnly = file.path.fileSystem.isReadOnly
     val archivePath = file.path.isArchivePath
     var menuExpanded by remember(file.path) { mutableStateOf(false) }
-    val background = if (selected) MaterialTheme.colorScheme.secondaryContainer
-        else MaterialTheme.colorScheme.surfaceContainerLow
-    val foreground = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-        else MaterialTheme.colorScheme.onSurface
-    val shape = when {
-        selected -> MaterialTheme.shapes.extraLarge
-        grid || count == 1 -> MaterialTheme.shapes.large
-        else -> RoundedCornerShape(
-            topStart = if (index == 0) 24.dp else 6.dp,
-            topEnd = if (index == 0) 24.dp else 6.dp,
-            bottomStart = if (index == count - 1) 24.dp else 6.dp,
-            bottomEnd = if (index == count - 1) 24.dp else 6.dp
+    val keyModifier = Modifier.onPreviewKeyEvent { event ->
+        if (event.type == KeyEventType.KeyDown &&
+            (event.key == Key.DirectionUp || event.key == Key.DirectionDown)) {
+            onKeyNavigation(event.key, event.isShiftPressed)
+        } else false
+    }
+    val onClick = {
+        if (hasSelection && selectable) onAction(FileBrowserItemAction.SELECT)
+        else onAction(FileBrowserItemAction.OPEN)
+    }
+    val onLongClick: (() -> Unit)? = if (selectable) {
+        { onAction(FileBrowserItemAction.SELECT) }
+    } else null
+    val menu: @Composable () -> Unit = {
+        FileBrowserItemMenu(
+            file, readOnly, archivePath, pickOptions != null, selectable, selected,
+            menuExpanded, { menuExpanded = it }, onAction
         )
     }
-    Surface(
-        color = background,
-        shape = shape,
-        modifier = Modifier.fillMaxWidth().semantics { this.selected = selected }
-            .onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown &&
-                    (event.key == Key.DirectionUp || event.key == Key.DirectionDown)) {
-                    onKeyNavigation(event.key, event.isShiftPressed)
-                } else false
+    if (grid) {
+        FileBrowserGridTile(
+            file, selected, hasSelection, enabled, ellipsize, onClick, onLongClick,
+            keyModifier, menu
+        )
+        return
+    }
+    SegmentedListItem(
+        selected = selected,
+        onClick = onClick,
+        shapes = ListItemDefaults.segmentedShapes(index, count),
+        colors = VFilesListDefaults.segmentedColors(),
+        modifier = Modifier.fillMaxWidth().then(keyModifier),
+        enabled = enabled,
+        onLongClick = onLongClick,
+        onLongClickLabel = if (selectable) stringResource(R.string.select) else null,
+        leadingContent = {
+            Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                FileBrowserThumbnail(file, Modifier.size(44.dp), grid = false)
+                AnimatedVisibility(selected) { SelectedBadge(Modifier.size(44.dp)) }
             }
+        },
+        trailingContent = { menu() },
+        supportingContent = if (!directory || file.hasBadges) {
+            { FileBrowserSupportingText(file, directory) }
+        } else null,
+        content = {
+            Text(
+                file.name,
+                maxLines = 2,
+                overflow = ellipsize.toComposeOverflow()
+            )
+        }
+    )
+}
+
+@Composable
+private fun FileBrowserSupportingText(file: FileItem, directory: Boolean) {
+    Row(
+        modifier = Modifier.singleLineBaseline(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (!directory) {
+            val context = LocalContext.current
+            val size = file.attributes.fileSize.formatHumanReadable(context)
+            val modified = file.attributes.lastModifiedTime().toInstant().formatShort(context)
+            Text(
+                "$modified · $size",
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false)
+            )
+        }
+        FileBrowserBadges(file)
+    }
+}
+
+private val FileItem.hasBadges: Boolean
+    get() = attributesNoFollowLinks.isSymbolicLink || attributesNoFollowLinks.isEncrypted() ||
+        isArchiveFile || path.isArchivePath || path.fileSystem.isReadOnly
+
+@Composable
+private fun SelectedBadge(modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primary,
+        contentColor = MaterialTheme.colorScheme.onPrimary
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                painterResource(R.drawable.check_icon_control_normal_24dp),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun FileBrowserGridTile(
+    file: FileItem,
+    selected: Boolean,
+    hasSelection: Boolean,
+    enabled: Boolean,
+    ellipsize: TextUtils.TruncateAt,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)?,
+    keyModifier: Modifier,
+    menu: @Composable () -> Unit
+) {
+    val directory = file.attributes.isDirectory
+    // Selection morphs the tile corner: a quiet, physical confirmation of the state change.
+    val corner by animateDpAsState(
+        if (selected) 32.dp else 20.dp,
+        MaterialTheme.motionScheme.fastSpatialSpec()
+    )
+    val shape = RoundedCornerShape(corner)
+    Surface(
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer
+            else MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
+            else MaterialTheme.colorScheme.onSurface,
+        shape = shape,
+        modifier = Modifier.fillMaxWidth().clip(shape).semantics { this.selected = selected }
+            .then(keyModifier)
             .combinedClickable(
                 enabled = enabled,
                 onClickLabel = if (hasSelection) stringResource(
                     if (selected) R.string.file_browser_deselect else R.string.select
                 ) else null,
-                onLongClickLabel = if (selectable) stringResource(R.string.select) else null,
-                onClick = {
-                    if (hasSelection && selectable) onAction(FileBrowserItemAction.SELECT)
-                    else onAction(FileBrowserItemAction.OPEN)
-                },
-                onLongClick = if (selectable) {
-                    { onAction(FileBrowserItemAction.SELECT) }
-                } else null
+                onLongClickLabel = if (onLongClick != null) stringResource(R.string.select) else null,
+                onClick = onClick,
+                onLongClick = onLongClick
             )
     ) {
-        if (grid) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxWidth().aspectRatio(1.25f),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier.fillMaxWidth().height(96.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    FileBrowserThumbnail(
-                        file = file,
-                        grid = true,
-                        modifier = if (directory || !file.supportsThumbnail) Modifier.size(80.dp)
-                            else Modifier.fillMaxSize()
-                    )
-                    if (selected || hasSelection) {
-                        Box(Modifier.align(Alignment.TopStart)) {
-                            Checkbox(
-                                checked = selected,
-                                onCheckedChange = null,
-                                modifier = Modifier.clearAndSetSemantics { }
-                            )
-                        }
-                    }
-                    Box(Modifier.align(Alignment.TopEnd)) {
-                        FileBrowserItemMenu(
-                            file, readOnly, archivePath,
-                            pickOptions != null, selectable, selected, menuExpanded,
-                            { menuExpanded = it }, onAction
-                        )
-                    }
-                }
-                Text(
-                    file.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = foreground,
-                    maxLines = 2,
-                    minLines = 2,
-                    overflow = ellipsize.toComposeOverflow()
+                FileBrowserThumbnail(
+                    file = file,
+                    grid = true,
+                    modifier = if (directory || !file.supportsThumbnail) Modifier.size(72.dp)
+                        else Modifier.fillMaxSize()
                 )
-                FileBrowserBadges(file)
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp)
-                    .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                FileBrowserThumbnail(file, Modifier.size(44.dp), grid = false)
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        file.name,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = foreground,
-                        maxLines = 2,
-                        overflow = ellipsize.toComposeOverflow()
-                    )
-                    if (!directory) {
-                        val context = LocalContext.current
-                        val size = file.attributes.fileSize.formatHumanReadable(context)
-                        val modified = file.attributes.lastModifiedTime().toInstant()
-                            .formatShort(context)
-                        Text(
-                            "$modified · $size",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (selected) foreground
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1, overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    FileBrowserBadges(file)
+                if (selected) {
+                    SelectedBadge(Modifier.align(Alignment.TopStart).padding(4.dp).size(28.dp))
                 }
-                if (selected || hasSelection) {
-                    Checkbox(
-                        checked = selected, onCheckedChange = null,
-                        modifier = Modifier.clearAndSetSemantics { }
-                    )
-                }
-                FileBrowserItemMenu(
-                    file, readOnly, archivePath,
-                    pickOptions != null, selectable, selected, menuExpanded, { menuExpanded = it }, onAction
-                )
+                Box(Modifier.align(Alignment.TopEnd)) { menu() }
             }
+            Text(
+                file.name,
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 2,
+                minLines = 2,
+                overflow = ellipsize.toComposeOverflow(),
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            Box(Modifier.padding(horizontal = 4.dp, vertical = 0.dp)) { FileBrowserBadges(file) }
         }
     }
 }
 
 /**
- * Uncluttered 44dp list icons and restrained 80dp grid previews. Directory icons use the theme's
- * paired secondary-container colors, while Coil images are clipped and retain provider fetchers.
- * Never paint a square gray ImageView background behind every folder glyph.
+ * 44dp list icons and restrained grid previews. Directory icons use the paired secondary
+ * container colours, while Coil images are clipped and retain the app's provider fetchers.
  */
 @Composable
 private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier, grid: Boolean = false) {
     val directory = file.attributes.isDirectory
     val thumbnail = !directory && file.supportsThumbnail
     val iconTint = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
-    val shape = MaterialTheme.shapes.medium
+    val shape = if (grid) MaterialTheme.shapes.large else MaterialTheme.shapes.medium
     val background = if (directory) MaterialTheme.colorScheme.secondaryContainer
-        else MaterialTheme.colorScheme.surfaceContainerHigh
-    Surface(
-        modifier = modifier.clip(shape),
-        color = background,
-        shape = shape
-    ) {
+        else MaterialTheme.colorScheme.surfaceContainerHighest
+    Surface(modifier = modifier.clip(shape), color = background, shape = shape) {
         if (directory) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Icon(
                     painter = painterResource(R.drawable.file_browser_icon_folder),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                    modifier = Modifier.size(if (grid) 40.dp else 26.dp)
+                    modifier = Modifier.size(if (grid) 36.dp else 24.dp)
+                )
+            }
+        } else if (LocalInspectionMode.current) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(
+                    painterResource(file.mimeType.iconRes),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(if (grid) 36.dp else 24.dp)
                 )
             }
         } else {
@@ -513,7 +651,6 @@ private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier, 
                     ImageView(context).apply {
                         scaleType = ImageView.ScaleType.FIT_CENTER
                         setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                        setPadding(8, 8, 8, 8)
                     }
                 },
                 modifier = Modifier.fillMaxSize(),
@@ -534,7 +671,7 @@ private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier, 
                     image.scaleType = if (thumbnail) ImageView.ScaleType.CENTER_CROP
                         else ImageView.ScaleType.FIT_CENTER
                     val p = if (thumbnail) 0 else
-                        (image.resources.displayMetrics.density * if (grid) 18 else 8).toInt()
+                        (image.resources.displayMetrics.density * if (grid) 18 else 10).toInt()
                     if (image.paddingLeft != p) image.setPadding(p, p, p, p)
                 },
                 onRelease = { image -> image.dispose(); image.tag = null }
@@ -560,28 +697,37 @@ private fun FileBrowserBadges(file: FileItem) {
             Icon(
                 painter = painterResource(badge),
                 contentDescription = if (file.attributesNoFollowLinks.isSymbolicLink)
-                    stringResource(R.string.file_browser_badge_symbolic_link) else stringResource(R.string.file_browser_badge_encrypted),
-                modifier = Modifier.size(18.dp),
+                    stringResource(R.string.file_browser_badge_symbolic_link)
+                    else stringResource(R.string.file_browser_badge_encrypted),
+                modifier = Modifier.size(16.dp),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         if (file.isArchiveFile || file.path.isArchivePath) {
-            Text(
-                stringResource(R.string.file_browser_badge_archive),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            BrowserBadgeLabel(stringResource(R.string.file_browser_badge_archive))
         }
         if (file.path.fileSystem.isReadOnly) {
-            Text(
-                stringResource(R.string.file_browser_badge_read_only),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            BrowserBadgeLabel(stringResource(R.string.file_browser_badge_read_only))
         }
     }
 }
 
+@Composable
+private fun BrowserBadgeLabel(text: String) {
+    Surface(
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        shape = MaterialTheme.shapes.small
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+        )
+    }
+}
+
+/** Context menu actions mirror res/menu/file_item.xml, grouped by intent ([C17]). */
 @Composable
 private fun FileBrowserItemMenu(
     file: FileItem,
@@ -595,49 +741,68 @@ private fun FileBrowserItemMenu(
     onAction: (FileBrowserItemAction) -> Unit
 ) {
     Box {
-        IconButton(onClick = { onExpanded(true) }) {
+        IconButton(onClick = { onExpanded(true) }, shapes = IconButtonDefaults.shapes()) {
             Icon(
                 painterResource(R.drawable.file_browser_icon_more),
                 contentDescription = stringResource(R.string.file_browser_item_actions)
             )
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { onExpanded(false) }) {
-            if (selectable) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(if (selected)
-                        R.string.file_browser_deselect else R.string.select)) },
-                    onClick = { onExpanded(false); onAction(FileBrowserItemAction.SELECT) }
-                )
-            }
-            @Composable
-            fun item(id: Int, action: FileBrowserItemAction) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(id)) },
-                    onClick = { onExpanded(false); onAction(action) }
-                )
-            }
-            if (!file.attributes.isDirectory) {
-                item(R.string.file_item_action_open_with, FileBrowserItemAction.OPEN_WITH)
-            }
-            if (!picker) {
-                if (!readOnly && !archivePath && !file.attributes.isDirectory) {
-                    item(R.string.edit, FileBrowserItemAction.EDIT_WITH)
+        DropdownMenuPopup(expanded = expanded, onDismissRequest = { onExpanded(false) }) {
+            val directory = file.attributes.isDirectory
+            val groups = buildList {
+                add(buildList {
+                    if (selectable) add(
+                        (if (selected) R.string.file_browser_deselect else R.string.select) to
+                            FileBrowserItemAction.SELECT
+                    )
+                    if (!directory) add(R.string.file_item_action_open_with to FileBrowserItemAction.OPEN_WITH)
+                    if (!picker && !readOnly && !archivePath && !directory) {
+                        add(R.string.edit to FileBrowserItemAction.EDIT_WITH)
+                    }
+                })
+                if (!picker) {
+                    add(buildList {
+                        if (!readOnly) add(R.string.cut to FileBrowserItemAction.CUT)
+                        add((if (archivePath) R.string.file_item_action_extract else R.string.copy) to
+                            FileBrowserItemAction.COPY)
+                        if (!readOnly) {
+                            add(R.string.rename to FileBrowserItemAction.RENAME)
+                            add(R.string.delete to FileBrowserItemAction.DELETE)
+                        }
+                    })
+                    add(buildList {
+                        if (file.isArchiveFile) add(R.string.file_item_action_extract to FileBrowserItemAction.EXTRACT)
+                        if (!archivePath) add(R.string.file_item_action_archive to FileBrowserItemAction.ARCHIVE)
+                        add(R.string.share to FileBrowserItemAction.SHARE)
+                        add(R.string.file_item_action_copy_path to FileBrowserItemAction.COPY_PATH)
+                    })
+                    add(buildList {
+                        if (directory) add(R.string.file_item_action_add_bookmark to FileBrowserItemAction.BOOKMARK)
+                        add(R.string.file_item_action_create_shortcut to FileBrowserItemAction.SHORTCUT)
+                        add(R.string.file_item_action_properties to FileBrowserItemAction.PROPERTIES)
+                    })
                 }
-                if (!readOnly) item(R.string.cut, FileBrowserItemAction.CUT)
-                item(if (archivePath) R.string.file_item_action_extract else R.string.copy,
-                    FileBrowserItemAction.COPY)
-                if (!readOnly) {
-                    item(R.string.delete, FileBrowserItemAction.DELETE)
-                    item(R.string.rename, FileBrowserItemAction.RENAME)
+            }.filter { it.isNotEmpty() }
+            groups.forEachIndexed { groupIndex, group ->
+                DropdownMenuGroup(shapes = MenuDefaults.groupShape(groupIndex, groups.size)) {
+                    group.forEachIndexed { index, (title, action) ->
+                        val destructive = action == FileBrowserItemAction.DELETE
+                        DropdownMenuItem(
+                            onClick = { onExpanded(false); onAction(action) },
+                            text = {
+                                Text(
+                                    stringResource(title),
+                                    color = if (destructive) MaterialTheme.colorScheme.error
+                                        else androidx.compose.ui.graphics.Color.Unspecified
+                                )
+                            },
+                            shape = MenuDefaults.itemShape(index, group.size).shape
+                        )
+                    }
                 }
-                if (file.isArchiveFile) item(R.string.file_item_action_extract, FileBrowserItemAction.EXTRACT)
-                if (!archivePath) item(R.string.file_item_action_archive, FileBrowserItemAction.ARCHIVE)
-                item(R.string.share, FileBrowserItemAction.SHARE)
-                item(R.string.file_item_action_copy_path, FileBrowserItemAction.COPY_PATH)
-                if (file.attributes.isDirectory)
-                    item(R.string.file_item_action_add_bookmark, FileBrowserItemAction.BOOKMARK)
-                item(R.string.file_item_action_create_shortcut, FileBrowserItemAction.SHORTCUT)
-                item(R.string.file_item_action_properties, FileBrowserItemAction.PROPERTIES)
+                if (groupIndex != groups.lastIndex) {
+                    androidx.compose.foundation.layout.Spacer(Modifier.size(MenuDefaults.GroupSpacing))
+                }
             }
         }
     }

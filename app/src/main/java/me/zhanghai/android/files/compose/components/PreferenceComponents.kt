@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import me.zhanghai.android.files.compose.components.VFilesListDefaults
 
 /** Data-only preference row. The owning screen reads/writes SettingLiveData, not this component. */
 data class PreferenceRowUi(
@@ -39,8 +40,8 @@ fun VFilesPreferenceGroup(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMediumEmphasized,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleSmallEmphasized,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.semantics { heading() }.padding(start = 16.dp, bottom = 8.dp)
         )
         Column(verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
@@ -49,6 +50,7 @@ fun VFilesPreferenceGroup(
                     onClick = { onSelect(row.key) },
                     enabled = row.enabled,
                     shapes = ListItemDefaults.segmentedShapes(index, rows.size),
+                    colors = VFilesListDefaults.segmentedColors(),
                     content = { Text(row.title, style = MaterialTheme.typography.titleMedium) },
                     supportingContent = row.supporting?.let { subtitle ->
                         { Text(subtitle, style = MaterialTheme.typography.bodyMedium) }

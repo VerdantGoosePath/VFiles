@@ -1,19 +1,16 @@
 package me.zhanghai.android.files.filelist
 
 import android.graphics.Bitmap
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import me.zhanghai.android.files.compose.components.BreadcrumbUi
 import me.zhanghai.android.files.compose.theme.VFilesAppearance
 import me.zhanghai.android.files.compose.theme.VFilesTheme
 import org.junit.Rule
@@ -22,37 +19,31 @@ import org.junit.runner.RunWith
 import java.io.File
 
 /**
- * API35 emulator screenshot evidence for actual MaterialExpressiveTheme browser controls.
+ * Emulator screenshot evidence for the full MaterialExpressiveTheme browser screen.
  * This is NOT a pixel-golden test; a human must inspect each theme, font scale and width.
  */
 @RunWith(AndroidJUnit4::class)
 class FileBrowserScreenshotSmokeTest {
     @get:Rule val composeRule = createComposeRule()
 
-    @Test fun capturesRealBrowserChromeInLightAndDark() {
+    @Test fun capturesRealBrowserScreenInLightAndDark() {
         var dark by mutableStateOf(false)
+        var selected by mutableStateOf(0)
+        val trail = listOf(BreadcrumbUi("0", "Internal storage"), BreadcrumbUi("1", "Download"))
         composeRule.setContent {
             VFilesTheme(appearance = VFilesAppearance(dark = dark)) {
-                Column(Modifier.fillMaxWidth()) {
-                    VFilesBrowserChrome(
-                        state = FileBrowserChromeState(),
-                        onBreadcrumb = {},
-                        onSearchExpanded = {},
-                        onSearchQuery = {},
-                        onSearchSubmit = {},
-                        onViewType = {},
-                        onSortBy = {},
-                        onSortOrder = {},
-                        onDirectoriesFirst = {},
-                        onPathSpecificSort = {},
-                        onShowHiddenFiles = {},
-                        onSelection = {}
-                    )
-                    BrowserSelectionBar(
-                        state = FileBrowserChromeState(selectedCount = 2),
-                        onSelection = {}
-                    )
-                }
+                FileBrowserScreen(
+                    chrome = FileBrowserChromeState(
+                        breadcrumbs = trail, subtitle = "3 folders", selectedCount = selected,
+                        currentReadOnly = false
+                    ),
+                    content = FileBrowserContentState(loading = false),
+                    jobs = emptyList(),
+                    navigation = FileBrowserNavigationState(),
+                    navigationListener = NoNavigation,
+                    createMenuExpanded = false,
+                    actions = RecordingActions()
+                )
             }
         }
         val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -65,7 +56,9 @@ class FileBrowserScreenshotSmokeTest {
             }
         }
         capture("light")
-        composeRule.runOnIdle { dark = true }
+        composeRule.runOnIdle { selected = 2 }
+        capture("light-selection")
+        composeRule.runOnIdle { dark = true; selected = 0 }
         capture("dark")
     }
 }

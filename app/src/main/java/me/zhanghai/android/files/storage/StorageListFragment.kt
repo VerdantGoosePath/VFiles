@@ -48,6 +48,7 @@ import me.zhanghai.android.files.compose.theme.observeCompose
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.startActivitySafe
+import me.zhanghai.android.files.compose.components.VFilesListDefaults
 
 /**
  * Storage management is a single ordered collection, not groups sorted by protocol.
@@ -93,6 +94,7 @@ class StorageListFragment : Fragment() {
                                     SegmentedListItem(
                                         modifier = Modifier.fillMaxWidth().widthIn(max = 850.dp),
                                         shapes = ListItemDefaults.segmentedShapes(index, storages.size),
+                                        colors = VFilesListDefaults.segmentedColors(),
                                         onClick = { startActivitySafe(storage.createEditIntent()) },
                                         leadingContent = {
                                             Icon(

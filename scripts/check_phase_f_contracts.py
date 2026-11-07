@@ -40,7 +40,8 @@ assert any((s.get(android + "name") or "").endswith(".FtpServerService")
 
 build = Path("app/build.gradle").read_text()
 assert re.search(r"compileSdk\s*=\s*37\b", build)
-assert re.search(r"minSdk\s+23\b", build)
+assert re.search(r"minSdk\s+24\b", build)
+assert "androidx.compose.material3:material3:1.5.0-rc01" in build
 # Android17 is the default target for every build variant.
 assert re.search(r"targetSdk\s+37\b", build)
 for dependency in ("io.coil-kt:coil", "io.coil-kt:coil-video",
@@ -59,11 +60,14 @@ assert "visibleResult == null" in browser
 fragment = (src / "filelist/FileListFragment.kt").read_text()
 assert "getSubtitle(files.orEmpty())" in fragment
 assert "throwable.printStackTrace()" not in fragment
-assert "Modifier.clearAndSetSemantics { }" in browser
-assert "measuredDockHeight" in browser and "onSizeChanged" in browser
+assert "SegmentedListItem(" in browser
+screen = (src / "filelist/FileBrowserScreen.kt").read_text()
+# The last row must clear the FAB menu or the floating toolbar.
+assert "bottom = padding.calculateBottomPadding() + 112.dp" in screen
 chrome = (src / "filelist/FileBrowserChrome.kt").read_text()
 assert "modifier = Modifier.clearAndSetSemantics { }" in chrome
-assert "Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())" in chrome
+assert "Modifier.fillMaxWidth().horizontalScroll(scroll)" in chrome
+assert "rememberScrollState(initial = Int.MAX_VALUE)" in chrome
 scaffold = (src / "compose/components/SurfaceComponents.kt").read_text()
 assert "IconButton(onClick = onBack)" in scaffold
 assert "settings_expressive_back_24dp" in scaffold
@@ -97,7 +101,9 @@ assert "systemContrast(context)" in theme
 assert "binding.viewPager.offscreenPageLimit = 1" in (src / "fileproperties/FilePropertiesDialogFragment.kt").read_text()
 assert "@style/TextAppearance.MaterialFiles.Material3.Toolbar.Subtitle" in (root / "res/layout/file_list_fragment_app_bar_include.xml").read_text()
 assert "TextAppearance.MaterialFiles.Material3.Toolbar.Subtitle" in (root / "res/values/styles_material3.xml").read_text()
-assert "tintDestructivePositiveButton()" in (src / "filelist/ConfirmDeleteFilesDialogFragment.kt").read_text()
+confirm_delete = (src / "filelist/ConfirmDeleteFilesDialogFragment.kt").read_text()
+assert "ComposeDialogFragment()" in confirm_delete
+assert "contentColor = MaterialTheme.colorScheme.error" in confirm_delete
 assert "tintDestructivePositiveButton()" in (src / "filelist/ConfirmReplaceFileDialogFragment.kt").read_text()
 assert "itemBinding.text.isFocusable = true" in (src / "fileproperties/FilePropertiesTabFragment.kt").read_text()
 assert 'android:foregroundServiceType="connectedDevice"' in manifest_source

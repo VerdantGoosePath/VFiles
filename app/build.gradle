@@ -16,7 +16,7 @@ android {
     ndkVersion '28.1.13356709'
     defaultConfig {
         applicationId 'fr.vroot.vfiles.fork'
-        minSdk 23
+        minSdk 24
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
         // Ship against Android 17. File-job timeout and FTP connectedDevice service
         // safeguards are retained; long-running dataSync resume can be refined later.
@@ -44,6 +44,16 @@ android {
     }
     androidResources {
         generateLocaleConfig true
+    }
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+            all {
+                // Robolectric reaches into FileDescriptor internals on JDK 17+.
+                jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED',
+                    '--add-exports=java.base/jdk.internal.access=ALL-UNNAMED'
+            }
+        }
     }
     compileOptions {
         coreLibraryDesugaringEnabled true
@@ -163,8 +173,8 @@ dependencies {
     // Android 17 compile and target are both API 37. All debug/systemPicker variants match.
     // Stable BOM controls Compose runtime/UI. Material3 explicitly overrides the BOM's
     // 1.4 stable to enable MaterialExpressiveTheme and native segmented lists.
-    // Pinned at 1.5.0-alpha23 because alpha24+ adds material3-ripple with minSdk 24;
-    // VFiles must retain minSdk 23. Do not force-override that library's minSdk.
+    // 1.5.0-rc01 pulls in material3-ripple, which requires minSdk 24; the app's
+    // minSdk was raised to 24 for that reason. Do not force-override library minSdk.
     def composeBom = platform('androidx.compose:compose-bom:2026.09.00')
     implementation composeBom
     androidTestImplementation composeBom
@@ -173,7 +183,7 @@ dependencies {
     implementation 'androidx.compose.foundation:foundation'
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-tooling-preview'
-    implementation 'androidx.compose.material3:material3:1.5.0-alpha23'
+    implementation 'androidx.compose.material3:material3:1.5.0-rc01'
     implementation 'androidx.activity:activity-compose:1.13.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-compose:2.10.0'
     debugImplementation 'androidx.compose.ui:ui-tooling'
@@ -182,6 +192,14 @@ dependencies {
     androidTestImplementation 'androidx.test:runner:1.6.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     testImplementation 'junit:junit:4.13.2'
+    // JVM (Robolectric) renders of Compose screens for design review without a device.
+    testImplementation composeBom
+    testImplementation('org.robolectric:robolectric:4.17') {
+        // The app ships bcprov-jdk15to18; a second, differently signed copy breaks the JCE.
+        exclude group: 'org.bouncycastle'
+    }
+    testImplementation 'androidx.compose.ui:ui-test-junit4'
+    testImplementation 'androidx.test.ext:junit:1.2.1'
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 

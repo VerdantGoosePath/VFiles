@@ -57,6 +57,7 @@ import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.launchSafe
 import me.zhanghai.android.files.util.putArgs
 import me.zhanghai.android.files.util.startActivitySafe
+import me.zhanghai.android.files.compose.components.VFilesListDefaults
 
 /**
  * Bookmarks remain stored/reordered in BookmarkDirectories. Visible up/down actions are a
@@ -159,6 +160,7 @@ private fun BookmarkSettingsScreen(
                                 SegmentedListItem(
                                     onClick = { onEditBookmark(bookmark) },
                                     shapes = ListItemDefaults.segmentedShapes(index, bookmarks.size),
+                                    colors = VFilesListDefaults.segmentedColors(),
                                     content = {
                                         Text(
                                             bookmark.name,

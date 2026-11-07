@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="browserScreenView" type="id" />
+    <item name="composeDialogContent" type="id" />
+    <!-- Stored by Settings.CREATE_ARCHIVE_TYPE as resource names; keep them stable. -->
+    <item name="zipRadio" type="id" />
+    <item name="tarXzRadio" type="id" />
+    <item name="sevenZRadio" type="id" />
+</resources>
