@@ -293,7 +293,7 @@ fun VFilesBrowserContent(
     // Existing 120dp lazy-content bottom padding keeps the final item reachable above this dock.
     val dockModifier = Modifier.align(Alignment.BottomCenter)
         .navigationBarsPadding().imePadding()
-        .padding(horizontal = 16.dp, top = 12.dp,
+        .padding(start = 16.dp, end = 16.dp, top = 12.dp,
             bottom = if (hasActiveJobs) 76.dp else 12.dp).widthIn(max = 520.dp)
     if (chromeState.selectedCount > 0 && state.pickOptions == null) {
         BrowserSelectionBar(
