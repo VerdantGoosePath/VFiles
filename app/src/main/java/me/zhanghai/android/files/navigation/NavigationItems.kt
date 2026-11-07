@@ -116,6 +116,8 @@ private class PathStorageItem(
     override fun getSubtitle(context: Context): String? =
         storage.linuxPath?.let { getStorageSubtitle(it, context) }
 
+    override val supportsLongClick: Boolean get() = true
+
     override fun onLongClick(listener: Listener): Boolean {
         listener.launchIntent(storage.createEditIntent())
         return true
@@ -144,6 +146,8 @@ private class IntentStorageItem(
         listener.launchIntent(storage.createIntent()!!)
         listener.closeNavigationDrawer()
     }
+
+    override val supportsLongClick: Boolean get() = true
 
     override fun onLongClick(listener: Listener): Boolean {
         listener.launchIntent(storage.createEditIntent())
@@ -275,6 +279,8 @@ private class StorageVolumeItem(
     override fun getName(context: Context): String = getTitle(context)
 
     // Long-press opens a small dialog to rename the volume, choose its icon, or eject it.
+    override val supportsLongClick: Boolean get() = storageVolume.uuidCompat != null
+
     override fun onLongClick(listener: Listener): Boolean {
         val uuid = storageVolume.uuidCompat ?: return false
         listener.launchIntent(
@@ -418,6 +424,8 @@ private class StandardDirectoryItem(
 
     override fun getTitle(context: Context): String = standardDirectory.getTitle(context)
 
+    override val supportsLongClick: Boolean get() = true
+
     override fun onLongClick(listener: Listener): Boolean {
         listener.launchIntent(StandardDirectoryListActivity::class.createIntent())
         return true
@@ -556,6 +564,8 @@ private class BookmarkDirectoryItem(
     override val iconRes: Int = R.drawable.bookmark_icon_white_24dp
 
     override fun getTitle(context: Context): String = bookmarkDirectory.name
+
+    override val supportsLongClick: Boolean get() = true
 
     override fun onLongClick(listener: Listener): Boolean {
         listener.launchIntent(

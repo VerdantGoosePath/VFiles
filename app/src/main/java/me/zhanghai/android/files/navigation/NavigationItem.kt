@@ -32,6 +32,9 @@ abstract class NavigationItem {
     // whose partitions are listed beneath it). Such rows aren't clickable or focusable.
     open val isHeader: Boolean = false
 
+    /** Distinguish a real edit action from a decorative long-press affordance. */
+    open val supportsLongClick: Boolean = false
+
     open fun isChecked(listener: Listener): Boolean = false
 
     abstract fun onClick(listener: Listener)

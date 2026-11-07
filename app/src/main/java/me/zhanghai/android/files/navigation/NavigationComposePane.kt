@@ -6,6 +6,8 @@ import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,7 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
+import me.zhanghai.android.files.R
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -47,6 +52,7 @@ internal data class NavigationEntryUi(
  * The subtitles for local/removable volumes can query free disk space. Resolve them off-main
  * and refresh on open, volume change, and after file jobs. Actions call the original NavigationItem.
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun VFilesNavigationPane(
     items: List<NavigationItem?>,
@@ -56,8 +62,8 @@ internal fun VFilesNavigationPane(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val entries by produceState(
-        initialValue = emptyList<NavigationEntryUi>(), items, revision
+    val loadedEntries by produceState<List<NavigationEntryUi>?>(
+        initialValue = null, items, revision
     ) {
         value = withContext(Dispatchers.IO) {
             items.map { item ->
@@ -70,6 +76,7 @@ internal fun VFilesNavigationPane(
             }
         }
     }
+    val entries = loadedEntries.orEmpty()
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.surfaceContainerLow
@@ -78,6 +85,13 @@ internal fun VFilesNavigationPane(
             contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            if (loadedEntries == null) {
+                item(key = "loading") {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        LoadingIndicator(Modifier.size(36.dp))
+                    }
+                }
+            }
             itemsIndexed(
                 entries,
                 key = { index, entry -> entry.item?.id?.toString() ?: "divider-" + index },
@@ -126,10 +140,14 @@ private fun NavigationDestination(
     val background = if (checked) MaterialTheme.colorScheme.secondaryContainer
         else MaterialTheme.colorScheme.surfaceContainerLow
     Surface(
-        modifier = Modifier.fillMaxWidth().semantics { selected = checked }
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .semantics { selected = checked }
             .combinedClickable(
                 onClick = { item.onClick(listener) },
-                onLongClick = { item.onLongClick(listener) }
+                onLongClickLabel = if (item.supportsLongClick) context.getString(R.string.edit) else null,
+                onLongClick = if (item.supportsLongClick) {
+                    { item.onLongClick(listener) }
+                } else null
             ),
         shape = MaterialTheme.shapes.large,
         color = background
