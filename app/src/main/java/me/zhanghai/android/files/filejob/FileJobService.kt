@@ -8,7 +8,9 @@ package me.zhanghai.android.files.filejob
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
+import androidx.annotation.RequiresApi
 import androidx.annotation.MainThread
 import java8.nio.file.Path
 import me.zhanghai.android.files.file.MimeType
@@ -46,7 +48,18 @@ class FileJobService : Service() {
 
     override fun onBind(intent: Intent): IBinder? = null
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+    // Jobs exist only in RAM (they contain provider paths, callbacks and sometimes passwords).
+    // Never resurrect a service after process death and pretend an unfinished job is resumable.
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int =
+        START_NOT_STICKY
+
+    /** Android 15+ limits dataSync FGS time across the entire app to 6h per 24h. */
+    @RequiresApi(35)
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        // The framework allows only a few seconds to stop. onDestroy cancels all in-flight
+        // jobs and releases locks; no automatic retry of an incompletely copied file.
+        stopSelf()
+    }
 
     private val jobCount: Int
         get() = synchronized(runningJobs) { runningJobs.size }
@@ -89,6 +102,7 @@ class FileJobService : Service() {
             }
             updateWakeWifiLockLocked()
         }
+        executorService.shutdownNow()
     }
 
     // Synchronize on runningJobs to avoid the potential race condition that the lock is

@@ -95,4 +95,9 @@ release = Path(".github/workflows/android.yml").read_text()
 assert 'platforms;android-37.0' in release and 'platforms;android-36' not in release
 assert 'minTouchTargetSize">0dp' not in (root / "res/values/themes_material3.xml").read_text()
 assert "systemContrast(context)" in theme
+assert 'android:foregroundServiceType="connectedDevice"' in manifest_source
+assert "FOREGROUND_SERVICE_CONNECTED_DEVICE" in manifest_source
+assert "CHANGE_NETWORK_STATE" in manifest_source
+assert "override fun onTimeout(startId: Int, fgsType: Int)" in (src / "filejob/FileJobService.kt").read_text()
+assert "START_NOT_STICKY" in (src / "filejob/FileJobService.kt").read_text()
 print(f"Phase F source contracts: PASS ({len(activities)} activities, {len(providers)} providers, {len(services)} services); not a device test.")

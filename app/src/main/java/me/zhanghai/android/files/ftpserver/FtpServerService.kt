@@ -13,6 +13,7 @@ import androidx.annotation.WorkerThread
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import me.zhanghai.android.files.R
 import me.zhanghai.android.files.compat.mainExecutorCompat
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.WakeWifiLock
@@ -66,7 +67,9 @@ class FtpServerService : Service() {
 
     private fun onStartError(exception: Exception) {
         state = State.STOPPED
-        showToast(exception.toString())
+        // Server errors may contain credentials, private hostnames or provider paths.
+        // Never echo a Throwable into UI, especially when network configuration fails.
+        showToast(R.string.ftp_server_expressive_start_failed)
         notification.stopForeground()
         wakeWifiLock.isAcquired = false
         stopSelf()
@@ -109,7 +112,6 @@ class FtpServerService : Service() {
         try {
             server.start()
         } catch (e: Exception) {
-            e.printStackTrace()
             this.server = null
             mainExecutorCompat.execute { onStartError(e) }
             return
