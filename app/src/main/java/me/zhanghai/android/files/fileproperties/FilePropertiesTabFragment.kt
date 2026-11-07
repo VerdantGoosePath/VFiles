@@ -144,6 +144,12 @@ abstract class FilePropertiesTabFragment : Fragment() {
             itemBinding.text.setText(text)
             itemBinding.text.setTextIsSelectable(onClickListener == null)
             itemBinding.text.setOnClickListener(onClickListener?.let { View.OnClickListener(it) })
+            // TextIsSelectable(false) disables keyboard focus; restore it for metadata
+            // links/actions so D-pad, TalkBack and hardware-keyboard users can open them.
+            if (onClickListener != null) {
+                itemBinding.text.isFocusable = true
+                itemBinding.text.isClickable = true
+            }
             return itemBinding.text
         }
 

@@ -94,6 +94,9 @@ release = Path(".github/workflows/android.yml").read_text()
 assert 'platforms;android-37.0' in release and 'platforms;android-36' not in release
 assert 'minTouchTargetSize">0dp' not in (root / "res/values/themes_material3.xml").read_text()
 assert "systemContrast(context)" in theme
+assert "tintDestructivePositiveButton()" in (src / "filelist/ConfirmDeleteFilesDialogFragment.kt").read_text()
+assert "tintDestructivePositiveButton()" in (src / "filelist/ConfirmReplaceFileDialogFragment.kt").read_text()
+assert "itemBinding.text.isFocusable = true" in (src / "fileproperties/FilePropertiesTabFragment.kt").read_text()
 assert 'android:foregroundServiceType="connectedDevice"' in manifest_source
 assert "FOREGROUND_SERVICE_CONNECTED_DEVICE" in manifest_source
 assert "CHANGE_NETWORK_STATE" in manifest_source
