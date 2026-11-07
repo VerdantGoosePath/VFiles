@@ -832,6 +832,15 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 VFilesTheme {
                     VFilesBrowserContent(
                         state = browserContentState,
+                        chromeState = browserChromeState,
+                        onSelection = { command ->
+                            // File jobs and selection remain subject to the existing policy
+                            // regardless of which Compose surface dispatched the command.
+                            updateBrowserChrome()
+                            if (command in browserChromeState.commandContext().availableCommands()) {
+                                onComposeSelection(command)
+                            }
+                        },
                         onRefresh = { refresh() },
                         onItemAction = { file, action -> onComposeItemAction(file, action) },
                         onRangeSelect = { onComposeRangeSelect(it) },
@@ -1163,7 +1172,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val searchViewExpanded = viewModel.isSearchViewExpanded
         // Compose already exposes sorting and layout in the browser. Do not repeat their
         // controls in the legacy Toolbar when Compose is rendering file content.
-        menuBinding.viewSortItem.isVisible = !searchViewExpanded && !useComposeFileList
+        menuBinding.viewSortItem.isVisible = !searchViewExpanded && requireContext().isTelevision
         if (searchViewExpanded) {
             return
         }
