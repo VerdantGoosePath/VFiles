@@ -172,13 +172,13 @@ fun VFilesBrowserChrome(
                         shape = MaterialTheme.shapes.extraLarge,
                         placeholder = { Text(stringResource(R.string.search)) },
                         leadingIcon = {
-                            Icon(painterResource(R.drawable.search_icon_control_normal_24dp), null)
+                            Icon(painterResource(R.drawable.file_browser_icon_search), null)
                         },
                         trailingIcon = {
                             if (state.searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { onSearchQuery("") }) {
                                     Icon(
-                                        painterResource(R.drawable.close_icon_control_normal_24dp),
+                                        painterResource(R.drawable.file_browser_icon_close),
                                         contentDescription = stringResource(R.string.file_browser_clear_search)
                                     )
                                 }
@@ -202,7 +202,7 @@ fun VFilesBrowserChrome(
                         onSearchExpanded(false)
                     }) {
                         Icon(
-                            painterResource(R.drawable.close_icon_control_normal_24dp),
+                            painterResource(R.drawable.file_browser_icon_close),
                             contentDescription = stringResource(R.string.close)
                         )
                     }
@@ -219,7 +219,7 @@ fun VFilesBrowserChrome(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Icon(
-                                painterResource(R.drawable.search_icon_control_normal_24dp),
+                                painterResource(R.drawable.file_browser_icon_search),
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -239,8 +239,8 @@ fun VFilesBrowserChrome(
                     ) {
                         Icon(
                             painterResource(if (state.viewType == FileViewType.LIST)
-                                R.drawable.view_grid_icon_control_normal_24dp
-                                else R.drawable.view_list_icon_control_normal_24dp),
+                                R.drawable.file_browser_icon_grid
+                                else R.drawable.file_browser_icon_list),
                             contentDescription = stringResource(
                                 if (state.viewType == FileViewType.LIST)
                                     R.string.file_list_action_view_grid
@@ -250,7 +250,7 @@ fun VFilesBrowserChrome(
                     }
                     IconButton(onClick = { sortSheetOpen = true }, modifier = Modifier.size(48.dp)) {
                         Icon(
-                            painterResource(R.drawable.sort_icon_control_normal_24dp),
+                            painterResource(R.drawable.file_browser_icon_sort),
                             contentDescription = stringResource(R.string.file_list_action_view_sort),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -406,7 +406,7 @@ private fun BrowserSelectionBar(
                     Text(stringResource(R.string.select_all))
                 }
                 IconButton(onClick = { onSelection(FileBrowserSelectionCommand.CLEAR) }) {
-                    Icon(painterResource(R.drawable.close_icon_control_normal_24dp),
+                    Icon(painterResource(R.drawable.file_browser_icon_close),
                         contentDescription = stringResource(R.string.close))
                 }
             }
@@ -429,7 +429,7 @@ private fun BrowserSelectionBar(
                     Box {
                         IconButton(onClick = { moreOpen = true }) {
                             Icon(
-                                painterResource(R.drawable.more_vertical_icon_white_24dp),
+                                painterResource(R.drawable.file_browser_icon_more),
                                 contentDescription = stringResource(R.string.file_browser_item_actions)
                             )
                         }
@@ -490,7 +490,7 @@ private fun BrowserPasteBar(
                 onClick = { onSelection(FileBrowserSelectionCommand.PASTE) }
             ) { Text(stringResource(R.string.paste)) }
             IconButton(onClick = { onSelection(FileBrowserSelectionCommand.CANCEL_PASTE) }) {
-                Icon(painterResource(R.drawable.close_icon_control_normal_24dp),
+                Icon(painterResource(R.drawable.file_browser_icon_close),
                     contentDescription = stringResource(R.string.close))
             }
         }
