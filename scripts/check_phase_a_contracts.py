@@ -86,10 +86,22 @@ def run():
     require("android.content.action.DOCUMENTS_PROVIDER" in activity_actions(documents),
             "DocumentsProvider intent-filter changed")
 
-    for suffix in (".filejob.FileJobService", ".ftpserver.FtpServerService"):
+    # File jobs perform dataSync; the FTP server hosts an incoming network connection
+    # indefinitely and is now connectedDevice so it is not subject to a shared 6h dataSync cap.
+    service_types = {
+        ".filejob.FileJobService": "dataSync",
+        ".ftpserver.FtpServerService": "connectedDevice",
+    }
+    for suffix, expected in service_types.items():
         service = component(main, "service", suffix)
-        require(attr(service, "foregroundServiceType") == "dataSync",
-                f"Data-sync service type altered: {suffix}")
+        require(attr(service, "foregroundServiceType") == expected,
+                f"Incorrect foreground service type for {suffix}: expected {expected}")
+    for permission in (
+        "android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE",
+        "android.permission.CHANGE_NETWORK_STATE",
+    ):
+        require(permission in main_permissions,
+                f"FTP connected-device service requires {permission}")
 
     for name in (
         "ArchiveFileSystemProvider.kt", "FtpFileSystemProvider.kt",
