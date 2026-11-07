@@ -450,7 +450,7 @@ private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier) 
         if (directory) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Icon(
-                    painter = painterResource(R.drawable.folder_icon_control_normal_24dp),
+                    painter = painterResource(R.drawable.file_browser_icon_folder),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                     modifier = Modifier.fillMaxSize().padding(10.dp)
@@ -545,7 +545,7 @@ private fun FileBrowserItemMenu(
     Box {
         IconButton(onClick = { onExpanded(true) }) {
             Icon(
-                painterResource(R.drawable.more_vertical_icon_white_24dp),
+                painterResource(R.drawable.file_browser_icon_more),
                 contentDescription = stringResource(R.string.file_browser_item_actions)
             )
         }
