@@ -937,7 +937,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val compose = useComposeFileList
         binding.breadcrumbLayout.isVisible = !compose
         binding.root.findViewById<ComposeView>(R.id.browserChromeView).isVisible = compose
-        binding.root.findViewById<ComposeView>(R.id.browserCreateMenuView).isVisible = compose
+        // The View speed dial was removed; both the Compose browser and TV fallback need creation.
+        // External picker sessions use their dedicated bottom CREATE_DOCUMENT controls.
+        binding.root.findViewById<ComposeView>(R.id.browserCreateMenuView).isVisible = viewModel.pickOptions == null
         binding.root.findViewById<ComposeView>(R.id.browserJobProgressView).isVisible = compose
         if (this::menuBinding.isInitialized) {
             menuBinding.searchItem.isVisible = !compose

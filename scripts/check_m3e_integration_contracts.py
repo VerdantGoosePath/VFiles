@@ -31,7 +31,7 @@ assert "FileListActivity" in manifest and "FileSystemDocumentsProvider" in manif
 assert "viewModel.pickOptions == null" in browser and "isTelevision" in browser
 assert "binding.breadcrumbLayout.isVisible = !compose" in browser
 assert "R.id.browserChromeView).isVisible = compose" in browser
-assert "R.id.browserCreateMenuView).isVisible = compose" in browser
+assert "R.id.browserCreateMenuView).isVisible = viewModel.pickOptions == null" in browser
 assert "menuBinding.searchItem.isVisible = !useComposeFileList" in browser
 assert "menuBinding.viewSortItem.isVisible = !searchViewExpanded && !useComposeFileList" in browser
 assert "if (useComposeFileList)" in browser
