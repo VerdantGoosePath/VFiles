@@ -12,8 +12,10 @@ import androidx.appcompat.app.AppCompatDialogFragment
 fun AppCompatDialogFragment.tintDestructivePositiveButton() {
     val alert = dialog as? AlertDialog ?: return
     val styled = requireContext().obtainStyledAttributes(
-        intArrayOf(com.google.android.material.R.attr.colorError)
+        intArrayOf(android.R.attr.colorError)
     )
+    // API 26+ framework error role where available; older themed hosts use the
+    // Material error fallback rather than a primary-coloured destructive action.
     val errorColor = styled.getColor(0, 0xFFB3261E.toInt())
     styled.recycle()
     alert.getButton(DialogInterface.BUTTON_POSITIVE)?.setTextColor(errorColor)
