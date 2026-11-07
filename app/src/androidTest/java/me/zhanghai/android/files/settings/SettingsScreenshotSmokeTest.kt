@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -25,7 +26,13 @@ class SettingsScreenshotSmokeTest {
 
     @Test fun captureRenderedSurface() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        rule.onNodeWithText(context.getString(R.string.settings_expressive_preview)).assertExists()
+        // The Activity adds its Compose Fragment with an asynchronous FragmentTransaction.
+        // Wait until its real view is composed; immediate assertions race that commit.
+        val expectedTitle = context.getString(R.string.settings_expressive_preview)
+        rule.waitUntil(timeoutMillis = 15_000) {
+            rule.onAllNodesWithText(expectedTitle).fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithText(expectedTitle).assertExists()
         rule.waitForIdle()
         val image = rule.onRoot().captureToImage().asAndroidBitmap()
         val destination = File(context.filesDir, "m3e-screenshots").apply { mkdirs() }
