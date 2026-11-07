@@ -613,18 +613,9 @@
     <string name="navigation_edit_bookmark_directory_name">Nome</string>
     <string name="navigation_edit_bookmark_directory_path">Percorso</string>
     <string name="archive_viewer_title">Visualizzatore archivio</string>
-    <string name="image_viewer_title">Visualizzatore di immagini</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
     <string name="save_as_title">Salva come</string>
     <string name="save_as_error">Errore durante il salvataggio del file</string>
     <string name="save_as_success_format">\"%1$s\" è stato salvato in \"%2$s\"</string>
-    <string name="text_editor_title">Editor di testo</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Salvato</string>
-    <string name="text_editor_reload_message">Sei sicuro di volere ricaricare? Le modifiche a questo documento non salvate verranno perse.</string>
-    <string name="text_editor_encoding">Codifica</string>
-    <string name="text_editor_close_message">Sei sicuro di volere scartare le modifiche a questo documento non salvate?</string>
 
     <string name="ftp_server_title">Server FTP</string>
     <string name="ftp_server_state_title">Stato</string>

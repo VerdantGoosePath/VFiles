@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.snackbar.Snackbar
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.ConcatAdapter
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -69,8 +70,12 @@ class AddLanSmbServerFragment : Fragment() {
     }
 
     private fun onLanSmbServerListChanged(stateful: Stateful<List<LanSmbServer>>) {
-        if (stateful is Failure) {
-            stateful.throwable.printStackTrace()
+        if (stateful is Failure && isAdded) {
+            // Network discovery failures must not silently leave an empty list. Keep the manual
+            // add option available, and offer retry without exposing server/credential details.
+            Snackbar.make(
+                binding.root, R.string.storage_lan_discovery_failed, Snackbar.LENGTH_LONG
+            ).setAction(R.string.retry) { viewModel.reload() }.show()
         }
         val isLoading = stateful is Loading
         binding.swipeRefreshLayout.isEnabled = !isLoading

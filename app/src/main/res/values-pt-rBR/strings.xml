@@ -547,15 +547,6 @@
     <string name="navigation_edit_bookmark_directory_name">Nome</string>
     <string name="navigation_edit_bookmark_directory_path">Caminho</string>
     <string name="archive_viewer_title">Visualizador de arquivos</string>
-    <string name="image_viewer_title">Visualizador de imagens</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
-    <string name="text_editor_title">Editor de texto</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Salvo</string>
-    <string name="text_editor_reload_message">Tem certeza de que deseja recarregar? Alterações não salvas neste documento serão perdidas.</string>
-    <string name="text_editor_encoding">Codificação</string>
-    <string name="text_editor_close_message">Tem certeza de que deseja descartar alterações não salvas neste documento?</string>
 
     <string name="ftp_server_title">Servidor FTP</string>
     <string name="ftp_server_state_title">Status</string>

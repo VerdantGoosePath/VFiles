@@ -583,18 +583,9 @@
     <string name="navigation_edit_bookmark_directory_name">Navn</string>
     <string name="navigation_edit_bookmark_directory_path">Bane</string>
     <string name="archive_viewer_title">Arkivleser</string>
-    <string name="image_viewer_title">Bildefremviser</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
     <string name="save_as_title">Lagre som</string>
     <string name="save_as_error">Feil under lagring av fil</string>
     <string name="save_as_success_format">«%1$s» er lagret i «%2$s»</string>
-    <string name="text_editor_title">Tekstredigering</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Lagret</string>
-    <string name="text_editor_reload_message">Er du sikker på at du vil laste inn på nytt? Ulagrede endringer i dette dokumentet vil gå tapt.</string>
-    <string name="text_editor_encoding">Tegnkoding</string>
-    <string name="text_editor_close_message">Er du sikker på at du vil forkaste de ulagrede endringene i dette dokumentet?</string>
 
     <string name="ftp_server_title">FTP-tjener</string>
     <string name="ftp_server_state_title">Status</string>

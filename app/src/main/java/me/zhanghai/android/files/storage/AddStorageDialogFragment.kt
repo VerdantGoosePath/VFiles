@@ -9,8 +9,25 @@ import android.app.Dialog
 import android.content.DialogInterface
 import android.os.Build
 import android.os.Bundle
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.unit.dp
 import androidx.appcompat.app.AppCompatDialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import me.zhanghai.android.files.compose.components.PreferenceRowUi
+import me.zhanghai.android.files.compose.components.VFilesPreferenceGroup
+import me.zhanghai.android.files.compose.theme.VFilesTheme
 import me.zhanghai.android.files.R
 import me.zhanghai.android.files.file.asExternalStorageUri
 import me.zhanghai.android.files.provider.document.resolver.ExternalStorageProviderHacks
@@ -20,17 +37,52 @@ import me.zhanghai.android.files.util.putArgs
 import me.zhanghai.android.files.util.startActivitySafe
 
 class AddStorageDialogFragment : AppCompatDialogFragment() {
-    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
-        MaterialAlertDialogBuilder(requireContext(), theme)
-            .setTitle(R.string.storage_add_storage_title)
-            .apply {
-                val items = STORAGE_TYPES.map { getString(it.first) }.toTypedArray<CharSequence>()
-                setItems(items) { _, which ->
-                    startActivitySafe(STORAGE_TYPES[which].second)
-                    finish()
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        // The existing activity and Intent contracts remain unchanged: this is only the chooser
+        // surface. Each action still launches the original SAF/remote-connection workflow.
+        val options = STORAGE_TYPES
+        val chooser = ComposeView(requireContext()).apply {
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
+            setContent {
+                VFilesTheme {
+                    Column(
+                        modifier = Modifier.widthIn(max = 560.dp)
+                            .verticalScroll(rememberScrollState())
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        VFilesPreferenceGroup(
+                            title = getString(R.string.storage_add_storage_title),
+                            rows = options.mapIndexed { index, option ->
+                                PreferenceRowUi(
+                                    key = index.toString(),
+                                    title = getString(option.first)
+                                )
+                            },
+                            onSelect = { key ->
+                                val selected = key.toIntOrNull()?.let(options::getOrNull)
+                                if (selected != null) {
+                                    startActivitySafe(selected.second)
+                                    finish()
+                                }
+                            }
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(onClick = { finish() }) {
+                                Text(getString(android.R.string.cancel))
+                            }
+                        }
+                    }
                 }
             }
+        }
+        return MaterialAlertDialogBuilder(requireContext(), theme)
+            .setView(chooser)
             .create()
+    }
 
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)

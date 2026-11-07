@@ -54,13 +54,16 @@ class EditExternalStorageShortcutDialogFragment : AppCompatDialogFragment() {
             }
             .setPositiveButton(android.R.string.ok, null)
             .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }
-            .setNeutralButton(R.string.remove) { _, _ -> remove() }
+            .setNeutralButton(R.string.remove, null)
             .create()
             .apply {
                 window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
                 // Override the listener here so that we have control over when to close the dialog.
                 setOnShowListener {
                     getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { save() }
+                    getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                        confirmRemoveStorage { remove() }
+                    }
                 }
             }
 

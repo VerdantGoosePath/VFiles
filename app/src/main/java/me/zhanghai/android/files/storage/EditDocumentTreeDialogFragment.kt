@@ -10,6 +10,7 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.parcelize.Parcelize
@@ -48,11 +49,18 @@ class EditDocumentTreeDialogFragment : AppCompatDialogFragment() {
             }
             .setPositiveButton(android.R.string.ok) { _, _ -> save() }
             .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }
-            .setNeutralButton(R.string.remove) { _, _ -> remove() }
+            .setNeutralButton(R.string.remove, null)
             .create()
             .apply {
                 window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
             }
+
+    override fun onStart() {
+        super.onStart()
+        (requireDialog() as AlertDialog)
+            .getButton(AlertDialog.BUTTON_NEUTRAL)
+            .setOnClickListener { confirmRemoveStorage { remove() } }
+    }
 
     private fun save() {
         val customName = binding.nameEdit.text.toString()

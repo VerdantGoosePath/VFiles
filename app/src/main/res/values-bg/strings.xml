@@ -571,15 +571,6 @@
     <string name="navigation_edit_bookmark_directory_name">Име</string>
     <string name="navigation_edit_bookmark_directory_path">Път</string>
     <string name="archive_viewer_title">Преглед на архиви</string>
-    <string name="image_viewer_title">Преглед на изображение</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
-    <string name="text_editor_title">Текстов редактор</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Запазен</string>
-    <string name="text_editor_reload_message">Сигурни ли сте, че желаете да презаредите? Незапазените промени в документа ще бъдат загубени.</string>
-    <string name="text_editor_encoding">Кодиране на знаците</string>
-    <string name="text_editor_close_message">Сигурни ли сте, че желаете да отхвърлите незапазените промени в документа?</string>
 
     <string name="ftp_server_title">Сървър за FTP</string>
     <string name="ftp_server_state_title">Състояние</string>

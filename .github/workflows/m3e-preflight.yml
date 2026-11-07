@@ -27,7 +27,18 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Run SDK-free static contract checks
-        run: python3 scripts/check_phase_a_contracts.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/check_phase_a_contracts.py
+          if [[ -f scripts/check_secondary_ui_contracts.py ]]; then
+            python3 scripts/check_secondary_ui_contracts.py
+          fi
+          if [[ -f app/src/main/java/me/zhanghai/android/files/settings/ExpressiveSettingsScreen.kt ]]; then
+            test ! -e app/src/main/res/xml/settings.xml
+            test ! -e app/src/main/res/xml/ftp_server.xml
+            ! grep -q 'Settings.MATERIAL_DESIGN_3.valueCompat' app/src/main/java/me/zhanghai/android/files/theme/custom/CustomThemeHelper.kt
+          fi
 
       - name: Install baseline Android SDK, NDK and CMake
         shell: bash

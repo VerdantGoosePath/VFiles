@@ -474,15 +474,6 @@
     <string name="navigation_standard_directory_wechat">WeChat</string>
     <string name="navigation_edit_bookmark_directory_name">Nimi</string>
     <string name="navigation_edit_bookmark_directory_path">Polku</string>
-    <string name="image_viewer_title">Kuvan katselija</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
-    <string name="text_editor_title">Tekstieditori</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Tallennettu</string>
-    <string name="text_editor_reload_message">Haluatko varmasti ladata tiedoston uudelleen? Tallentamattomat muutokset häviävät.</string>
-    <string name="text_editor_encoding">Merkistökoodaus</string>
-    <string name="text_editor_close_message">Haluatko varmasti hylätä tiedoston tallentamattomat muutokset?</string>
 
     <string name="ftp_server_title">FTP-palvelin</string>
     <string name="ftp_server_state_title">Tila</string>

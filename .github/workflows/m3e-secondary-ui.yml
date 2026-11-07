@@ -1,0 +1,55 @@
+name: M3E secondary UI validation
+
+on:
+  push:
+    branches:
+      - m3e/secondary-ui
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secondary-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Check secondary UI and viewer removal contracts
+        run: |
+          python3 scripts/check_phase_a_contracts.py
+          python3 scripts/check_secondary_ui_contracts.py
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path('app/src/main/AndroidManifest.xml').read_text()
+          files = Path('app/src/main/java/me/zhanghai/android/files/filelist/FileListFragment.kt').read_text()
+          for route in ('viewer.image.ImageViewerActivity', 'viewer.text.TextEditorActivity'):
+              assert route not in manifest, f'Internal viewer still registered: {route}'
+          assert 'ImageViewerActivity' not in files
+          assert 'maybeAddImageViewerActivityExtras' not in files
+          for package in ('viewer/image', 'viewer/text'):
+              assert not Path('app/src/main/java/me/zhanghai/android/files', package).exists()
+          PY
+      - name: Install Android SDK and native dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          if command -v sdkmanager >/dev/null 2>&1; then
+            SDKMANAGER="$(command -v sdkmanager)"
+          else
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          fi
+          "$SDKMANAGER" --install "platforms;android-37.0" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+          if [[ ! -e "$SDK_ROOT/platforms/android-37" && -d "$SDK_ROOT/platforms/android-37.0" ]]; then
+            ln -s android-37.0 "$SDK_ROOT/platforms/android-37"
+          fi
+      - name: Assemble debug, instrumentation APK and run JVM tests
+        run: ./gradlew --no-daemon --warning-mode all :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest
+      - name: Assemble systemPicker flavor
+        run: ./gradlew --no-daemon --warning-mode all -PsystemPicker :app:assembleSystemPickerDebug

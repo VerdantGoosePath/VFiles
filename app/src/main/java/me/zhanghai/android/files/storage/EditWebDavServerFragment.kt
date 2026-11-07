@@ -132,7 +132,13 @@ class EditWebDavServerFragment : Fragment() {
                 connectAndAdd()
             }
         }
-        binding.cancelButton.setOnClickListener { finish() }
+        binding.cancelButton.setOnClickListener {
+            if (viewModel.connectState.value is ActionState.Running) {
+                viewModel.cancelConnecting()
+            } else {
+                finish()
+            }
+        }
         binding.removeOrAddButton.setText(
             if (args.server != null) R.string.remove else R.string.storage_edit_webdav_server_add
         )
@@ -253,9 +259,17 @@ class EditWebDavServerFragment : Fragment() {
             is ActionState.Ready, is ActionState.Running -> {
                 val isConnecting = state is ActionState.Running
                 binding.progress.fadeToVisibilityUnsafe(isConnecting)
-                binding.scrollView.fadeToVisibilityUnsafe(!isConnecting)
+                binding.scrollView.alpha = if (isConnecting) 0.55f else 1f
+                binding.scrollView.isEnabled = !isConnecting
+                binding.connectingInputBlocker.isVisible = isConnecting
+                binding.scrollView.importantForAccessibility = if (isConnecting) {
+                    View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+                } else {
+                    View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+                }
                 binding.saveOrConnectAndAddButton.isEnabled = !isConnecting
                 binding.removeOrAddButton.isEnabled = !isConnecting
+                binding.cancelButton.isEnabled = true
             }
             is ActionState.Success -> {
                 Storages.addOrReplace(state.argument)
@@ -263,18 +277,18 @@ class EditWebDavServerFragment : Fragment() {
                 finish()
             }
             is ActionState.Error -> {
-                val throwable = state.throwable
-                throwable.printStackTrace()
-                showToast(throwable.toString())
+                showRemoteConnectionError(state.throwable, binding.passwordEdit.text?.toString(), binding.accessTokenEdit.text?.toString())
                 viewModel.finishConnecting()
             }
         }
     }
 
     private fun remove() {
-        Storages.remove(args.server!!)
-        setResult(Activity.RESULT_OK)
-        finish()
+        confirmRemoveStorage {
+            Storages.remove(args.server!!)
+            setResult(Activity.RESULT_OK)
+            finish()
+        }
     }
 
     private fun getServerOrSetError(): WebDavServer? {
@@ -295,7 +309,7 @@ class EditWebDavServerFragment : Fragment() {
         }
         val port = binding.portEdit.text.toString().takeIfNotEmpty()
             .let { if (it != null) it.toIntOrNull() else protocol.defaultPort }
-        if (port == null) {
+        if (port == null || port !in 1..65535) {
             binding.portLayout.error =
                 getString(R.string.storage_edit_webdav_server_port_error_invalid)
             if (errorEdit == null) {

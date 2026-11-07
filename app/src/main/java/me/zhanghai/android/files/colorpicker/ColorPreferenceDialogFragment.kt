@@ -91,6 +91,7 @@ class ColorPreferenceDialogFragment : MaterialPreferenceDialogFragmentCompat() {
             ViewCompat.requireViewById<View>(view, R.id.presetColorsLabel).isVisible = true
             dynamicColorSwatch = ViewCompat.requireViewById(view, R.id.dynamicColorSwatch)
             dynamicColorSwatch.setColor(dynamicColor)
+            dynamicColorSwatch.contentDescription = getString(R.string.color_picker_dynamic_color_label)
             dynamicColorSwatch.setOnClickListener {
                 clearGridChoice()
                 dynamicColorSwatch.isChecked = true

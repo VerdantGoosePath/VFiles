@@ -224,6 +224,7 @@
     <string name="file_job_remount_success_format">“%1$s” has been remounted as read-write</string>
     <string name="file_job_action_all">Apply this action to all files</string>
 
+    <string name="file_open_apk_title">Android package</string>
     <string name="file_open_apk_message">This file is an Android package. Do you want to install it, or view its contents?</string>
     <string name="file_edit_title" translatable="false">@string/edit</string>
     <string name="file_open_as_title">Open as…</string>
@@ -532,6 +533,24 @@
 
     <string name="storage_file_system_root_title">Root</string>
     <string name="storage_internal_storage">Internal storage</string>
+    <string name="storage_reorder">Reorder storage</string>
+    <string name="storage_move_up_named_format">Move %1$s up</string>
+    <string name="storage_move_down_named_format">Move %1$s down</string>
+    <string name="ftp_server_password_not_set">No password set</string>
+    <string name="ftp_server_port_range_error">Port must be between 1 and 65535</string>
+    <string name="storage_move_up">Move up</string>
+    <string name="storage_move_down">Move down</string>
+    <string name="storage_connection_connecting">Connecting to server</string>
+    <string name="storage_connection_failed_title">Connection failed</string>
+    <string name="storage_remove_confirmation_title">Remove storage?</string>
+    <string name="storage_remove_confirmation_message">Remove this entry from your storage list? Files on the storage device or server will not be deleted.</string>
+    <string name="file_properties_refresh_failed">Could not refresh properties. Pull down to retry.</string>
+    <string name="file_properties_load_failed">Could not read properties (%1$s). Tap to retry.</string>
+    <string name="navigation_change_bookmark_path">Choose bookmark folder</string>
+    <string name="navigation_remove_bookmark_title">Remove bookmark?</string>
+    <string name="navigation_remove_bookmark_message">Remove “%1$s” from your bookmarks? The folder and its files will not be deleted.</string>
+    <string name="color_picker_swatch_hex_format">Color %1$s</string>
+    <string name="storage_lan_discovery_failed">Could not discover local network servers. You can retry or enter a server manually.</string>
     <string name="storage_list_title">Storage</string>
     <string name="storage_list_empty">No storage</string>
     <string name="storage_add_storage_title">Add storage</string>
@@ -714,19 +733,9 @@
     <string name="navigation_about" translatable="false">@string/about_title</string>
 
     <string name="archive_viewer_title">Archive viewer</string>
-    <string name="image_viewer_title">Image viewer</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
-    <string name="image_viewer_delete_message_format" translatable="false">@string/file_delete_message_file_format</string>
     <string name="save_as_title">Save as</string>
     <string name="save_as_error">Error while saving file</string>
     <string name="save_as_success_format">“%1$s” has been saved to “%2$s”</string>
-    <string name="text_editor_title">Text editor</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Saved</string>
-    <string name="text_editor_reload_message">Are you sure you want to reload? Unsaved changes to this document will be lost.</string>
-    <string name="text_editor_encoding">Encoding</string>
-    <string name="text_editor_close_message">Are you sure you want to discard unsaved changes to this document?</string>
 
     <string name="ftp_server_title">FTP server</string>
     <string name="ftp_server_state_title">Status</string>
@@ -840,6 +849,7 @@
     <string name="onboarding_welcome_title">Welcome to %1$s</string>
     <string name="onboarding_welcome_description">Grant a few permissions to get the best experience. Optional ones can be changed later in Settings.</string>
     <string name="onboarding_grant">Grant</string>
+    <string name="onboarding_granted">Granted</string>
     <string name="onboarding_required">Required</string>
     <string name="onboarding_optional">Optional</string>
 

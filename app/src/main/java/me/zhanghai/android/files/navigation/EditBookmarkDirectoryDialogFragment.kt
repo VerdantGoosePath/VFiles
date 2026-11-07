@@ -10,6 +10,7 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.appcompat.app.AlertDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java8.nio.file.Path
 import kotlinx.parcelize.Parcelize
@@ -56,16 +57,34 @@ class EditBookmarkDirectoryDialogFragment : AppCompatDialogFragment() {
                     binding.nameEdit.setTextWithSelection(bookmarkDirectory.name)
                 }
                 updatePathText()
+                binding.pathText.isFocusable = true
+                binding.pathText.contentDescription = getString(R.string.navigation_change_bookmark_path)
                 binding.pathText.setOnClickListener { onEditPath() }
                 setView(binding.root)
             }
             .setPositiveButton(android.R.string.ok) { _, _ -> save() }
             .setNegativeButton(android.R.string.cancel) { dialog, _ -> dialog.cancel() }
-            .setNeutralButton(R.string.remove) { _, _ -> remove() }
+            .setNeutralButton(R.string.remove, null)
             .create()
             .apply {
                 window!!.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
             }
+
+    override fun onStart() {
+        super.onStart()
+        (requireDialog() as AlertDialog).getButton(AlertDialog.BUTTON_NEUTRAL)
+            .setOnClickListener {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.navigation_remove_bookmark_title)
+                    .setMessage(getString(
+                        R.string.navigation_remove_bookmark_message,
+                        args.bookmarkDirectory.name
+                    ))
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.remove) { _, _ -> remove() }
+                    .show()
+            }
+    }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)

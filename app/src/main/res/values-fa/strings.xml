@@ -487,15 +487,6 @@
     <string name="navigation_edit_bookmark_directory_name">نام</string>
     <string name="navigation_edit_bookmark_directory_path">مسیر</string>
     <string name="archive_viewer_title">نمایشگر بایگانی</string>
-    <string name="image_viewer_title">نمایشگر تصویر</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
-    <string name="text_editor_title">ویرایشگر متن</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">ذخیره شد</string>
-    <string name="text_editor_reload_message">آیا مطمئن هستید که می‌خواهید دوباره بارگزاری کنید؟ تغییرات ذخیره نشده در این سند از بین خواهند رفت.</string>
-    <string name="text_editor_encoding">رمزگذاری</string>
-    <string name="text_editor_close_message">آیا مطمئن هستید که می‌خواهید تغییرات ذخیره نشده در این سند را دور بریزید؟</string>
 
     <string name="ftp_server_title">کارساز اف‌تی‌پی</string>
     <string name="ftp_server_state_title">وضعیت</string>

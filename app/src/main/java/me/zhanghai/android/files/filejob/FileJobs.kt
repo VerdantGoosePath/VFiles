@@ -36,6 +36,7 @@ import me.zhanghai.android.files.file.FileItem
 import me.zhanghai.android.files.file.MimeType
 import me.zhanghai.android.files.file.asFileSize
 import me.zhanghai.android.files.file.fileProviderUri
+import me.zhanghai.android.files.filelist.applyExternalDefaultOpenApp
 import me.zhanghai.android.files.file.loadFileItem
 import me.zhanghai.android.files.filelist.OpenFileAsDialogActivity
 import me.zhanghai.android.files.filelist.OpenFileAsDialogFragment
@@ -84,7 +85,6 @@ import me.zhanghai.android.files.util.asFileName
 import me.zhanghai.android.files.util.createInstallPackageIntent
 import me.zhanghai.android.files.util.createIntent
 import me.zhanghai.android.files.util.createViewIntent
-import me.zhanghai.android.files.util.extraPath
 import me.zhanghai.android.files.util.getQuantityString
 import me.zhanghai.android.files.util.putArgs
 import me.zhanghai.android.files.util.showToast
@@ -1485,7 +1485,6 @@ class OpenFileJob(
         ) { file ->
             file.fileProviderUri.createViewIntent(mimeType)
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-                .apply { extraPath = file }
                 .let {
                     if (withChooser) {
                         it.withChooser(
@@ -1493,7 +1492,7 @@ class OpenFileJob(
                                 .putArgs(OpenFileAsDialogFragment.Args(file))
                         )
                     } else {
-                        it
+                        it.applyExternalDefaultOpenApp(mimeType, service)
                     }
                 }
         }

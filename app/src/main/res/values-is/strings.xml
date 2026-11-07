@@ -585,18 +585,9 @@
     <string name="navigation_edit_bookmark_directory_name">Nafn</string>
     <string name="navigation_edit_bookmark_directory_path">Slóð</string>
     <string name="archive_viewer_title">Safnskoðari</string>
-    <string name="image_viewer_title">Myndaskoðari</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
     <string name="save_as_title">Vista sem</string>
     <string name="save_as_error">Villa kom upp við að vista skrá</string>
     <string name="save_as_success_format">“%1$s” hefur verið vistuð í “%2$s”</string>
-    <string name="text_editor_title">Textaritill</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">Vistað</string>
-    <string name="text_editor_reload_message">Ertu viss um að þú viljir endurhlaða? Óvistaðar breytingar á þessu skjali munu tapast.</string>
-    <string name="text_editor_encoding">Kóðun</string>
-    <string name="text_editor_close_message">Ertu viss um að þú viljir henda óvistuðum breytingum á þessu skjali?</string>
 
     <string name="ftp_server_title">FTP-netþjónn</string>
     <string name="ftp_server_state_title">Staða</string>

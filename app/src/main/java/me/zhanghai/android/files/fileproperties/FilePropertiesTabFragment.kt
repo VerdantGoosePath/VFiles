@@ -51,12 +51,17 @@ abstract class FilePropertiesTabFragment : Fragment() {
         binding.swipeRefreshLayout.isRefreshing = stateful is Loading && hasValue
         binding.errorText.fadeToVisibilityUnsafe(stateful is Failure && !hasValue)
         if (stateful is Failure) {
-            stateful.throwable.printStackTrace()
-            val error = stateful.throwable.toString()
+            // Do not expose complete provider exception dumps (which may contain credentials or
+            // authenticated URLs). Preserve the previous values and allow an explicit retry.
+            val description = stateful.throwable.javaClass.simpleName
             if (hasValue) {
-                showToast(error)
+                showToast(getString(me.zhanghai.android.files.R.string.file_properties_refresh_failed))
             } else {
-                binding.errorText.text = error
+                binding.errorText.text = getString(
+                    me.zhanghai.android.files.R.string.file_properties_load_failed,
+                    description
+                )
+                binding.errorText.setOnClickListener { refresh() }
             }
         }
         binding.scrollView.fadeToVisibilityUnsafe(hasValue)

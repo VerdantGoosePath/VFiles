@@ -553,18 +553,9 @@
     <string name="navigation_edit_bookmark_directory_path">路径</string>
 
     <string name="archive_viewer_title">归档文件查看器</string>
-    <string name="image_viewer_title">图片查看器</string>
-    <string name="image_viewer_subtitle_format">%1$,d/%2$,d</string>
     <string name="save_as_title">另存为</string>
     <string name="save_as_error">保存时发生错误</string>
     <string name="save_as_success_format">已将“%1$s”保存到“%2$s”</string>
-    <string name="text_editor_title">文本编辑器</string>
-    <string name="text_editor_title_format">%1$s</string>
-    <string name="text_editor_title_changed_format">*%1$s</string>
-    <string name="text_editor_save_success">已保存</string>
-    <string name="text_editor_reload_message">您确定要重新加载吗？对此文档未保存的变更将丢失。</string>
-    <string name="text_editor_encoding">编码</string>
-    <string name="text_editor_close_message">您确定要舍弃对此文档未保存的变更吗？</string>
 
     <string name="ftp_server_title">FTP 服务器</string>
     <string name="ftp_server_state_title">状态</string>
