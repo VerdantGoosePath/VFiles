@@ -15,11 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilledTonalButton
@@ -27,6 +24,8 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -53,6 +52,8 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -306,30 +307,18 @@ private fun BrowserSortSheet(
                     FileSortOptions.By.LAST_MODIFIED -> R.string.file_list_action_sort_by_last_modified
                 }
                 val selected = state.sortOptions.by == by
-                Surface(
-                    color = if (selected) MaterialTheme.colorScheme.secondaryContainer
-                        else MaterialTheme.colorScheme.surfaceContainerLow,
-                    shape = RoundedCornerShape(
-                        topStart = if (index == 0) 24.dp else 8.dp,
-                        topEnd = if (index == 0) 24.dp else 8.dp,
-                        bottomStart = if (index == 3) 24.dp else 8.dp,
-                        bottomEnd = if (index == 3) 24.dp else 8.dp
-                    ),
-                    modifier = Modifier.fillMaxWidth().selectable(
-                        selected = selected, role = Role.RadioButton,
-                        onClick = { onSortBy(by) }
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        RadioButton(selected = selected, onClick = null)
+                SegmentedListItem(
+                    onClick = { onSortBy(by) },
+                    shapes = ListItemDefaults.segmentedShapes(index, FileSortOptions.By.entries.size),
+                    modifier = Modifier.semantics {
+                        this.selected = selected
+                        role = Role.RadioButton
+                    },
+                    leadingContent = { RadioButton(selected = selected, onClick = null) },
+                    content = {
                         Text(stringResource(label), style = MaterialTheme.typography.bodyLarge)
                     }
-                }
+                )
             }
             Text(
                 stringResource(R.string.file_browser_sort_options),
@@ -339,52 +328,56 @@ private fun BrowserSortSheet(
             )
             BrowserSwitchRow(
                 stringResource(R.string.file_list_action_sort_order_ascending),
-                state.sortOptions.order == FileSortOptions.Order.ASCENDING
+                state.sortOptions.order == FileSortOptions.Order.ASCENDING,
+                index = 0, count = 4
             ) { checked -> onSortOrder(
                 if (checked) FileSortOptions.Order.ASCENDING else FileSortOptions.Order.DESCENDING
             ) }
             BrowserSwitchRow(
                 stringResource(R.string.file_list_action_sort_directories_first),
                 state.sortOptions.isDirectoriesFirst,
-                onDirectoriesFirst
+                index = 1, count = 4, onChange = onDirectoriesFirst
             )
             BrowserSwitchRow(
                 stringResource(R.string.file_list_action_view_sort_path_specific),
                 state.pathSpecificSort,
-                onPathSpecificSort
+                index = 2, count = 4, onChange = onPathSpecificSort
             )
             BrowserSwitchRow(
                 stringResource(R.string.file_list_action_show_hidden_files),
                 state.showHiddenFiles,
-                onShowHiddenFiles
+                index = 3, count = 4, onChange = onShowHiddenFiles
             )
         }
     }
 }
 
 @Composable
-private fun BrowserSwitchRow(title: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
-        shape = MaterialTheme.shapes.medium,
-        modifier = Modifier.fillMaxWidth().toggleable(
-            value = checked, role = Role.Switch, onValueChange = onChange
-        )
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)
-                .padding(horizontal = 16.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+private fun BrowserSwitchRow(
+    title: String,
+    checked: Boolean,
+    index: Int,
+    count: Int,
+    onChange: (Boolean) -> Unit
+) {
+    // The segmented row is the only input owner; the switch is a visual state indicator.
+    // Native item shapes create shared groups without four competing outlined cards.
+    SegmentedListItem(
+        onClick = { onChange(!checked) },
+        shapes = ListItemDefaults.segmentedShapes(index, count),
+        modifier = Modifier.semantics {
+            role = Role.Switch
+            toggleableState = ToggleableState(checked)
+        },
+        content = { Text(title, style = MaterialTheme.typography.bodyLarge) },
+        trailingContent = {
             Switch(
                 checked = checked,
                 onCheckedChange = null,
                 modifier = Modifier.clearAndSetSemantics { }
             )
         }
-    }
+    )
 }
 
 @Composable
