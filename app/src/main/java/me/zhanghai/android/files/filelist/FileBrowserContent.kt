@@ -371,7 +371,7 @@ private fun FileBrowserItem(
                     Box(Modifier.align(Alignment.TopEnd)) {
                         FileBrowserItemMenu(
                             file, readOnly, archivePath,
-                            pickOptions != null, menuExpanded,
+                            pickOptions != null, selectable, menuExpanded,
                             { menuExpanded = it }, onAction
                         )
                     }
@@ -422,7 +422,7 @@ private fun FileBrowserItem(
                 }
                 FileBrowserItemMenu(
                     file, readOnly, archivePath,
-                    pickOptions != null, menuExpanded, { menuExpanded = it }, onAction
+                    pickOptions != null, selectable, menuExpanded, { menuExpanded = it }, onAction
                 )
             }
         }
@@ -537,6 +537,7 @@ private fun FileBrowserItemMenu(
     readOnly: Boolean,
     archivePath: Boolean,
     picker: Boolean,
+    selectable: Boolean,
     expanded: Boolean,
     onExpanded: (Boolean) -> Unit,
     onAction: (FileBrowserItemAction) -> Unit
@@ -549,7 +550,7 @@ private fun FileBrowserItemMenu(
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { onExpanded(false) }) {
-            if (canSelectBrowserFile(file, if (picker) null else null)) {
+            if (selectable) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.select)) },
                     onClick = { onExpanded(false); onAction(FileBrowserItemAction.SELECT) }
