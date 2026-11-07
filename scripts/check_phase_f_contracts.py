@@ -73,6 +73,12 @@ assert "FileJobService.open" in opener
 assert not (src / "viewer/image").exists()
 assert not (src / "viewer/text").exists()
 assert "viewer.saveas.SaveAsActivity" in (root / "AndroidManifest.xml").read_text()
+job_service = (src / "filejob/FileJobService.kt").read_text()
+assert "try {\n                    job.runOn(this)\n                } finally {" in job_service
+assert "runningJobs.remove(job)" in job_service
+job_base = (src / "filejob/FileJob.kt").read_text()
+assert "safeRemoteErrorMessage(e, emptyList())" in job_base
+assert "service.showToast(e.toString())" not in job_base
 picker = (root.parent / "systemPicker/AndroidManifest.xml").read_text()
 assert "android.permission.MANAGE_DOCUMENTS" in picker
 assert "android.permission.MANAGE_DOCUMENTS" not in (root / "AndroidManifest.xml").read_text().split("<application", 1)[0]

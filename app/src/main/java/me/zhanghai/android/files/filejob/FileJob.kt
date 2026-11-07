@@ -6,6 +6,7 @@
 package me.zhanghai.android.files.filejob
 
 import me.zhanghai.android.files.util.showToast
+import me.zhanghai.android.files.storage.safeRemoteErrorMessage
 import java.io.IOException
 import java.io.InterruptedIOException
 import java.util.Random
@@ -22,11 +23,11 @@ abstract class FileJob {
             run()
             // TODO: Toast
         } catch (e: InterruptedIOException) {
-            // TODO
-            e.printStackTrace()
+            // User cancellation is expected; do not log provider paths or credentials.
         } catch (e: Exception) {
-            e.printStackTrace()
-            service.showToast(e.toString())
+            // Provider errors may contain FTP/WebDAV userinfo, tokens or private key data.
+            // Never show or log the raw Throwable from a file operation.
+            service.showToast(safeRemoteErrorMessage(e, emptyList()))
         } finally {
             service.notificationManager.cancel(id)
             FileJobProgressLiveData.remove(id)
