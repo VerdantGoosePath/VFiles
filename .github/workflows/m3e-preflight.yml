@@ -82,7 +82,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          echo "Android lint command outcome: **\${{ steps.legacy_lint.outcome }}** (non-blocking; see report)" >> "$GITHUB_STEP_SUMMARY"
+          echo "Android lint command outcome: **${{ steps.legacy_lint.outcome }}** (non-blocking; see report)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Android lint audit evidence
         if: always()
