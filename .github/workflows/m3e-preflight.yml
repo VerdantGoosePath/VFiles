@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - m3e/integration
+      - m3e/final-hardening
   workflow_dispatch:
 
 permissions:
@@ -37,6 +38,9 @@ jobs:
           if [[ -f scripts/check_m3e_integration_contracts.py ]]; then
             python3 scripts/check_m3e_integration_contracts.py
           fi
+          if [[ -f scripts/check_phase_f_contracts.py ]]; then
+            python3 scripts/check_phase_f_contracts.py
+          fi
           if [[ -f app/src/main/java/me/zhanghai/android/files/settings/ExpressiveSettingsScreen.kt ]]; then
             test ! -e app/src/main/res/xml/settings.xml
             test ! -e app/src/main/res/xml/ftp_server.xml
@@ -68,6 +72,10 @@ jobs:
 
       - name: Assemble standard debug and run JVM test task
         run: ./gradlew --no-daemon --warning-mode all :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest
+
+      - name: Collect Android lint diagnostics (advisory until legacy View debt is triaged)
+        continue-on-error: true
+        run: ./gradlew --no-daemon :app:lintDebug
 
       - name: Assemble opt-in systemPicker debug and run JVM test task
         run: ./gradlew --no-daemon --warning-mode all -PsystemPicker :app:assembleSystemPickerDebug :app:testSystemPickerDebugUnitTest
