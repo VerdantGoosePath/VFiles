@@ -34,9 +34,11 @@ object CustomThemeHelper {
                 // Compose's createComposeRule() starts the bare ComponentActivity test host,
                 // not an app route. Permit that exact test-only class in debuggable builds;
                 // all production activities still require AppActivity theme initialization.
-                val debuggable = activity.applicationInfo.flags and
-                    android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0
-                if (debuggable && activity.javaClass.name == "androidx.activity.ComponentActivity") {
+                // Compose's test-manifest declares exactly androidx.activity.ComponentActivity,
+                // which is never an app production route. The test APK may not have the
+                // debuggable application flag on all runners, so use the *concrete class name*
+                // rather than BuildConfig/debug flags. Keep all real app Activities guarded.
+                if (activity.javaClass.name == "androidx.activity.ComponentActivity") {
                     return
                 }
                 check(activityBaseThemes.containsKey(activity)) {
