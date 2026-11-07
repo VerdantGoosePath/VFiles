@@ -27,11 +27,15 @@ object NightModeHelper {
     fun initialize(application: Application) {
         application.registerActivityLifecycleCallbacks(object : SimpleActivityLifecycleCallbacks {
                 override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                    // The Compose UI-test manifest launches precisely the bare AndroidX
+                    // ComponentActivity. It has no AppCompat delegate to initialize.
+                    // All real app Activities must still use AppActivity/NightModeHelper.apply.
+                    if (activity.javaClass.name == "androidx.activity.ComponentActivity") return
                     check(activity in activities) { "Activity must extend AppActivity: $activity" }
                 }
 
                 override fun onActivityDestroyed(activity: Activity) {
-                    activities -= activity as AppCompatActivity
+                    if (activity is AppCompatActivity) activities -= activity
                 }
             })
     }
