@@ -7,7 +7,10 @@ import xml.etree.ElementTree as ET
 root = Path("app/src/main")
 src = root / "java/me/zhanghai/android/files"
 android = "{http://schemas.android.com/apk/res/android}"
-manifest = ET.fromstring((root / "AndroidManifest.xml").read_text())
+manifest_source = (root / "AndroidManifest.xml").read_text()
+manifest = ET.fromstring(manifest_source)
+assert 'android:theme="@style/Theme.MaterialFiles"' not in manifest_source
+assert 'android:theme="@style/Theme.MaterialFiles.Translucent"' not in manifest_source
 application = manifest.find("application")
 assert application is not None
 assert application.get(android + "enableOnBackInvokedCallback") == "true"
@@ -48,6 +51,7 @@ for dependency in ("io.coil-kt:coil", "io.coil-kt:coil-video",
 
 theme = (src / "compose/theme/VFilesTheme.kt").read_text()
 assert "MaterialExpressiveTheme(" in theme and "MotionScheme.expressive()" in theme
+assert "baseThemeName.startsWith(material3ThemeName)" in (src / "theme/custom/CustomThemeHelper.kt").read_text()
 assert "headlineMediumEmphasized" in (src / "about/AboutFragment.kt").read_text()
 browser = (src / "filelist/FileBrowserContent.kt").read_text()
 assert "key(state.pathKey, state.files" in browser

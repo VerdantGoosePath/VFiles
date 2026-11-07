@@ -110,8 +110,14 @@ object CustomThemeHelper {
             val defaultThemeName = resources.getResourceEntryName(R.style.Theme_MaterialFiles)
             val material3ThemeName =
                 resources.getResourceEntryName(R.style.Theme_MaterialFiles_Material3)
-            baseThemeName.replace(defaultThemeName, material3ThemeName) +
-                if (isDynamic) "" else ".$themeColorName"
+            // The manifest already uses Material3 for the launch/splash window.
+            // Avoid adding a second ".Material3" when resolving the selected preset.
+            val themedBaseName = if (baseThemeName.startsWith(material3ThemeName)) {
+                baseThemeName
+            } else {
+                baseThemeName.replace(defaultThemeName, material3ThemeName)
+            }
+            themedBaseName + if (isDynamic) "" else ".$themeColorName"
         } else {
             "$baseThemeName.$themeColorName"
         } + if (Settings.BLACK_NIGHT_MODE.valueCompat) ".Black" else ""

@@ -57,7 +57,7 @@
         android:resizeableActivity="true"
         android:roundIcon="@mipmap/launcher_icon"
         android:supportsRtl="true"
-        android:theme="@style/Theme.MaterialFiles"
+        android:theme="@style/Theme.MaterialFiles.Material3"
         android:usesCleartextTraffic="true"
         tools:ignore="GoogleAppIndexingWarning,UnusedAttribute">
 
@@ -65,7 +65,7 @@
             android:name="me.zhanghai.android.files.onboarding.OnboardingActivity"
             android:exported="false"
             android:label="@string/app_name"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.filelist.FileListActivity"
@@ -154,7 +154,7 @@
             android:documentLaunchMode="always"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:theme="@style/Theme.MaterialFiles.Translucent">
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent">
             <intent-filter>
                 <action android:name="me.zhanghai.android.files.intent.action.OPEN_FILE" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -167,86 +167,86 @@
             android:autoRemoveFromRecents="true"
             android:icon="@drawable/edit_icon"
             android:label="@string/file_edit_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.filelist.OpenFileAsDialogActivity"
             android:autoRemoveFromRecents="true"
             android:icon="@drawable/open_as_icon"
             android:label="@string/file_open_as_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.AddStorageDialogActivity"
             android:label="@string/storage_add_storage_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.EditDeviceStorageDialogActivity"
             android:label="@string/storage_edit_device_storage_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.AddExternalStorageShortcutActivity"
             android:label="@string/storage_add_external_storage_shortcut_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.EditExternalStorageShortcutDialogActivity"
             android:label="@string/storage_edit_external_storage_shortcut_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.AddDocumentTreeActivity"
             android:label="@string/storage_add_document_tree_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.EditDocumentTreeDialogActivity"
             android:label="@string/storage_edit_document_tree_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.EditFtpServerActivity"
             android:label="@string/storage_edit_ftp_server_title_edit"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.EditSftpServerActivity"
             android:label="@string/storage_edit_sftp_server_title_edit"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.AddLanSmbServerActivity"
             android:label="@string/storage_add_lan_smb_server_title"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.EditSmbServerActivity"
             android:label="@string/storage_edit_smb_server_title_edit"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.storage.EditWebDavServerActivity"
             android:label="@string/storage_edit_webdav_server_title_edit"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.navigation.EditBookmarkDirectoryDialogActivity"
             android:label="@string/navigation_edit_bookmark_directory_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.navigation.EditStorageVolumeDialogActivity"
             android:label="@string/storage_volume_edit_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.ftpserver.FtpServerActivity"
             android:exported="true"
             android:label="@string/ftp_server_title"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MaterialFiles">
+            android:theme="@style/Theme.MaterialFiles.Material3">
             <intent-filter>
                 <action android:name="me.zhanghai.android.files.intent.action.MANAGE_FTP_SERVER" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -262,7 +262,7 @@
             android:exported="true"
             android:label="@string/settings_title"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MaterialFiles">
+            android:theme="@style/Theme.MaterialFiles.Material3">
             <intent-filter>
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -273,53 +273,53 @@
             android:name="me.zhanghai.android.files.storage.StorageListActivity"
             android:label="@string/storage_list_title"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.settings.StandardDirectoryListActivity"
             android:label="@string/settings_standard_directory_list_title"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.settings.BookmarkDirectoryListActivity"
             android:label="@string/settings_bookmark_directory_list_title"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.settings.DefaultAppsActivity"
             android:label="@string/settings_default_apps_title"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.about.AboutActivity"
             android:label="@string/about_title"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.MaterialFiles" />
+            android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
             android:name="me.zhanghai.android.files.fileaction.ArchivePasswordDialogActivity"
             android:autoRemoveFromRecents="true"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.filejob.FileJobErrorDialogActivity"
             android:autoRemoveFromRecents="true"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.filejob.FileJobConflictDialogActivity"
             android:autoRemoveFromRecents="true"
-            android:theme="@style/Theme.MaterialFiles.Translucent" />
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent" />
 
         <activity
             android:name="me.zhanghai.android.files.viewer.saveas.SaveAsActivity"
             android:autoRemoveFromRecents="true"
             android:exported="true"
             android:label="@string/save_as_title"
-            android:theme="@style/Theme.MaterialFiles.Translucent">
+            android:theme="@style/Theme.MaterialFiles.Material3.Translucent">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
