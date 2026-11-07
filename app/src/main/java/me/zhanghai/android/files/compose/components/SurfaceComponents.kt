@@ -99,7 +99,7 @@ fun VFilesFileProgress(
         if (progress == null) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 LoadingIndicator(modifier = Modifier.size(36.dp))
-                Text("Working…", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.loading), style = MaterialTheme.typography.bodyMedium)
             }
         } else {
             LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
@@ -109,7 +109,7 @@ fun VFilesFileProgress(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
-        if (onCancel != null) OutlinedButton(onClick = onCancel) { Text("Cancel") }
+        if (onCancel != null) OutlinedButton(onClick = onCancel) { Text(stringResource(android.R.string.cancel)) }
     }
 }
 
@@ -155,7 +155,7 @@ fun VFilesConfirmation(
                     else MaterialTheme.colorScheme.primary)
             }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(android.R.string.cancel)) } }
     )
 }
 

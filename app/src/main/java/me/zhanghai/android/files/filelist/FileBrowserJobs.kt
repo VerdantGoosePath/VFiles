@@ -11,7 +11,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.LoadingIndicator
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -38,8 +38,9 @@ fun VFilesJobStatus(
 ) {
     if (jobs.isEmpty()) return
     var expanded by remember { mutableStateOf(false) }
-    val known = jobs.mapNotNull { it.fraction }
-    val overall = known.takeIf { it.isNotEmpty() }?.average()?.toFloat()
+    // Never report a misleading 50% total when another concurrent job has no
+    // measurable fraction. An indeterminate job makes the aggregate indeterminate.
+    val overall = aggregateFileJobFraction(jobs.map { it.fraction })
     Column(modifier) {
         Card(onClick = { expanded = true }) {
             Row(
@@ -48,7 +49,7 @@ fun VFilesJobStatus(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (overall == null) {
-                    LoadingIndicator(modifier = Modifier.size(32.dp))
+                    CircularProgressIndicator(modifier = Modifier.size(32.dp))
                 } else {
                     Text(
                         ((overall * 100).toInt()).toString() + "%",
@@ -101,7 +102,7 @@ fun VFilesJobStatus(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            LoadingIndicator(Modifier.size(24.dp))
+                            CircularProgressIndicator(Modifier.size(24.dp))
                             Text(stringResource(R.string.loading))
                         }
                     }
@@ -112,4 +113,10 @@ fun VFilesJobStatus(
             }
         }
     }
+}
+
+/** A total percentage is only truthful when *all* concurrent file jobs are measurable. */
+internal fun aggregateFileJobFraction(fractions: List<Float?>): Float? {
+    if (fractions.isEmpty() || fractions.any { it == null }) return null
+    return fractions.requireNoNulls().map { it.coerceIn(0f, 1f) }.average().toFloat()
 }
