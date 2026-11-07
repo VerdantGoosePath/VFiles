@@ -3,11 +3,10 @@
  * All Rights Reserved.
  */
 
-// The replacement, FragmentStateAdapter, is for ViewPager2. This adapter's only caller
-// (FilePropertiesDialogFragment) uses TabLayout.setupWithViewPager(), the classic ViewPager (v1)
-// integration, so migrating this adapter alone would not be enough: it would also mean swapping the
-// underlying ViewPager widget and its TabLayout wiring, a real UI change beyond this warning.
-// File-level so this also covers the FragmentPagerAdapter import itself, not just the class using it.
+// The properties dialog now presents native Compose PrimaryScrollableTabRow controls while
+// preserving the existing ViewPager and provider-specific Fragment data surfaces. This
+// FragmentPagerAdapter compatibility boundary is isolated here; changing it requires migrating
+// the underlying ViewPager to ViewPager2, not just replacing this adapter class.
 @file:Suppress("DEPRECATION")
 
 package me.zhanghai.android.files.ui

@@ -94,6 +94,9 @@ release = Path(".github/workflows/android.yml").read_text()
 assert 'platforms;android-37.0' in release and 'platforms;android-36' not in release
 assert 'minTouchTargetSize">0dp' not in (root / "res/values/themes_material3.xml").read_text()
 assert "systemContrast(context)" in theme
+assert "binding.viewPager.offscreenPageLimit = 1" in (src / "fileproperties/FilePropertiesDialogFragment.kt").read_text()
+assert "@style/TextAppearance.MaterialFiles.Material3.Toolbar.Subtitle" in (root / "res/layout/file_list_fragment_app_bar_include.xml").read_text()
+assert "TextAppearance.MaterialFiles.Material3.Toolbar.Subtitle" in (root / "res/values/styles_material3.xml").read_text()
 assert "tintDestructivePositiveButton()" in (src / "filelist/ConfirmDeleteFilesDialogFragment.kt").read_text()
 assert "tintDestructivePositiveButton()" in (src / "filelist/ConfirmReplaceFileDialogFragment.kt").read_text()
 assert "itemBinding.text.isFocusable = true" in (src / "fileproperties/FilePropertiesTabFragment.kt").read_text()

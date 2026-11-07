@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onRoot
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -32,7 +31,6 @@ class FtpScreenshotSmokeTest {
         rule.waitUntil(timeoutMillis = 15_000) {
             rule.onAllNodesWithText(expectedTitle).fetchSemanticsNodes().isNotEmpty()
         }
-        rule.onNodeWithText(expectedTitle).assertExists()
         rule.waitForIdle()
         val image = rule.onRoot().captureToImage().asAndroidBitmap()
         val destination = File(context.filesDir, "m3e-screenshots").apply { mkdirs() }

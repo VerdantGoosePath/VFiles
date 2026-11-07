@@ -43,7 +43,7 @@
                     app:navigationIcon="@drawable/menu_icon_control_normal_24dp"
                     app:navigationContentDescription="@string/open_navigation_drawer"
                     app:popupTheme="?actionBarPopupTheme"
-                    app:subtitleTextAppearance="@style/TextAppearance.AppCompat.Widget.ActionBar.Subtitle.Small" />
+                    app:subtitleTextAppearance="@style/TextAppearance.MaterialFiles.Material3.Toolbar.Subtitle" />
 
                 <me.zhanghai.android.files.ui.OverlayToolbar
                     android:id="@+id/overlayToolbar"

@@ -58,6 +58,12 @@
         <item name="android:background">@android:color/transparent</item>
     </style>
 
+    <!-- Bridge the remaining AppCompat browser action bar to the same M3 typography
+         tokens and paired surface text colors as Compose browser chrome. -->
+    <style name="TextAppearance.MaterialFiles.Material3.Toolbar.Subtitle" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:textColor">?colorOnAppBarSurface</item>
+    </style>
+
     <style name="Widget.MaterialFiles.Material3.Toolbar" parent="Widget.Material3.Toolbar">
         <item name="contentInsetStartWithNavigation">@dimen/abc_action_bar_content_inset_with_nav</item>
     </style>

@@ -140,7 +140,9 @@ class FilePropertiesDialogFragment : AppCompatDialogFragment() {
             .map { getString(it.first) to it.second }
             .toTypedArray()
         val tabAdapter = TabFragmentPagerAdapter(childFragmentManager, *tabs)
-        binding.viewPager.offscreenPageLimit = (tabAdapter.count - 1).coerceAtLeast(1)
+        // Keep only neighboring metadata panels active. Eagerly constructing all seven
+        // providers delays dialog entry and can start unnecessary remote requests.
+        binding.viewPager.offscreenPageLimit = 1
         binding.viewPager.adapter = tabAdapter
         selectedTab = binding.viewPager.currentItem
         binding.propertiesTabBar.isVisible = tabAdapter.count > 1
