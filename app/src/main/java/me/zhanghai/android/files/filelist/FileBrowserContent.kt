@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -117,6 +120,8 @@ enum class FileBrowserItemAction {
 @Composable
 fun VFilesBrowserContent(
     state: FileBrowserContentState,
+    chromeState: FileBrowserChromeState,
+    onSelection: (FileBrowserSelectionCommand) -> Unit,
     onRefresh: () -> Unit,
     onItemAction: (FileItem, FileBrowserItemAction) -> Unit,
     onRangeSelect: (List<FileItem>) -> Unit,
@@ -133,10 +138,11 @@ fun VFilesBrowserContent(
         }
     }
     val savedState = rememberSaveableStateHolder()
+    Box(modifier = modifier.fillMaxSize()) {
     PullToRefreshBox(
         isRefreshing = state.loading && state.files.isNotEmpty(),
         onRefresh = onRefresh,
-        modifier = modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         Column(Modifier.fillMaxSize()) {
             if (state.error != null && visible.isNotEmpty()) {
@@ -271,6 +277,21 @@ fun VFilesBrowserContent(
                 }
             }
         }
+    }
+    // [C34] Contextual actions belong near the thumb, independent of the scrolling app bar.
+    // Existing 120dp lazy-content bottom padding keeps the final item reachable above this dock.
+    val dockModifier = Modifier.align(Alignment.BottomCenter)
+        .navigationBarsPadding().imePadding()
+        .padding(horizontal = 16.dp, vertical = 12.dp).widthIn(max = 520.dp)
+    if (chromeState.selectedCount > 0 && state.pickOptions == null) {
+        BrowserSelectionBar(
+            state = chromeState, onSelection = onSelection, modifier = dockModifier
+        )
+    } else if (chromeState.pasteCount > 0 && state.pickOptions == null) {
+        BrowserPasteBar(
+            state = chromeState, onSelection = onSelection, modifier = dockModifier
+        )
+    }
     }
 }
 
