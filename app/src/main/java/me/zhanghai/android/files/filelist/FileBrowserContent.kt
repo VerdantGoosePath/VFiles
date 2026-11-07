@@ -563,7 +563,9 @@ private fun FileBrowserItemMenu(
                     onClick = { onExpanded(false); onAction(action) }
                 )
             }
-            item(R.string.file_item_action_open_with, FileBrowserItemAction.OPEN_WITH)
+            if (!file.attributes.isDirectory) {
+                item(R.string.file_item_action_open_with, FileBrowserItemAction.OPEN_WITH)
+            }
             if (!picker) {
                 if (!readOnly && !archivePath && !file.attributes.isDirectory) {
                     item(R.string.edit, FileBrowserItemAction.EDIT_WITH)
