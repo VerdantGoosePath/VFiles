@@ -7,6 +7,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FloatingActionButtonMenu
 import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleFloatingActionButton
 import androidx.compose.runtime.Composable
@@ -49,10 +50,11 @@ fun VFilesCreateMenu(
                 ) {
                     Icon(
                         painter = painterResource(
-                            if (expanded) R.drawable.close_icon_white_24dp
-                            else R.drawable.add_icon_white_24dp
+                            if (expanded) R.drawable.file_browser_icon_close
+                            else R.drawable.file_browser_icon_add
                         ),
-                        contentDescription = null
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
@@ -65,7 +67,7 @@ fun VFilesCreateMenu(
                 text = { Text(stringResource(R.string.file_create_directory_title)) },
                 icon = {
                     Icon(
-                        painterResource(R.drawable.folder_icon_control_normal_24dp),
+                        painterResource(R.drawable.file_browser_icon_folder),
                         contentDescription = null
                     )
                 }
