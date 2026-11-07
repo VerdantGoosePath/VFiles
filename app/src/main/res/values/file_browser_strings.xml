@@ -12,4 +12,5 @@
     <string name="file_browser_clear_search">Clear search</string>
     <string name="file_browser_selected">selected</string>
     <string name="file_browser_sort_options">Preferences</string>
+    <string name="file_browser_deselect">Deselect</string>
 </resources>
