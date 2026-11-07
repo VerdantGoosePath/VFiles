@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Expressive settings headings and explanatory preview labels. Legacy titles remain reused. -->
+    <string name="settings_expressive_back">Back</string>
+    <string name="settings_expressive_appearance">Appearance &amp; language</string>
+    <string name="settings_expressive_browsing">Files &amp; browsing</string>
+    <string name="settings_expressive_storage">Storage &amp; bookmarks</string>
+    <string name="settings_expressive_opening">File opening &amp; archives</string>
+    <string name="settings_expressive_advanced">Advanced</string>
+    <string name="settings_expressive_network_advanced">Network &amp; advanced</string>
+    <string name="settings_expressive_ftp_summary">Run and configure the FTP server</string>
+    <string name="settings_expressive_default_accent">Default</string>
+    <string name="settings_expressive_preview">Appearance preview</string>
+    <string name="settings_expressive_preview_sample">Your files</string>
+    <string name="settings_expressive_preview_row">Folder preview</string>
+    <string name="settings_expressive_dark">Dark appearance</string>
+    <string name="settings_expressive_light">Light appearance</string>
+    <string name="settings_expressive_black_explanation">Use black backgrounds when night mode is active</string>
+    <string name="settings_expressive_standard_description">Choose which common folders appear in the navigation list</string>
+    <string name="settings_expressive_external_apps">External apps for opening files</string>
+    <string name="settings_expressive_add_bookmark">Add bookmark</string>
+    <string name="settings_expressive_move_up">Move up</string>
+    <string name="settings_expressive_move_down">Move down</string>
+    <string name="ftp_server_expressive_password_set">Password set</string>
+    <string name="ftp_server_expressive_password_unset">No password</string>
+    <string name="ftp_server_expressive_password_clipboard">Copy the stored password to the clipboard</string>
+    <string name="ftp_server_expressive_password_copied">Password copied securely</string>
+    <string name="ftp_server_expressive_invalid_port">Enter a non-negative whole number</string>
+</resources>

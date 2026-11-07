@@ -1,35 +1,44 @@
-/*
- * Copyright (c) 2019 Hai Zhang <dreaming.in.code.zh@gmail.com>
- * All Rights Reserved.
- */
-
 package me.zhanghai.android.files.ftpserver
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
-import me.zhanghai.android.files.databinding.FtpServerFragmentBinding
+import me.zhanghai.android.files.compose.theme.VFilesTheme
+import me.zhanghai.android.files.filelist.FileListActivity
+import me.zhanghai.android.files.settings.Settings
+import me.zhanghai.android.files.util.valueCompat
 
 class FtpServerFragment : Fragment() {
-    private lateinit var binding: FtpServerFragmentBinding
+    private val homeDirectoryPicker =
+        registerForActivityResult(FileListActivity.OpenDirectoryContract()) { path ->
+            // A path selection is intentionally ignored while FTP is running. Its server
+            // configuration is snapshotted on start and changing it live would be misleading.
+            if (path != null
+                && FtpServerService.stateLiveData.value
+                    == FtpServerService.State.STOPPED) {
+                Settings.FTP_SERVER_HOME_DIRECTORY.putValue(path)
+            }
+        }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View =
-        FtpServerFragmentBinding.inflate(inflater, container, false)
-            .also { binding = it }
-            .root
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        val activity = requireActivity() as AppCompatActivity
-        activity.setSupportActionBar(binding.toolbar)
-        activity.supportActionBar!!.setDisplayHomeAsUpEnabled(true)
+    ): View = ComposeView(requireContext()).apply {
+        setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        setContent {
+            VFilesTheme {
+                ExpressiveFtpServerScreen(
+                    onNavigateUp = { requireActivity().finish() },
+                    onPickHomeDirectory = {
+                        homeDirectoryPicker.launch(Settings.FTP_SERVER_HOME_DIRECTORY.valueCompat)
+                    }
+                )
+            }
+        }
     }
 }

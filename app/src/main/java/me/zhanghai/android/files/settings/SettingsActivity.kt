@@ -65,6 +65,10 @@ class SettingsActivity : AppActivity(), OnThemeChangedListener, OnNightModeChang
     }
 
     private fun restart() {
+        // A color + night change can notify several observers before this Activity is destroyed.
+        // Only the first notification may enqueue a replacement instance.
+        if (isRestarting) return
+        isRestarting = true
         val savedInstanceState = Bundle().apply {
             onSaveInstanceState(this)
         }
@@ -79,7 +83,6 @@ class SettingsActivity : AppActivity(), OnThemeChangedListener, OnNightModeChang
             @Suppress("DEPRECATION")
             overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         }
-        isRestarting = true
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
