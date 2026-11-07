@@ -1,9 +1,11 @@
 package me.zhanghai.android.files.filelist
 
+import android.content.res.ColorStateList
 import android.text.TextUtils
 import android.widget.ImageView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -49,6 +51,7 @@ import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -188,9 +191,9 @@ fun VFilesBrowserContent(
                                 state = listState,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(
-                                    start = 12.dp, end = 12.dp, top = 8.dp, bottom = 104.dp
+                                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp
                                 ),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
                                 itemsIndexed(visible, key = { _, file -> file.path.toString() },
                                     contentType = { _, file ->
@@ -199,6 +202,8 @@ fun VFilesBrowserContent(
                                     FileBrowserItem(
                                         file = file,
                                         grid = false,
+                                        index = index,
+                                        count = visible.size,
                                         selected = file.path in state.selectedPaths,
                                         hasSelection = state.selectedPaths.isNotEmpty(),
                                         pickOptions = state.pickOptions,
@@ -224,11 +229,11 @@ fun VFilesBrowserContent(
                         } else {
                             val gridState = rememberLazyGridState()
                             LazyVerticalGrid(
-                                columns = GridCells.Adaptive(minSize = 164.dp),
+                                columns = GridCells.Adaptive(minSize = 156.dp),
                                 state = gridState,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(
-                                    start = 12.dp, end = 12.dp, top = 8.dp, bottom = 104.dp
+                                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp
                                 ),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -240,6 +245,8 @@ fun VFilesBrowserContent(
                                     FileBrowserItem(
                                         file = file,
                                         grid = true,
+                                        index = index,
+                                        count = visible.size,
                                         selected = file.path in state.selectedPaths,
                                         hasSelection = state.selectedPaths.isNotEmpty(),
                                         pickOptions = state.pickOptions,
@@ -277,11 +284,18 @@ internal fun canSelectBrowserFile(file: FileItem, pick: PickOptions?): Boolean {
 }
 
 /** Context menu actions mirror res/menu/file_item.xml and use the same fragment listener API. */
+/**
+ * Expressive [C10] list rows share an intentional segmented group shape; the selection expands
+ * into a distinct tonal state instead of permanently displaying checkboxes on every file.
+ * Tiles are media-first, with the action menu over the preview and no redundant "Select" button.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun FileBrowserItem(
     file: FileItem,
     grid: Boolean,
+    index: Int,
+    count: Int,
     selected: Boolean,
     hasSelection: Boolean,
     pickOptions: PickOptions?,
@@ -289,19 +303,29 @@ private fun FileBrowserItem(
     onAction: (FileBrowserItemAction) -> Unit,
     onKeyNavigation: (Key, Boolean) -> Boolean
 ) {
-    val isDirectory = file.attributes.isDirectory
+    val directory = file.attributes.isDirectory
     val selectable = canSelectBrowserFile(file, pickOptions)
-    val enabled = selectable || isDirectory
+    val enabled = selectable || directory
     val readOnly = file.path.fileSystem.isReadOnly
     val archivePath = file.path.isArchivePath
     var menuExpanded by remember(file.path) { mutableStateOf(false) }
-    val bg = if (selected) MaterialTheme.colorScheme.primaryContainer
+    val background = if (selected) MaterialTheme.colorScheme.secondaryContainer
         else MaterialTheme.colorScheme.surfaceContainerLow
-    val contentColor = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+    val foreground = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
         else MaterialTheme.colorScheme.onSurface
+    val shape = when {
+        selected -> MaterialTheme.shapes.extraLarge
+        grid || count == 1 -> MaterialTheme.shapes.large
+        else -> RoundedCornerShape(
+            topStart = if (index == 0) 24.dp else 6.dp,
+            topEnd = if (index == 0) 24.dp else 6.dp,
+            bottomStart = if (index == count - 1) 24.dp else 6.dp,
+            bottomEnd = if (index == count - 1) 24.dp else 6.dp
+        )
+    }
     Surface(
-        color = bg,
-        shape = if (grid) MaterialTheme.shapes.large else MaterialTheme.shapes.medium,
+        color = background,
+        shape = shape,
         modifier = Modifier.fillMaxWidth().semantics { this.selected = selected }
             .onPreviewKeyEvent { event ->
                 if (event.type == KeyEventType.KeyDown &&
@@ -311,115 +335,160 @@ private fun FileBrowserItem(
             }
             .combinedClickable(
                 enabled = enabled,
+                onClickLabel = if (hasSelection) stringResource(R.string.select) else null,
+                onLongClickLabel = stringResource(R.string.select),
                 onClick = {
                     if (hasSelection && selectable) onAction(FileBrowserItemAction.SELECT)
                     else onAction(FileBrowserItemAction.OPEN)
                 },
                 onLongClick = {
                     if (selectable) onAction(FileBrowserItemAction.SELECT)
-                    else if (isDirectory) onAction(FileBrowserItemAction.OPEN)
+                    else if (directory) onAction(FileBrowserItemAction.OPEN)
                 }
             )
     ) {
         if (grid) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(10.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(96.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    FileBrowserThumbnail(file, Modifier.size(88.dp))
-                    FileBrowserItemMenu(file, readOnly, archivePath,
-                        pickOptions != null, menuExpanded, { menuExpanded = it }, onAction)
+                    FileBrowserThumbnail(
+                        file = file,
+                        modifier = if (directory || !file.supportsThumbnail) Modifier.size(80.dp)
+                            else Modifier.fillMaxSize()
+                    )
+                    if (selected || hasSelection) {
+                        Box(Modifier.align(Alignment.TopStart)) {
+                            Checkbox(
+                                checked = selected, onCheckedChange = null
+                            )
+                        }
+                    }
+                    Box(Modifier.align(Alignment.TopEnd)) {
+                        FileBrowserItemMenu(
+                            file, readOnly, archivePath,
+                            pickOptions != null, menuExpanded,
+                            { menuExpanded = it }, onAction
+                        )
+                    }
                 }
                 Text(
-                    file.name, style = MaterialTheme.typography.titleSmall,
-                    color = contentColor, maxLines = 2, overflow = ellipsize.toComposeOverflow()
+                    file.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = foreground,
+                    maxLines = 2,
+                    minLines = 2,
+                    overflow = ellipsize.toComposeOverflow()
                 )
-                Row(verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    if (selected) Checkbox(checked = true, onCheckedChange = null)
-                    else if (selectable) TextButton(
-                        onClick = { onAction(FileBrowserItemAction.SELECT) }
-                    ) { Text(stringResource(R.string.select)) }
-                    FileBrowserBadges(file)
-                }
+                FileBrowserBadges(file)
             }
         } else {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 6.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 64.dp)
+                    .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    FileBrowserThumbnail(file, Modifier.size(46.dp))
-                }
+                FileBrowserThumbnail(file, Modifier.size(44.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        file.name, style = MaterialTheme.typography.titleMedium,
-                        color = contentColor, maxLines = 2, overflow = ellipsize.toComposeOverflow()
+                        file.name,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = foreground,
+                        maxLines = 2,
+                        overflow = ellipsize.toComposeOverflow()
                     )
-                    if (!isDirectory) {
+                    if (!directory) {
                         val context = LocalContext.current
-                        val fileSize = file.attributes.fileSize.formatHumanReadable(context)
+                        val size = file.attributes.fileSize.formatHumanReadable(context)
                         val modified = file.attributes.lastModifiedTime().toInstant()
                             .formatShort(context)
                         Text(
-                            "$modified · $fileSize",
+                            "$modified · $size",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = if (selected) foreground
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                     }
                     FileBrowserBadges(file)
                 }
-                if (selected) {
-                    Checkbox(checked = true, onCheckedChange = null)
-                } else if (selectable) {
-                    Checkbox(checked = false, onCheckedChange = {
-                        onAction(FileBrowserItemAction.SELECT)
-                    })
+                if (selected || hasSelection) {
+                    Checkbox(checked = selected, onCheckedChange = null)
                 }
-                FileBrowserItemMenu(file, readOnly, archivePath,
-                    pickOptions != null, menuExpanded, { menuExpanded = it }, onAction)
+                FileBrowserItemMenu(
+                    file, readOnly, archivePath,
+                    pickOptions != null, menuExpanded, { menuExpanded = it }, onAction
+                )
             }
         }
     }
 }
 
+/**
+ * Uncluttered 44dp list icons and restrained 80dp grid previews. Directory icons use the theme's
+ * paired secondary-container colors, while Coil images are clipped and retain provider fetchers.
+ * Never paint a square gray ImageView background behind every folder glyph.
+ */
 @Composable
 private fun FileBrowserThumbnail(file: FileItem, modifier: Modifier = Modifier) {
-    val thumbnail = file.supportsThumbnail
-    val fallbackIcon = file.mimeType.iconRes
-    val surface = MaterialTheme.colorScheme.surfaceVariant.toArgb()
-    Box(modifier, contentAlignment = Alignment.Center) {
-        // Coil's existing PathAttributesFetcher and custom providers remain in the image pipeline.
-        AndroidView(
-            factory = { context ->
-                ImageView(context).apply {
-                    scaleType = ImageView.ScaleType.CENTER_CROP
-                    setBackgroundColor(surface)
-                }
-            },
-            modifier = Modifier.fillMaxSize(),
-            update = { image ->
-                val request = file.path to file.attributes
-                if (image.tag != request) {
-                    image.dispose()
-                    image.tag = request
-                    image.setImageResource(fallbackIcon)
-                    if (thumbnail) image.load(request) {
-                        crossfade(false)
-                        placeholder(fallbackIcon)
-                        error(fallbackIcon)
+    val directory = file.attributes.isDirectory
+    val thumbnail = !directory && file.supportsThumbnail
+    val iconTint = MaterialTheme.colorScheme.onSurfaceVariant.toArgb()
+    val shape = MaterialTheme.shapes.medium
+    val background = if (directory) MaterialTheme.colorScheme.secondaryContainer
+        else MaterialTheme.colorScheme.surfaceContainerHigh
+    Surface(
+        modifier = modifier.clip(shape),
+        color = background,
+        shape = shape
+    ) {
+        if (directory) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(R.drawable.folder_icon_control_normal_24dp),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    modifier = Modifier.fillMaxSize().padding(10.dp)
+                )
+            }
+        } else {
+            val fallbackIcon = file.mimeType.iconRes
+            AndroidView(
+                factory = { context ->
+                    ImageView(context).apply {
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                        setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                        setPadding(8, 8, 8, 8)
                     }
-                }
-            },
-            onRelease = { image -> image.dispose(); image.tag = null }
-        )
+                },
+                modifier = Modifier.fillMaxSize(),
+                update = { image ->
+                    val request = file.path to file.attributes
+                    if (image.tag != request) {
+                        image.dispose()
+                        image.tag = request
+                        image.setImageResource(fallbackIcon)
+                        if (thumbnail) image.load(request) {
+                            crossfade(false)
+                            placeholder(fallbackIcon)
+                            error(fallbackIcon)
+                        }
+                    }
+                    image.imageTintList = if (thumbnail) null
+                        else ColorStateList.valueOf(iconTint)
+                    image.scaleType = if (thumbnail) ImageView.ScaleType.CENTER_CROP
+                        else ImageView.ScaleType.FIT_CENTER
+                    val p = if (thumbnail) 0 else (image.resources.displayMetrics.density * 8).toInt()
+                    if (image.paddingLeft != p) image.setPadding(p, p, p, p)
+                },
+                onRelease = { image -> image.dispose(); image.tag = null }
+            )
+        }
     }
 }
 
@@ -480,6 +549,12 @@ private fun FileBrowserItemMenu(
             )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { onExpanded(false) }) {
+            if (canSelectBrowserFile(file, if (picker) null else null)) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.select)) },
+                    onClick = { onExpanded(false); onAction(FileBrowserItemAction.SELECT) }
+                )
+            }
             @Composable
             fun item(id: Int, action: FileBrowserItemAction) {
                 DropdownMenuItem(
