@@ -55,6 +55,7 @@ jobs:
             ./gradlew --no-daemon :app:connectedDebugAndroidTest
             result=$?
             mkdir -p m3e-screenshots
+            adb logcat -d -t 1500 -v threadtime > m3e-screenshots/emulator-tail.log || true
             for variant in light dark; do
               adb exec-out run-as fr.vroot.vfiles.fork cat "files/m3e-screenshots/browser-${variant}.png" > "m3e-screenshots/browser-${variant}.png"
               if [[ ! -s "m3e-screenshots/browser-${variant}.png" ]]; then
@@ -69,6 +70,7 @@ jobs:
           name: m3e-api35-emulator-ui-evidence
           path: |
             m3e-screenshots/*.png
+            m3e-screenshots/emulator-tail.log
             app/build/reports/androidTests/connected/
             app/build/outputs/androidTest-results/connected/
           if-no-files-found: warn

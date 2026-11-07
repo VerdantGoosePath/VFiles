@@ -36,14 +36,13 @@ assert all(p.get(android + "authorities") for p in providers)
 assert any((s.get(android + "name") or "").endswith(".FileJobService")
            and s.get(android + "foregroundServiceType") == "dataSync" for s in services)
 assert any((s.get(android + "name") or "").endswith(".FtpServerService")
-           and s.get(android + "foregroundServiceType") == "dataSync" for s in services)
+           and s.get(android + "foregroundServiceType") == "connectedDevice" for s in services)
 
 build = Path("app/build.gradle").read_text()
 assert re.search(r"compileSdk\s*=\s*37\b", build)
 assert re.search(r"minSdk\s+23\b", build)
-# API 37 targeting is explicitly BLOCKED until dataSync service timeouts and restart/resume
-# are redesigned; checking the SDK contract prevents an accidental nonfunctional bump.
-assert re.search(r"targetSdk\s+34\b", build)
+# Android17 targeting is an explicit canary while runtime behaviour remains unverified.
+assert "targetSdk (project.hasProperty('targetApi37') ? 37 : 34)" in build
 for dependency in ("io.coil-kt:coil", "io.coil-kt:coil-video",
                    "androidx.exifinterface:exifinterface",
                    "me.zhanghai.android.libarchive:library"):

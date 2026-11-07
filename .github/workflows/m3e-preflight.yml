@@ -97,3 +97,6 @@ jobs:
 
       - name: Assemble opt-in systemPicker debug and run JVM test task
         run: ./gradlew --no-daemon --warning-mode all -PsystemPicker :app:assembleSystemPickerDebug :app:testSystemPickerDebugUnitTest
+
+      - name: Android 17 target-SDK canary (compile, instrumentation APK, JVM)
+        run: ./gradlew --no-daemon -PtargetApi37 :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest
