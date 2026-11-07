@@ -7,9 +7,18 @@
 
 <me.zhanghai.android.files.ui.ReadOnlyTextInputLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/textInputLayout"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    app:boxBackgroundMode="filled"
+    app:boxBackgroundColor="?colorSurfaceVariant"
+    app:boxStrokeWidth="0dp"
+    app:boxStrokeWidthFocused="0dp"
+    app:boxCornerRadiusTopStart="20dp"
+    app:boxCornerRadiusTopEnd="20dp"
+    app:boxCornerRadiusBottomStart="20dp"
+    app:boxCornerRadiusBottomEnd="20dp">
 
     <me.zhanghai.android.files.ui.ReadOnlyTextInputEditText
         android:id="@+id/text"

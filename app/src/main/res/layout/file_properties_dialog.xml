@@ -1,36 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-
-<!--
-  ~ Copyright (c) 2018 Hai Zhang <dreaming.in.code.zh@gmail.com>
-  ~ All Rights Reserved.
-  -->
-
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingTop="@dimen/abc_dialog_title_divider_material"
     android:orientation="vertical">
 
-    <FrameLayout
+    <!-- Responsive, accessible M3E tabs; legacy metadata fragments retain their providers. -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/propertiesTabBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_gravity="bottom"
-            android:background="?colorControlHighlight" />
-
-        <com.google.android.material.tabs.TabLayout
-            android:id="@+id/tabLayout"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:tabMode="scrollable"
-            app:tabPaddingStart="?dialogPreferredPadding"
-            app:tabPaddingEnd="?dialogPreferredPadding" />
-    </FrameLayout>
+        android:layout_height="wrap_content" />
 
     <me.zhanghai.android.files.ui.WrapFirstPageContentViewPager
         android:id="@+id/viewPager"

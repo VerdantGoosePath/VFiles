@@ -12,6 +12,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatDialogFragment
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.viewpager.widget.ViewPager
+import me.zhanghai.android.files.compose.theme.VFilesTheme
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -41,6 +54,8 @@ class FilePropertiesDialogFragment : AppCompatDialogFragment() {
     private val viewModel by viewModels { { FilePropertiesFileViewModel(args.file) } }
 
     private lateinit var binding: FilePropertiesDialogBinding
+    // Compose tab state mirrors the existing pager and survives ordinary recomposition.
+    private var selectedTab by mutableIntStateOf(0)
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         MaterialAlertDialogBuilder(requireContext(), theme)
@@ -59,6 +74,7 @@ class FilePropertiesDialogFragment : AppCompatDialogFragment() {
         savedInstanceState: Bundle?
     ): View = binding.root
 
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -125,9 +141,43 @@ class FilePropertiesDialogFragment : AppCompatDialogFragment() {
             .toTypedArray()
         val tabAdapter = TabFragmentPagerAdapter(childFragmentManager, *tabs)
         binding.viewPager.offscreenPageLimit = (tabAdapter.count - 1).coerceAtLeast(1)
-        binding.tabLayout.isVisible = tabAdapter.count > 1
         binding.viewPager.adapter = tabAdapter
-        binding.tabLayout.setupWithViewPager(binding.viewPager)
+        selectedTab = binding.viewPager.currentItem
+        binding.propertiesTabBar.isVisible = tabAdapter.count > 1
+        binding.propertiesTabBar.setViewCompositionStrategy(
+            ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed
+        )
+        binding.propertiesTabBar.setContent {
+            VFilesTheme {
+                PrimaryScrollableTabRow(
+                    selectedTabIndex = selectedTab,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    tabs.forEachIndexed { index, tab ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { binding.viewPager.setCurrentItem(index, true) },
+                            text = {
+                                Text(
+                                    tab.first,
+                                    style = if (selectedTab == index)
+                                        MaterialTheme.typography.titleSmallEmphasized
+                                    else MaterialTheme.typography.titleSmall
+                                )
+                            }
+                        )
+                    }
+                }
+            }
+        }
+        binding.viewPager.addOnPageChangeListener(
+            object : ViewPager.SimpleOnPageChangeListener() {
+                override fun onPageSelected(position: Int) {
+                    selectedTab = position
+                }
+            }
+        )
     }
 
     override fun onStart() {
