@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -533,10 +534,14 @@ internal fun ExpressiveSettingsScreen(
     }
 }
 
-/** A small, real composition of the same scheme resolver and components as the app. */
+/**
+ * A tiny *real* file-manager composition, rather than three unrelated palette chips.
+ * Users can judge search, a selected file, quiet metadata and container contrast before
+ * committing an accent/night change. Decorative controls are excluded from TalkBack.
+ * The page is scrollable; nothing in the sample performs file operations.
+ */
 @Composable
 private fun AppearancePreview(color: ThemeColor, dark: Boolean, black: Boolean) {
-    val context = LocalContext.current
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
             stringResource(R.string.settings_expressive_preview),
@@ -547,51 +552,96 @@ private fun AppearancePreview(color: ThemeColor, dark: Boolean, black: Boolean) 
             Surface(
                 shape = MaterialTheme.shapes.extraLarge,
                 color = MaterialTheme.colorScheme.surfaceContainerLow,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().clearAndSetSemantics { }
             ) {
-                Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(32.dp).clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary))
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                stringResource(R.string.settings_expressive_preview_sample),
-                                style = MaterialTheme.typography.titleMediumEmphasized,
-                                color = MaterialTheme.colorScheme.onSurface
+                Column(
+                    Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.settings_expressive_preview_sample),
+                            style = MaterialTheme.typography.titleLargeEmphasized,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            stringResource(
+                                if (dark) R.string.settings_expressive_dark
+                                else R.string.settings_expressive_light
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh
+                    ) {
+                        Row(
+                            Modifier.heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.file_browser_icon_search),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                if (dark) stringResource(R.string.settings_expressive_dark)
-                                else stringResource(R.string.settings_expressive_light),
-                                style = MaterialTheme.typography.bodyMedium,
+                                stringResource(R.string.search),
+                                style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        repeat(3) { index ->
-                            val scheme = MaterialTheme.colorScheme
-                            val background = when (index) {
-                                0 -> scheme.primaryContainer
-                                1 -> scheme.secondaryContainer
-                                else -> scheme.tertiaryContainer
-                            }
-                            Box(
-                                Modifier.weight(1f).height(32.dp)
-                                    .clip(MaterialTheme.shapes.medium).background(background)
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.large,
+                        color = MaterialTheme.colorScheme.secondaryContainer
+                    ) {
+                        Row(
+                            modifier = Modifier.heightIn(min = 60.dp)
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.file_browser_icon_folder),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                            Text(
+                                stringResource(R.string.settings_expressive_preview_row),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Checkbox(
+                                checked = true, onCheckedChange = null,
+                                modifier = Modifier.clearAndSetSemantics { }
                             )
                         }
                     }
-                    Surface(
-                        shape = MaterialTheme.shapes.large,
-                        color = MaterialTheme.colorScheme.surfaceContainer,
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            stringResource(R.string.settings_expressive_preview_row),
-                            Modifier.padding(14.dp), style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.tertiaryContainer,
+                            MaterialTheme.colorScheme.surfaceContainerHighest
+                        ).forEach { fill ->
+                            Box(
+                                modifier = Modifier.weight(1f).height(16.dp)
+                                    .clip(MaterialTheme.shapes.medium)
+                                    .background(fill)
+                            )
+                        }
                     }
                 }
             }

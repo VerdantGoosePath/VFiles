@@ -1,6 +1,7 @@
 package me.zhanghai.android.files.compose.theme
 
 import android.content.Context
+import android.app.UiModeManager
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
@@ -134,7 +135,9 @@ fun resolveVFilesColorScheme(context: Context, appearance: VFilesAppearance): Co
         val seed = wallpaperSeed ?: runCatching {
             ContextCompat.getColor(context, selected.resourceId)
         }.getOrElse { ContextCompat.getColor(context, ThemeColor.COLOR_PRIMARY.resourceId) }
-        val tones = SchemeTonalSpot(Hct.fromInt(seed), appearance.dark, 0.0)
+        // Android 14+ exposes the user-selected contrast level (-1..1). Keep
+        // tonal palette pairings intact when accessibility contrast is increased.
+        val tones = SchemeTonalSpot(Hct.fromInt(seed), appearance.dark, systemContrast(context))
         (if (appearance.dark) darkColorScheme() else lightColorScheme()).copy(
             primary = Color(tones.primary),
             onPrimary = Color(tones.onPrimary),
@@ -193,3 +196,12 @@ internal fun systemAnimationsDisabled(context: Context): Boolean = runCatching {
         context.contentResolver, AndroidSettings.Global.ANIMATOR_DURATION_SCALE, 1f
     ) == 0f
 }.getOrDefault(false)
+
+/** M3 color utilities accept the same contrast range as UiModeManager on API34+. */
+internal fun systemContrast(context: Context): Double =
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        runCatching {
+            (context.getSystemService(Context.UI_MODE_SERVICE) as UiModeManager).contrast
+                .toDouble().coerceIn(-1.0, 1.0)
+        }.getOrDefault(0.0)
+    } else 0.0
