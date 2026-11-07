@@ -18,9 +18,9 @@ android {
         applicationId 'fr.vroot.vfiles.fork'
         minSdk 23
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-        // Production target remains 34 while storage/permission/FGS behaviours are
-        // instrumented against the API 37 canary. Not a permanent target exemption.
-        targetSdk (project.hasProperty('targetApi37') ? 37 : 34)
+        // Ship against Android 17. File-job timeout and FTP connectedDevice service
+        // safeguards are retained; long-running dataSync resume can be refined later.
+        targetSdk 37
         versionCode 44
         versionName '1.8.4'
         resValue 'string', 'app_version', versionName + ' (' + versionCode + ')'
@@ -160,7 +160,7 @@ configurations.all {
 }
 
 dependencies {
-    // Compile API 37 and test an opt-in targetSdk37 build alongside the shipping SDK 34.
+    // Android 17 compile and target are both API 37. All debug/systemPicker variants match.
     // Stable BOM controls Compose runtime/UI. Material3 explicitly overrides the BOM's
     // 1.4 stable to enable MaterialExpressiveTheme and native segmented lists.
     // Pinned at 1.5.0-alpha23 because alpha24+ adds material3-ripple with minSdk 24;

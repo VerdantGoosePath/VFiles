@@ -31,9 +31,6 @@ object CustomThemeHelper {
     fun initialize(application: Application) {
         application.registerActivityLifecycleCallbacks(object : SimpleActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
-                // Compose's createComposeRule() starts the bare ComponentActivity test host,
-                // not an app route. Permit that exact test-only class in debuggable builds;
-                // all production activities still require AppActivity theme initialization.
                 // Compose's test-manifest declares exactly androidx.activity.ComponentActivity,
                 // which is never an app production route. The test APK may not have the
                 // debuggable application flag on all runners, so use the *concrete class name*
@@ -122,7 +119,7 @@ object CustomThemeHelper {
                 resources.getResourceEntryName(R.style.Theme_MaterialFiles_Material3)
             // The manifest already uses Material3 for the launch/splash window.
             // Avoid adding a second ".Material3" when resolving the selected preset.
-            val themedBaseName = if (baseThemeName.startsWith(material3ThemeName)) {
+            val themedBaseName = if (baseThemeName.substringAfterLast('/').startsWith(material3ThemeName)) {
                 baseThemeName
             } else {
                 baseThemeName.replace(defaultThemeName, material3ThemeName)

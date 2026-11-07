@@ -41,8 +41,8 @@ assert any((s.get(android + "name") or "").endswith(".FtpServerService")
 build = Path("app/build.gradle").read_text()
 assert re.search(r"compileSdk\s*=\s*37\b", build)
 assert re.search(r"minSdk\s+23\b", build)
-# Android17 targeting is an explicit canary while runtime behaviour remains unverified.
-assert "targetSdk (project.hasProperty('targetApi37') ? 37 : 34)" in build
+# Android17 is the default target for every build variant.
+assert re.search(r"targetSdk\s+37\b", build)
 for dependency in ("io.coil-kt:coil", "io.coil-kt:coil-video",
                    "androidx.exifinterface:exifinterface",
                    "me.zhanghai.android.libarchive:library"):
@@ -50,7 +50,7 @@ for dependency in ("io.coil-kt:coil", "io.coil-kt:coil-video",
 
 theme = (src / "compose/theme/VFilesTheme.kt").read_text()
 assert "MaterialExpressiveTheme(" in theme and "MotionScheme.expressive()" in theme
-assert "baseThemeName.startsWith(material3ThemeName)" in (src / "theme/custom/CustomThemeHelper.kt").read_text()
+assert "baseThemeName.substringAfterLast('/').startsWith(material3ThemeName)" in (src / "theme/custom/CustomThemeHelper.kt").read_text()
 assert "headlineMediumEmphasized" in (src / "about/AboutFragment.kt").read_text()
 browser = (src / "filelist/FileBrowserContent.kt").read_text()
 assert "key(state.pathKey, state.files" in browser
