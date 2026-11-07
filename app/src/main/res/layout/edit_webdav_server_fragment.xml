@@ -44,9 +44,12 @@
                 android:scrollbars="vertical"
                 android:scrollIndicators="bottom">
 
-                <LinearLayout
+                <me.zhanghai.android.files.ui.ExpressiveFormColumn
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:divider="@drawable/transparent_divider_vertical_16dp"
+                    android:showDividers="middle"
                     android:paddingStart="@dimen/screen_edge_margin"
                     android:paddingEnd="@dimen/screen_edge_margin"
                     android:paddingTop="@dimen/screen_edge_margin"
@@ -200,7 +203,7 @@
                             android:layout_height="wrap_content"
                             android:inputType="textPassword" />
                     </com.google.android.material.textfield.TextInputLayout>
-                </LinearLayout>
+                </me.zhanghai.android.files.ui.ExpressiveFormColumn>
             </androidx.core.widget.NestedScrollView>
         
             <!-- A transparent click barrier keeps a tested server snapshot immutable in the form.
@@ -236,9 +239,10 @@
                 android:id="@+id/removeOrAddButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:layout_marginStart="0dp"
                 android:text="@string/save"
-                style="?buttonBarButtonStyle" />
+                style="?materialButtonOutlinedStyle" />
 
             <Space
                 android:layout_width="0dp"
@@ -249,15 +253,17 @@
                 android:id="@+id/cancelButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:text="@android:string/cancel"
-                style="?buttonBarButtonStyle" />
+                style="?materialButtonOutlinedStyle" />
 
             <Button
                 android:id="@+id/saveOrConnectAndAddButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minHeight="48dp"
                 android:text="@string/save"
-                style="?buttonBarButtonStyle" />
+                style="?materialButtonStyle" />
         </LinearLayout>
     </me.zhanghai.android.files.ui.CoordinatorScrollingLinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

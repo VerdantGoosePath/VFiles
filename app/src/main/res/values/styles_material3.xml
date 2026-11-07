@@ -29,7 +29,7 @@
     </style>
 
     <style name="ShapeAppearance.MaterialFiles.Material3.LargeComponent" parent="ShapeAppearance.Material3.LargeComponent">
-        <item name="cornerSize">16dp</item>
+        <item name="cornerSize">20dp</item>
     </style>
 
     <style name="TextAppearance.MaterialFiles.Material3.ListItem" parent="TextAppearance.Material3.TitleMedium">
@@ -49,7 +49,7 @@
         <item name="itemTextColor">@color/navigation_item_foreground_color_material3</item>
         <item name="itemSubtitleTextAppearance">?textAppearanceBodyMedium</item>
         <item name="itemSubtitleTextColor">@color/navigation_item_subtitle_text_color_material3</item>
-        <item name="itemSubtitleTextSize">10sp</item>
+        <item name="itemSubtitleTextSize">12sp</item>
         <item name="itemIconPadding">@dimen/navigation_item_icon_padding_material3</item>
         <item name="dividerVerticalPadding">@dimen/design_navigation_separator_vertical_padding</item>
     </style>

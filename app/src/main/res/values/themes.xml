@@ -33,7 +33,7 @@
         <item name="navigationViewStyle">@style/Widget.MaterialFiles.NavigationView</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialFiles.SwitchPreferenceCompat</item>
         <item name="textInputStyle">?textInputOutlinedStyle</item>
-        <item name="minTouchTargetSize">0dp</item>
+        <item name="minTouchTargetSize">48dp</item>
 
         <!-- Material Components only sets the Material 3 type scale on Theme.Material3.*, so on this
              Material 2 theme these attributes resolve to nothing and any layout using them falls
@@ -95,7 +95,7 @@
         <item name="navigationViewStyle">@style/Widget.MaterialFiles.NavigationView</item>
         <item name="switchPreferenceCompatStyle">@style/Preference.MaterialFiles.SwitchPreferenceCompat</item>
         <item name="textInputStyle">?textInputOutlinedStyle</item>
-        <item name="minTouchTargetSize">0dp</item>
+        <item name="minTouchTargetSize">48dp</item>
 
         <item name="colorAppBarSurface">@color/dark_50_percent</item>
         <item name="colorOnAppBarSurface">@android:color/white</item>
