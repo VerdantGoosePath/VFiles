@@ -121,6 +121,7 @@ enum class FileBrowserItemAction {
 fun VFilesBrowserContent(
     state: FileBrowserContentState,
     chromeState: FileBrowserChromeState,
+    hasActiveJobs: Boolean,
     onSelection: (FileBrowserSelectionCommand) -> Unit,
     onRefresh: () -> Unit,
     onItemAction: (FileItem, FileBrowserItemAction) -> Unit,
@@ -138,6 +139,15 @@ fun VFilesBrowserContent(
         }
     }
     val savedState = rememberSaveableStateHolder()
+    // The contextual dock can be two lines tall; active file-job progress is anchored at
+    // bottom-start. Reserve enough scroll space for both rather than obscuring the last file.
+    val hasContextDock = (chromeState.selectedCount > 0 || chromeState.pasteCount > 0) &&
+        state.pickOptions == null
+    val contentBottomPadding = when {
+        hasContextDock && hasActiveJobs -> 260.dp
+        hasContextDock -> 196.dp
+        else -> 120.dp
+    }
     Box(modifier = modifier.fillMaxSize()) {
     PullToRefreshBox(
         isRefreshing = state.loading && state.files.isNotEmpty(),
@@ -197,7 +207,7 @@ fun VFilesBrowserContent(
                                 state = listState,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(
-                                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp
+                                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = contentBottomPadding
                                 ),
                                 verticalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
@@ -239,7 +249,7 @@ fun VFilesBrowserContent(
                                 state = gridState,
                                 modifier = Modifier.fillMaxSize(),
                                 contentPadding = PaddingValues(
-                                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp
+                                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = contentBottomPadding
                                 ),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -282,7 +292,8 @@ fun VFilesBrowserContent(
     // Existing 120dp lazy-content bottom padding keeps the final item reachable above this dock.
     val dockModifier = Modifier.align(Alignment.BottomCenter)
         .navigationBarsPadding().imePadding()
-        .padding(horizontal = 16.dp, vertical = 12.dp).widthIn(max = 520.dp)
+        .padding(horizontal = 16.dp, top = 12.dp,
+            bottom = if (hasActiveJobs) 76.dp else 12.dp).widthIn(max = 520.dp)
     if (chromeState.selectedCount > 0 && state.pickOptions == null) {
         BrowserSelectionBar(
             state = chromeState, onSelection = onSelection, modifier = dockModifier
