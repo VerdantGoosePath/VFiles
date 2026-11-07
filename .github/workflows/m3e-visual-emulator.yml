@@ -1,0 +1,75 @@
+name: M3E rendered emulator acceptance
+
+on:
+  push:
+    branches: [m3e/final-hardening]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m3e-emulator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  instrumented-render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable hardware virtualization
+        shell: bash
+        run: |
+          if [[ -e /dev/kvm ]]; then sudo chmod 666 /dev/kvm; fi
+      - name: Install Android 37 compile platform and native build dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          if command -v sdkmanager >/dev/null 2>&1; then
+            SDKMANAGER="$(command -v sdkmanager)"
+          else
+            SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager | sort -V | tail -n 1)"
+          fi
+          "$SDKMANAGER" --install "platforms;android-37.0" "build-tools;37.0.0" "ndk;28.1.13356709" "cmake;3.22.1"
+          if [[ ! -e "$SDK_ROOT/platforms/android-37" && -d "$SDK_ROOT/platforms/android-37.0" ]]; then
+            ln -s android-37.0 "$SDK_ROOT/platforms/android-37"
+          fi
+      - name: Run Compose/UI instrumentation on API 35 emulator and capture evidence
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_4
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          disable-animations: true
+          script: |
+            set +e
+            ./gradlew --no-daemon :app:connectedDebugAndroidTest
+            result=$?
+            mkdir -p m3e-screenshots
+            for variant in light dark; do
+              adb exec-out run-as fr.vroot.vfiles.fork cat "files/m3e-screenshots/browser-${variant}.png" > "m3e-screenshots/browser-${variant}.png"
+              if [[ ! -s "m3e-screenshots/browser-${variant}.png" ]]; then
+                rm -f "m3e-screenshots/browser-${variant}.png"
+              fi
+            done
+            exit "$result"
+      - name: Upload instrumentation results and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m3e-api35-emulator-ui-evidence
+          path: |
+            m3e-screenshots/*.png
+            app/build/reports/androidTests/connected/
+            app/build/outputs/androidTest-results/connected/
+          if-no-files-found: warn
+          retention-days: 14
