@@ -833,6 +833,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                     VFilesBrowserContent(
                         state = browserContentState,
                         chromeState = browserChromeState,
+                        hasActiveJobs = browserJobs.isNotEmpty(),
                         onSelection = { command ->
                             // File jobs and selection remain subject to the existing policy
                             // regardless of which Compose surface dispatched the command.
