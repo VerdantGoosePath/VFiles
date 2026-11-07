@@ -1483,6 +1483,7 @@ class OpenFileJob(
             file, R.string.file_open_from_background_title_format,
             R.string.file_open_from_background_text
         ) { file ->
+            // Keep the original outgoing URI grant behaviour for staged remote/archive files.
             file.fileProviderUri.createViewIntent(mimeType)
                 .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
                 .let {

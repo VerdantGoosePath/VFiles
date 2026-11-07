@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="file_browser_search_no_results">No matching files</string>
+    <string name="file_browser_empty_description">This folder is empty</string>
+    <string name="file_browser_badge_symbolic_link">Symbolic link</string>
+    <string name="file_browser_badge_encrypted">Encrypted</string>
+    <string name="file_browser_badge_archive">Archive</string>
+    <string name="file_browser_badge_read_only">Read-only</string>
+    <string name="file_browser_item_actions">File actions</string>
+    <string name="file_browser_create_open">Create file or folder</string>
+    <string name="file_browser_create_close">Close create menu</string>
+    <string name="file_browser_clear_search">Clear search</string>
+    <string name="file_browser_selected">selected</string>
+    <string name="file_browser_sort_options">Preferences</string>
+    <string name="file_browser_deselect">Deselect</string>
+</resources>
