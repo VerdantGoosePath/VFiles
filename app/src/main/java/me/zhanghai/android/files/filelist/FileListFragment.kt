@@ -225,6 +225,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     private val useComposeFileList: Boolean
         get() = isAdded && !requireContext().isTelevision && viewModel.pickOptions == null
     private var browserFabExpanded by mutableStateOf(false)
+    private var browserRefreshToken = 0
     private var browserNavigationState by mutableStateOf(FileBrowserNavigationState())
     private var browserScreenView: ComposeView? = null
     // The inflated View browser: the drawer (or persistent bar) layout under the fragment root.
@@ -493,6 +494,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             onShowHiddenFilesChanged(it)
             updateBrowserChrome()
         }
+        Settings.FILE_LIST_DRAG_TO_SELECT.observe(viewLifecycleOwner) { updateBrowserContent() }
         // Retain the View-based operational UI and use scalar projections for Compose chrome.
         // Observing these individually also handles provider changes and in-place set mutations.
         viewModel.currentPathLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
@@ -905,6 +907,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
 
         override fun onRangeSelect(files: List<FileItem>) = onComposeRangeSelect(files)
 
+        override fun onSetSelection(files: List<FileItem>, selected: Boolean) {
+            val eligible = files.filter { canSelectBrowserFile(it, viewModel.pickOptions) }
+            if (eligible.isEmpty()) return
+            val selection = fileItemSetOf()
+            selection.addAll(eligible)
+            viewModel.selectFiles(selection, selected)
+        }
+
         override fun onSelection(command: FileBrowserSelectionCommand) {
             // Compose cannot bypass the same read-only/picker restrictions as the legacy
             // contextual menus; recheck at command dispatch time.
@@ -968,7 +978,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val pickOptions = viewModel.pickOptionsLiveData.value
         browserChromeState = FileBrowserChromeState(
             breadcrumbs = segments,
-            subtitle = binding.toolbar.subtitle?.toString().orEmpty(),
+            currentIndex = breadcrumb?.selectedIndex ?: -1,
+            subtitle = browserSubtitle(),
             viewType = viewModel.viewTypeLiveData.value ?: FileViewType.LIST,
             sortOptions = viewModel.sortOptionsLiveData.value ?: FileSortOptions(
                 By.NAME, Order.ASCENDING, true
@@ -1011,6 +1022,20 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
     }
 
+    /**
+     * The folder header has its own delayed loading indicator, so a load in progress leaves the
+     * subtitle blank instead of flashing "Loading…" on every navigation.
+     */
+    private fun browserSubtitle(): String {
+        val stateful = viewModel.fileListLiveData.value ?: return ""
+        val files = stateful.value
+        return when {
+            stateful is Failure -> getString(R.string.error)
+            stateful is Loading && files.isNullOrEmpty() -> ""
+            else -> getSubtitle(files.orEmpty())
+        }
+    }
+
     private fun updateBrowserContent() {
         if (!isAdded || !this::binding.isInitialized || !viewModel.hasTrail) return
         updateBrowserModeVisibility()
@@ -1037,7 +1062,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             loading = state == null || state is Loading,
             error = (state as? Failure)?.throwable?.let { getReadableErrorMessage(it) },
             pickOptions = viewModel.pickOptions,
-            nameEllipsize = Settings.FILE_NAME_ELLIPSIZE.valueCompat
+            nameEllipsize = Settings.FILE_NAME_ELLIPSIZE.valueCompat,
+            refreshToken = browserRefreshToken,
+            dragToSelect = Settings.FILE_LIST_DRAG_TO_SELECT.valueCompat
         )
     }
 
@@ -1299,7 +1326,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun refresh() {
+        // Shows the Compose pull-to-refresh indicator for this user-requested reload.
+        browserRefreshToken++
         viewModel.reload()
+        updateBrowserContent()
     }
 
     private fun setShowHiddenFiles(showHiddenFiles: Boolean) {

@@ -8,6 +8,8 @@ import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -64,6 +66,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -71,6 +74,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -122,6 +126,7 @@ interface FileBrowserScreenActions {
     fun onRefresh()
     fun onItemAction(file: FileItem, action: FileBrowserItemAction)
     fun onRangeSelect(files: List<FileItem>)
+    fun onSetSelection(files: List<FileItem>, selected: Boolean)
     fun onSelection(command: FileBrowserSelectionCommand)
     fun onFolderAction(action: FileBrowserFolderAction)
     fun onCreateMenuExpandedChange(expanded: Boolean)
@@ -178,7 +183,8 @@ fun FileBrowserScreen(
                         currentPath = navigation.currentPath,
                         revision = navigation.revision,
                         expanded = railExpanded,
-                        listener = navigationListener
+                        listener = navigationListener,
+                        onAddBookmark = { actions.onFolderAction(FileBrowserFolderAction.ADD_BOOKMARK) }
                     )
                 }
                 BrowserScaffold(
@@ -220,7 +226,8 @@ fun FileBrowserScreen(
                     currentPath = navigation.currentPath,
                     revision = navigation.revision,
                     expanded = true,
-                    listener = navigationListener
+                    listener = navigationListener,
+                    onAddBookmark = { actions.onFolderAction(FileBrowserFolderAction.ADD_BOOKMARK) }
                 )
             }
         }
@@ -249,6 +256,20 @@ private fun BrowserScaffold(
     var sortSheetOpen by rememberSaveable { mutableStateOf(false) }
     val selectionMode = chrome.selectedCount > 0
     val pasteMode = !selectionMode && chrome.pasteCount > 0
+    val displayed = rememberDisplayedFiles(content)
+    // Everything between the first and last selected file, in on-screen order; null when the
+    // span is already fully selected or a single-choice picker forbids it.
+    val rangeFiles = remember(displayed, content.selectedPaths, chrome.picker, chrome.pickerCanSelectMultiple) {
+        val files = displayed?.files
+        if (files == null || content.selectedPaths.size < 2 ||
+            (chrome.picker && !chrome.pickerCanSelectMultiple)) return@remember null
+        val first = files.indexOfFirst { it.path in content.selectedPaths }
+        val last = files.indexOfLast { it.path in content.selectedPaths }
+        if (first < 0 || last <= first) return@remember null
+        files.subList(first, last + 1).takeIf { range ->
+            range.any { it.path !in content.selectedPaths }
+        }
+    }
 
     LaunchedEffect(searchBarState) {
         snapshotFlow { searchBarState.targetValue == SearchBarValue.Expanded }
@@ -342,7 +363,10 @@ private fun BrowserScaffold(
                 label = "browserTopBar"
             ) { selecting ->
                 if (selecting) {
-                    BrowserSelectionTopBar(chrome, actions::onSelection)
+                    BrowserSelectionTopBar(
+                        chrome, actions::onSelection,
+                        onSelectRange = rangeFiles?.let { files -> { actions.onRangeSelect(files) } }
+                    )
                 } else {
                     AppBarWithSearch(
                         state = searchBarState,
@@ -383,6 +407,8 @@ private fun BrowserScaffold(
                 onRefresh = actions::onRefresh,
                 onItemAction = actions::onItemAction,
                 onRangeSelect = actions::onRangeSelect,
+                displayed = displayed,
+                onSetSelection = actions::onSetSelection,
                 // Room for the FAB or floating toolbar so the last row is never covered.
                 contentPadding = PaddingValues(
                     start = padding.calculateStartPadding(layoutDirection),
@@ -427,19 +453,15 @@ private fun BrowserScaffold(
                     }
                     AnimatedVisibility(
                         visible = selectionMode,
-                        enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it } +
-                            fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
-                        exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it } +
-                            fadeOut(MaterialTheme.motionScheme.fastEffectsSpec())
+                        enter = floatingToolbarEnter(),
+                        exit = floatingToolbarExit()
                     ) {
                         BrowserSelectionToolbar(chrome, actions::onSelection)
                     }
                     AnimatedVisibility(
                         visible = pasteMode,
-                        enter = slideInVertically(MaterialTheme.motionScheme.defaultSpatialSpec()) { it } +
-                            fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
-                        exit = slideOutVertically(MaterialTheme.motionScheme.fastSpatialSpec()) { it } +
-                            fadeOut(MaterialTheme.motionScheme.fastEffectsSpec())
+                        enter = floatingToolbarEnter(),
+                        exit = floatingToolbarExit()
                     ) {
                         BrowserPasteToolbar(chrome, actions::onSelection)
                     }
@@ -482,11 +504,38 @@ private fun BrowserScaffold(
     }
 }
 
-/** Contextual app bar while files are selected: count, close and select all. */
+/**
+ * Floating toolbars rise from below their resting place and settle with the expressive spatial
+ * spring, growing out of the bottom edge; they leave faster than they arrive.
+ */
+@Composable
+private fun floatingToolbarEnter(): EnterTransition {
+    val motion = MaterialTheme.motionScheme
+    return slideInVertically(motion.defaultSpatialSpec()) { it / 2 } +
+        scaleIn(
+            motion.defaultSpatialSpec(), initialScale = 0.8f,
+            transformOrigin = TransformOrigin(0.5f, 1f)
+        ) +
+        fadeIn(motion.defaultEffectsSpec())
+}
+
+@Composable
+private fun floatingToolbarExit(): ExitTransition {
+    val motion = MaterialTheme.motionScheme
+    return slideOutVertically(motion.fastSpatialSpec()) { it / 2 } +
+        scaleOut(
+            motion.fastSpatialSpec(), targetScale = 0.8f,
+            transformOrigin = TransformOrigin(0.5f, 1f)
+        ) +
+        fadeOut(motion.fastEffectsSpec())
+}
+
+/** Contextual app bar while files are selected: count, close, range and select all. */
 @Composable
 private fun BrowserSelectionTopBar(
     chrome: FileBrowserChromeState,
-    onSelection: (FileBrowserSelectionCommand) -> Unit
+    onSelection: (FileBrowserSelectionCommand) -> Unit,
+    onSelectRange: (() -> Unit)?
 ) {
     val commands = chrome.commandContext().availableCommands()
     TopAppBar(
@@ -506,6 +555,13 @@ private fun BrowserSelectionTopBar(
             ) { onSelection(FileBrowserSelectionCommand.CLEAR) }
         },
         actions = {
+            if (onSelectRange != null) {
+                BrowserIconAction(
+                    R.drawable.select_range_icon_24dp,
+                    stringResource(R.string.file_browser_select_range),
+                    onSelectRange
+                )
+            }
             if (FileBrowserSelectionCommand.SELECT_ALL in commands) {
                 BrowserIconAction(
                     R.drawable.select_all_icon_control_normal_24dp,

@@ -136,13 +136,22 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
                             toggleableState = ToggleableState(row.checked)
                         }
                     } else Modifier,
+                    // The default switches to top alignment for taller rows; switches and values
+                    // must stay centred on the row whatever its text wraps to.
+                    verticalAlignment = Alignment.CenterVertically,
                     leadingContent = row.iconRes?.let { id -> { SettingsRowIcon(id) } },
-                    content = { Text(row.title, style = MaterialTheme.typography.titleMedium) },
+                    content = {
+                        Text(
+                            row.title, style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis
+                        )
+                    },
                     supportingContent = row.summary?.let { summary ->
                         {
                             Text(
                                 summary, style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1, overflow = TextOverflow.Ellipsis
                             )
                         }
                     },
@@ -159,7 +168,8 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
                             Text(
                                 row.value, style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.primary,
-                                maxLines = 2, overflow = TextOverflow.Ellipsis
+                                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.widthIn(max = 140.dp)
                             )
                         }
                     }
@@ -199,6 +209,7 @@ internal fun ExpressiveSettingsScreen(
     val night by Settings.NIGHT_MODE.observeCompose()
     val black by Settings.BLACK_NIGHT_MODE.observeCompose()
     val animation by Settings.FILE_LIST_ANIMATION.observeCompose()
+    val dragToSelect by Settings.FILE_LIST_DRAG_TO_SELECT.observeCompose()
     val edgeToEdge by Settings.EDGE_TO_EDGE.observeCompose()
     val ellipsis by Settings.FILE_NAME_ELLIPSIZE.observeCompose()
     val directory by Settings.FILE_LIST_DEFAULT_DIRECTORY.observeCompose()
@@ -275,7 +286,7 @@ internal fun ExpressiveSettingsScreen(
                             ),
                             ExpressiveSettingRow(
                                 "color", stringResource(R.string.settings_theme_color_title),
-                                stringResource(R.string.settings_theme_color_summary),
+                                stringResource(R.string.settings_expressive_theme_color_summary),
                                 value = if (color == ThemeColor.DYNAMIC)
                                     stringResource(R.string.color_picker_dynamic_color_label)
                                 else color.settingsLabel(context),
@@ -310,6 +321,13 @@ internal fun ExpressiveSettingsScreen(
                                 onClick = { Settings.FILE_LIST_ANIMATION.putValue(!animation) }
                             ))
                             add(ExpressiveSettingRow(
+                                "dragSelect", stringResource(R.string.settings_expressive_drag_to_select_title),
+                                stringResource(R.string.settings_expressive_drag_to_select_summary),
+                                checked = dragToSelect,
+                                iconRes = R.drawable.select_range_icon_24dp,
+                                onClick = { Settings.FILE_LIST_DRAG_TO_SELECT.putValue(!dragToSelect) }
+                            ))
+                            add(ExpressiveSettingRow(
                                 "ellipsis", stringResource(R.string.settings_file_name_ellipsize_title),
                                 value = ellipsisNames.getOrElse(
                                     listOf(TextUtils.TruncateAt.START, TextUtils.TruncateAt.MIDDLE,
@@ -323,7 +341,7 @@ internal fun ExpressiveSettingsScreen(
                             if (!(Build.VERSION.SDK_INT >= 35 && context.applicationInfo.targetSdkVersion >= 35)) {
                                 add(ExpressiveSettingRow(
                                     "edge", stringResource(R.string.settings_edge_to_edge_title),
-                                    stringResource(R.string.settings_edge_to_edge_summary),
+                                    stringResource(R.string.settings_expressive_edge_to_edge_summary),
                                     checked = edgeToEdge,
                                     iconRes = R.drawable.device_mobile_icon_white_24dp,
                                     onClick = { Settings.EDGE_TO_EDGE.putValue(!edgeToEdge) }
@@ -376,7 +394,7 @@ internal fun ExpressiveSettingsScreen(
                         buildList {
                             add(ExpressiveSettingRow(
                                 "apps", stringResource(R.string.settings_default_apps_title),
-                                stringResource(R.string.settings_default_apps_summary),
+                                stringResource(R.string.settings_expressive_default_apps_summary),
                                 iconRes = R.drawable.open_with_icon_control_normal_24dp,
                                 onClick = onOpenDefaultApps
                             ))
@@ -394,7 +412,7 @@ internal fun ExpressiveSettingsScreen(
                             if (Build.VERSION.SDK_INT < 28) {
                                 add(ExpressiveSettingRow(
                                     "pdf", stringResource(R.string.settings_show_pdf_thumbnail_pre_28_title),
-                                    stringResource(R.string.settings_show_pdf_thumbnail_pre_28_summary),
+                                    stringResource(R.string.settings_expressive_pdf_thumbnail_summary),
                                     checked = showPdf, iconRes = R.drawable.image_icon_white_24dp,
                                     onClick = { Settings.SHOW_PDF_THUMBNAIL_PRE_28.putValue(!showPdf) }
                                 ))

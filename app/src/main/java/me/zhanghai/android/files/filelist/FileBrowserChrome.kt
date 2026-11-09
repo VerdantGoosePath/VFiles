@@ -22,6 +22,7 @@ import androidx.compose.material3.DropdownMenuPopup
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
@@ -33,6 +34,7 @@ import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SegmentedListItem
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,15 +44,22 @@ import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onPlaced
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -75,6 +84,8 @@ import me.zhanghai.android.files.compose.components.VFilesListDefaults
  */
 data class FileBrowserChromeState(
     val breadcrumbs: List<BreadcrumbUi> = emptyList(),
+    /** Index of the folder on screen; the trail may continue past it after navigating up. */
+    val currentIndex: Int = -1,
     val subtitle: String = "",
     val viewType: FileViewType = FileViewType.LIST,
     val sortOptions: FileSortOptions = FileSortOptions(
@@ -96,7 +107,7 @@ data class FileBrowserChromeState(
     val pasteIsCopy: Boolean = false
 ) {
     val title: String
-        get() = breadcrumbs.lastOrNull()?.label.orEmpty()
+        get() = (breadcrumbs.getOrNull(currentIndex) ?: breadcrumbs.lastOrNull())?.label.orEmpty()
 }
 
 enum class FileBrowserSelectionCommand {
@@ -135,7 +146,12 @@ internal fun BrowserLocationHeader(
             modifier = Modifier.padding(horizontal = 4.dp).semantics { heading() }
         )
         if (state.breadcrumbs.size > 1) {
-            BrowserBreadcrumbs(state.breadcrumbs, onBreadcrumb)
+            BrowserBreadcrumbs(
+                state.breadcrumbs,
+                state.currentIndex.takeIf { it in state.breadcrumbs.indices }
+                    ?: state.breadcrumbs.lastIndex,
+                onBreadcrumb
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -154,29 +170,73 @@ internal fun BrowserLocationHeader(
                     )
                 }
             )
-            Text(
-                state.subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    state.subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                // Read-only belongs to the folder: state it once here, not on every row.
+                if (state.currentReadOnly && !state.picker) BrowserReadOnlyLabel()
+            }
             BrowserViewTypeToggle(state.viewType, onViewType)
         }
     }
 }
 
-/** Provider order comes from the path trail; never parse '/' out of user-visible names. */
+@Composable
+private fun BrowserReadOnlyLabel(modifier: Modifier = Modifier) {
+    Surface(
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        shape = MaterialTheme.shapes.small,
+        modifier = modifier
+    ) {
+        Text(
+            stringResource(R.string.file_browser_badge_read_only),
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+        )
+    }
+}
+
+/**
+ * Provider order comes from the path trail; never parse '/' out of user-visible names. After
+ * navigating up the trail keeps the folders below the current one: they stay tappable but read
+ * as secondary, and the current crumb is always scrolled into view.
+ */
 @Composable
 private fun BrowserBreadcrumbs(
     breadcrumbs: List<BreadcrumbUi>,
+    currentIndex: Int,
     onBreadcrumb: (String) -> Unit
 ) {
-    // Start scrolled to the end so the current folder's parents are visible in deep trees.
     val scroll = rememberScrollState(initial = Int.MAX_VALUE)
+    var viewportWidth by remember { mutableIntStateOf(0) }
+    var currentBounds by remember { mutableStateOf(IntRange.EMPTY) }
+    val peek = with(LocalDensity.current) { 56.dp.roundToPx() }
+    LaunchedEffect(currentIndex, breadcrumbs.size, currentBounds, viewportWidth) {
+        if (viewportWidth == 0 || currentBounds.isEmpty()) return@LaunchedEffect
+        // Show the current crumb's end plus a hint of any forward crumbs after it.
+        val trailing = if (currentIndex < breadcrumbs.lastIndex) peek else 0
+        val target = (currentBounds.last + trailing - viewportWidth)
+            .coerceAtLeast(0).coerceAtMost(scroll.maxValue)
+        val start = currentBounds.first
+        val value = if (start < target) start else target
+        if (value != scroll.value) scroll.animateScrollTo(value)
+    }
     Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(scroll),
+        modifier = Modifier.fillMaxWidth()
+            .onSizeChanged { viewportWidth = it.width }
+            .horizontalScroll(scroll),
         verticalAlignment = Alignment.CenterVertically
     ) {
         breadcrumbs.forEachIndexed { index, segment ->
@@ -185,22 +245,34 @@ private fun BrowserBreadcrumbs(
                     painterResource(R.drawable.arrow_end_icon_white_24dp),
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.outline
+                    tint = if (index > currentIndex) MaterialTheme.colorScheme.outlineVariant
+                        else MaterialTheme.colorScheme.outline
                 )
             }
-            val current = index == breadcrumbs.lastIndex
+            val current = index == currentIndex
+            val forward = index > currentIndex
             TextButton(
                 onClick = { onBreadcrumb(segment.id) },
                 enabled = !current,
                 shapes = androidx.compose.material3.ButtonDefaults.shapes(),
-                modifier = Modifier.semantics { selected = current }
+                modifier = Modifier
+                    .semantics { selected = current }
+                    .then(
+                        if (current) Modifier.onPlaced {
+                            val x = it.positionInParent().x.toInt()
+                            currentBounds = x..(x + it.size.width)
+                        } else Modifier
+                    )
             ) {
                 Text(
                     segment.label,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                    color = if (current) MaterialTheme.colorScheme.onSurface
-                        else MaterialTheme.colorScheme.primary,
+                    color = when {
+                        current -> MaterialTheme.colorScheme.onSurface
+                        forward -> MaterialTheme.colorScheme.onSurfaceVariant
+                        else -> MaterialTheme.colorScheme.primary
+                    },
                     style = if (current) MaterialTheme.typography.labelLargeEmphasized
                         else MaterialTheme.typography.labelLarge
                 )
@@ -268,7 +340,11 @@ internal fun BrowserSortSheet(
     onPathSpecificSort: (Boolean) -> Unit,
     onShowHiddenFiles: (Boolean) -> Unit
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    // A short, fixed set of options: open fully so nothing hides below a half-expanded state.
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ) {
         Column(
             modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp).padding(bottom = 24.dp),
@@ -375,8 +451,8 @@ private fun BrowserSwitchRow(
 }
 
 /**
- * [C34] Contextual selection actions in a vibrant floating toolbar near the thumb. The most
- * frequent commands are visible; rarer ones live in its overflow so labels never wrap.
+ * [C34] Contextual selection actions in a vibrant floating toolbar near the thumb. Every command
+ * is one tap away: archive and extract sit beside copy, cut, share and delete, with no overflow.
  */
 @Composable
 internal fun BrowserSelectionToolbar(
@@ -385,7 +461,6 @@ internal fun BrowserSelectionToolbar(
     modifier: Modifier = Modifier
 ) {
     val commands = state.commandContext().availableCommands()
-    var moreOpen by remember { mutableStateOf(false) }
     HorizontalFloatingToolbar(
         expanded = true,
         modifier = modifier,
@@ -411,39 +486,21 @@ internal fun BrowserSelectionToolbar(
                 onSelection(FileBrowserSelectionCommand.SHARE)
             }
         }
+        if (FileBrowserSelectionCommand.EXTRACT in commands) {
+            BrowserToolbarAction(
+                R.drawable.extract_icon_control_normal_24dp,
+                stringResource(R.string.file_list_select_action_extract)
+            ) { onSelection(FileBrowserSelectionCommand.EXTRACT) }
+        }
+        if (FileBrowserSelectionCommand.ARCHIVE in commands) {
+            BrowserToolbarAction(
+                R.drawable.archive_icon_control_normal_24dp,
+                stringResource(R.string.file_list_select_action_archive)
+            ) { onSelection(FileBrowserSelectionCommand.ARCHIVE) }
+        }
         if (FileBrowserSelectionCommand.DELETE in commands) {
             BrowserToolbarAction(R.drawable.delete_icon_control_normal_24dp, stringResource(R.string.delete)) {
                 onSelection(FileBrowserSelectionCommand.DELETE)
-            }
-        }
-        val overflow = listOf(
-            FileBrowserSelectionCommand.EXTRACT, FileBrowserSelectionCommand.ARCHIVE
-        ).filter { it in commands }
-        if (overflow.isNotEmpty()) {
-            Box {
-                BrowserToolbarAction(
-                    R.drawable.file_browser_icon_more,
-                    stringResource(R.string.file_browser_more_actions)
-                ) { moreOpen = true }
-                DropdownMenuPopup(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
-                    DropdownMenuGroup(shapes = MenuDefaults.groupShape(0, 1)) {
-                        overflow.forEachIndexed { index, command ->
-                            val (icon, title) = when (command) {
-                                FileBrowserSelectionCommand.EXTRACT ->
-                                    R.drawable.extract_icon_control_normal_24dp to
-                                        R.string.file_list_select_action_extract
-                                else -> R.drawable.archive_icon_control_normal_24dp to
-                                    R.string.file_list_select_action_archive
-                            }
-                            DropdownMenuItem(
-                                onClick = { moreOpen = false; onSelection(command) },
-                                text = { Text(stringResource(title)) },
-                                shape = MenuDefaults.itemShape(index, overflow.size).shape,
-                                leadingIcon = { Icon(painterResource(icon), null) }
-                            )
-                        }
-                    }
-                }
             }
         }
     }
@@ -531,9 +588,72 @@ internal fun BrowserPasteToolbar(
         }
     }
 }
+/** One menu row; [checked] non-null renders a checkable item. */
+internal class BrowserMenuEntry(
+    val title: String,
+    val icon: Int? = null,
+    val destructive: Boolean = false,
+    val checked: Boolean? = null,
+    val onClick: () -> Unit
+)
+
 /**
- * Folder overflow as an expressive grouped menu: navigation, view, sharing and shortcuts are
- * separate groups so the long list scans quickly ([C17]).
+ * A single expressive menu surface: related commands are separated by inset dividers rather
+ * than split into floating groups, so the menu reads as one continuous, gap-free container.
+ */
+@Composable
+internal fun BrowserMenuSections(sections: List<List<BrowserMenuEntry>>) {
+    val visible = sections.filter { it.isNotEmpty() }
+    val count = visible.sumOf { it.size }
+    DropdownMenuGroup(shapes = MenuDefaults.groupShape(0, 1)) {
+        var position = 0
+        visible.forEachIndexed { sectionIndex, section ->
+            if (sectionIndex > 0) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(MenuDefaults.HorizontalDividerPadding),
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
+            }
+            section.forEach { entry ->
+                val shapes = MenuDefaults.itemShape(position++, count)
+                val color = if (entry.destructive) MaterialTheme.colorScheme.error
+                    else androidx.compose.ui.graphics.Color.Unspecified
+                val leading: (@Composable () -> Unit)? = entry.icon?.let { icon ->
+                    {
+                        Icon(
+                            painterResource(icon), null,
+                            tint = if (entry.destructive) MaterialTheme.colorScheme.error
+                                else androidx.compose.material3.LocalContentColor.current
+                        )
+                    }
+                }
+                if (entry.checked != null) {
+                    CheckableDropdownMenuItem(
+                        checked = entry.checked,
+                        onCheckedChange = { entry.onClick() },
+                        text = { Text(entry.title, color = color) },
+                        shapes = shapes,
+                        leadingIcon = leading,
+                        checkedLeadingIcon = {
+                            Icon(painterResource(R.drawable.check_icon_control_normal_24dp), null)
+                        }
+                    )
+                } else {
+                    DropdownMenuItem(
+                        onClick = entry.onClick,
+                        text = { Text(entry.title, color = color) },
+                        shape = shapes.shape,
+                        leadingIcon = leading
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Folder overflow as one expressive menu: navigation, view, sharing and shortcuts are divided
+ * sections of a single surface so the long list scans quickly ([C17]).
  */
 @Composable
 internal fun BrowserOverflowMenu(
@@ -549,7 +669,7 @@ internal fun BrowserOverflowMenu(
             )
         }
         DropdownMenuPopup(expanded = open, onDismissRequest = { open = false }) {
-            val groups = buildList {
+            val sections = buildList {
                 add(listOf(
                     FileBrowserFolderAction.NAVIGATE_UP to R.drawable.arrow_up_icon_control_normal_24dp,
                     FileBrowserFolderAction.NAVIGATE_TO to R.drawable.navigate_to_icon_control_normal_24dp,
@@ -572,36 +692,19 @@ internal fun BrowserOverflowMenu(
                     FileBrowserFolderAction.ADD_BOOKMARK to R.drawable.bookmark_icon_control_normal_24dp,
                     FileBrowserFolderAction.CREATE_SHORTCUT to R.drawable.shortcut_icon_control_normal_24dp
                 ))
-            }
-            groups.forEachIndexed { groupIndex, group ->
-                DropdownMenuGroup(shapes = MenuDefaults.groupShape(groupIndex, groups.size)) {
-                    group.forEachIndexed { index, (action, icon) ->
-                        val title = stringResource(folderActionTitle(action))
-                        if (action == FileBrowserFolderAction.SHOW_HIDDEN_FILES) {
-                            CheckableDropdownMenuItem(
-                                checked = state.showHiddenFiles,
-                                onCheckedChange = { open = false; onAction(action) },
-                                text = { Text(title) },
-                                shapes = MenuDefaults.itemShape(index, group.size),
-                                leadingIcon = { Icon(painterResource(icon), null) },
-                                checkedLeadingIcon = {
-                                    Icon(painterResource(R.drawable.check_icon_control_normal_24dp), null)
-                                }
-                            )
-                        } else {
-                            DropdownMenuItem(
-                                onClick = { open = false; onAction(action) },
-                                text = { Text(title) },
-                                shape = MenuDefaults.itemShape(index, group.size).shape,
-                                leadingIcon = { Icon(painterResource(icon), null) }
-                            )
-                        }
-                    }
-                }
-                if (groupIndex != groups.lastIndex) {
-                    Spacer(Modifier.size(MenuDefaults.GroupSpacing))
+            }.map { section ->
+                section.map { (action, icon) ->
+                    BrowserMenuEntry(
+                        title = stringResource(folderActionTitle(action)),
+                        icon = icon,
+                        checked = if (action == FileBrowserFolderAction.SHOW_HIDDEN_FILES) {
+                            state.showHiddenFiles
+                        } else null,
+                        onClick = { open = false; onAction(action) }
+                    )
                 }
             }
+            BrowserMenuSections(sections)
         }
     }
 }

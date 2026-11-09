@@ -24,6 +24,7 @@
     <string name="file_browser_search_hint_detail">Results include everything inside %1$s and its subfolders</string>
     <string name="file_browser_navigation_expand">Expand navigation</string>
     <string name="file_browser_navigation_collapse">Collapse navigation</string>
+    <string name="file_browser_select_range">Select range</string>
     <plurals name="file_browser_jobs_running">
         <item quantity="one">%d operation running</item>
         <item quantity="other">%d operations running</item>

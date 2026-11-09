@@ -534,6 +534,8 @@ internal fun getExternalStorageDirectory(relativePath: String): String =
 private class BookmarksHintItem : NavigationItem() {
     override val id: Long = R.string.navigation_bookmarks_hint_title.toLong()
 
+    override val isBookmarksHint: Boolean = true
+
     @DrawableRes
     override val iconRes: Int = R.drawable.bookmark_outline_icon_white_24dp
 

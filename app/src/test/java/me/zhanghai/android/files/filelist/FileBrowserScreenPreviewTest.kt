@@ -268,6 +268,7 @@ private object PreviewActions : FileBrowserScreenActions {
     override fun onRefresh() {}
     override fun onItemAction(file: FileItem, action: FileBrowserItemAction) {}
     override fun onRangeSelect(files: List<FileItem>) {}
+    override fun onSetSelection(files: List<FileItem>, selected: Boolean) {}
     override fun onSelection(command: FileBrowserSelectionCommand) {}
     override fun onFolderAction(action: FileBrowserFolderAction) {}
     override fun onCreateMenuExpandedChange(expanded: Boolean) {}

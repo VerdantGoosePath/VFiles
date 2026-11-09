@@ -8,14 +8,21 @@
     <string name="settings_expressive_opening">File opening &amp; archives</string>
     <string name="settings_expressive_advanced">Advanced</string>
     <string name="settings_expressive_network_advanced">Network &amp; advanced</string>
-    <string name="settings_expressive_ftp_summary">Run and configure the FTP server</string>
+    <string name="settings_expressive_ftp_summary">Share files over your network</string>
+    <!-- One-line subtitles: settings rows keep a single, aligned line of supporting text. -->
+    <string name="settings_expressive_theme_color_summary">App accent color</string>
+    <string name="settings_expressive_edge_to_edge_summary">Draw behind the system bars</string>
+    <string name="settings_expressive_default_apps_summary">Apps that open each file type</string>
+    <string name="settings_expressive_pdf_thumbnail_summary">May be unstable on older Android</string>
+    <string name="settings_expressive_drag_to_select_title">Drag to select</string>
+    <string name="settings_expressive_drag_to_select_summary">Long press, then drag across files</string>
     <string name="settings_expressive_default_accent">Default</string>
     <string name="settings_expressive_preview">Appearance preview</string>
     <string name="settings_expressive_preview_sample">Your files</string>
     <string name="settings_expressive_preview_row">Folder preview</string>
     <string name="settings_expressive_dark">Dark appearance</string>
     <string name="settings_expressive_light">Light appearance</string>
-    <string name="settings_expressive_black_explanation">Use black backgrounds when night mode is active</string>
+    <string name="settings_expressive_black_explanation">Pure black dark theme</string>
     <string name="settings_expressive_standard_description">Choose which common folders appear in the navigation list</string>
     <string name="settings_expressive_external_apps">External apps for opening files</string>
     <string name="settings_expressive_add_bookmark">Add bookmark</string>

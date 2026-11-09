@@ -54,9 +54,11 @@ assert "MaterialExpressiveTheme(" in theme and "MotionScheme.expressive()" in th
 assert "baseThemeName.substringAfterLast('/').startsWith(material3ThemeName)" in (src / "theme/custom/CustomThemeHelper.kt").read_text()
 assert "headlineMediumEmphasized" in (src / "about/AboutFragment.kt").read_text()
 browser = (src / "filelist/FileBrowserContent.kt").read_text()
-assert "key(state.pathKey, state.files" in browser
-assert "produceState<List<FileItem>?>(initialValue = null)" in browser
-assert "visibleResult == null" in browser
+# Filtering/sorting off main; the previous folder stays up until the new one is ready or slow.
+assert "fun rememberDisplayedFiles(" in browser
+assert "withContext(Dispatchers.Default)" in browser
+assert "if (waitingForFiles) delay(loadingDelayMillis)" in browser
+assert "LOADING_INDICATOR_DELAY_MILLIS = 300L" in browser
 fragment = (src / "filelist/FileListFragment.kt").read_text()
 assert "getSubtitle(files.orEmpty())" in fragment
 assert "throwable.printStackTrace()" not in fragment
@@ -66,7 +68,7 @@ screen = (src / "filelist/FileBrowserScreen.kt").read_text()
 assert "bottom = padding.calculateBottomPadding() + 112.dp" in screen
 chrome = (src / "filelist/FileBrowserChrome.kt").read_text()
 assert "modifier = Modifier.clearAndSetSemantics { }" in chrome
-assert "Modifier.fillMaxWidth().horizontalScroll(scroll)" in chrome
+assert re.search(r"Modifier\.fillMaxWidth\(\)[\s.\w{}=()]*?\.horizontalScroll\(scroll\)", chrome)
 assert "rememberScrollState(initial = Int.MAX_VALUE)" in chrome
 scaffold = (src / "compose/components/SurfaceComponents.kt").read_text()
 assert "IconButton(onClick = onBack)" in scaffold

@@ -2,7 +2,20 @@
 
 package me.zhanghai.android.files.navigation
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
@@ -68,6 +81,7 @@ internal fun VFilesNavigationRailContent(
     revision: Int,
     expanded: Boolean,
     listener: NavigationItem.Listener,
+    onAddBookmark: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -134,6 +148,9 @@ internal fun VFilesNavigationRailContent(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+                item.isBookmarksHint -> AddBookmarkRailItem(
+                    expanded, onAddBookmark, Modifier.heightIn(min = itemMinHeight)
+                )
                 else -> NavigationRailDestination(
                     entry, item, currentPath, expanded, listener,
                     Modifier.heightIn(min = itemMinHeight)
@@ -143,6 +160,11 @@ internal fun VFilesNavigationRailContent(
     }
 }
 
+/**
+ * Expanded destinations are full-width rows: the active indicator spans the rail, and titles
+ * and subtitles ellipsize inside it instead of overflowing. The collapsed rail keeps the
+ * standard icon-over-label item.
+ */
 @Composable
 private fun NavigationRailDestination(
     entry: NavigationEntryUi,
@@ -163,48 +185,151 @@ private fun NavigationRailDestination(
             item.onLongClick(listener)
         }
     } else null
-    WideNavigationRailItem(
-        selected = selected,
-        onClick = { item.onClick(listener) },
-        railExpanded = expanded,
-        modifier = modifier
-            .padding(start = if (expanded && item.isIndented) 16.dp else 0.dp)
-            .then(
-                if (longClick != null) {
-                    Modifier.longPressBeforeClick(longClick).semantics {
-                        onLongClick(editLabel) { longClick(); true }
-                    }
-                } else Modifier
-            ),
-        icon = {
-            val icon = item.iconResource
-            if (icon != null) Icon(painterResource(icon), contentDescription = null)
-        },
-        label = {
-            if (expanded) {
-                Column {
-                    Text(entry.title, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    if (!entry.subtitle.isNullOrBlank()) {
-                        Text(
-                            entry.subtitle,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+    val longClickModifier = if (longClick != null) {
+        Modifier.longPressBeforeClick(longClick).semantics {
+            onLongClick(editLabel) { longClick(); true }
+        }
+    } else Modifier
+    val icon: @Composable () -> Unit = {
+        val res = item.iconResource
+        if (res != null) Icon(painterResource(res), contentDescription = null)
+    }
+    Crossfade(
+        targetState = expanded,
+        animationSpec = MaterialTheme.motionScheme.fastEffectsSpec(),
+        label = "railItem"
+    ) { showExpanded ->
+        if (showExpanded) {
+            ExpandedRailRow(
+                selected = selected,
+                onClick = { item.onClick(listener) },
+                icon = icon,
+                title = entry.title,
+                subtitle = entry.subtitle,
+                modifier = modifier
+                    .padding(start = if (item.isIndented) 16.dp else 0.dp)
+                    .then(longClickModifier)
+            )
+        } else {
+            WideNavigationRailItem(
+                selected = selected,
+                onClick = { item.onClick(listener) },
+                railExpanded = false,
+                modifier = modifier.then(longClickModifier),
+                icon = icon,
+                label = {
+                    Text(
+                        entry.title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 80.dp)
+                    )
                 }
-            } else {
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandedRailRow(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String?,
+    modifier: Modifier = Modifier
+) {
+    val colors = MaterialTheme.colorScheme
+    val effects = MaterialTheme.motionScheme.defaultEffectsSpec<Color>()
+    val container by animateColorAsState(
+        if (selected) colors.secondaryContainer else Color.Transparent, effects
+    )
+    val content by animateColorAsState(
+        if (selected) colors.onSecondaryContainer else colors.onSurfaceVariant, effects
+    )
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp)
+            .heightIn(min = 56.dp)
+            .clip(CircleShape)
+            .background(container)
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .padding(start = 16.dp, end = 24.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        CompositionLocalProvider(LocalContentColor provides content) {
+            Box(Modifier.size(24.dp), contentAlignment = Alignment.Center) { icon() }
+            Column(Modifier.weight(1f)) {
                 Text(
-                    entry.title,
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (selected) colors.onSecondaryContainer else colors.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.widthIn(max = 80.dp)
+                    overflow = TextOverflow.Ellipsis
                 )
+                if (!subtitle.isNullOrBlank()) {
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
-    )
+    }
+}
+
+/** With no bookmarks yet, the rail offers to bookmark the folder on screen. */
+@Composable
+private fun AddBookmarkRailItem(
+    expanded: Boolean,
+    onAddBookmark: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val label = stringResource(R.string.file_list_action_add_bookmark)
+    Crossfade(
+        targetState = expanded,
+        animationSpec = MaterialTheme.motionScheme.fastEffectsSpec(),
+        label = "railAddBookmark"
+    ) { showExpanded ->
+        if (showExpanded) {
+            Box(modifier.fillMaxWidth().padding(horizontal = 12.dp), contentAlignment = Alignment.CenterStart) {
+                FilledTonalButton(
+                    onClick = onAddBookmark,
+                    shapes = ButtonDefaults.shapes(),
+                    contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Icon(
+                        painterResource(R.drawable.bookmark_add_icon_24dp),
+                        contentDescription = null,
+                        modifier = Modifier.size(ButtonDefaults.IconSize)
+                    )
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+        } else {
+            WideNavigationRailItem(
+                selected = false,
+                onClick = onAddBookmark,
+                railExpanded = false,
+                modifier = modifier,
+                icon = { Icon(painterResource(R.drawable.bookmark_add_icon_24dp), contentDescription = null) },
+                label = {
+                    Text(
+                        stringResource(R.string.navigation_bookmarks_hint_title),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 80.dp)
+                    )
+                }
+            )
+        }
+    }
 }
 
 /**

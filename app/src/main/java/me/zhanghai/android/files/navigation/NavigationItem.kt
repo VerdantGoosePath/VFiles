@@ -36,6 +36,9 @@ abstract class NavigationItem {
     // whose partitions are listed beneath it). Such rows aren't clickable or focusable.
     open val isHeader: Boolean = false
 
+    /** Placeholder shown while there are no bookmarks; Compose renders it as an add action. */
+    open val isBookmarksHint: Boolean = false
+
     /** Distinguish a real edit action from a decorative long-press affordance. */
     open val supportsLongClick: Boolean = false
 

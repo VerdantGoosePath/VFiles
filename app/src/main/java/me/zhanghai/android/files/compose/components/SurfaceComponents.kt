@@ -29,10 +29,6 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.AlignmentLine
-import androidx.compose.ui.layout.FirstBaseline
-import androidx.compose.ui.layout.LastBaseline
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import me.zhanghai.android.files.R
@@ -66,18 +62,6 @@ object VFilesListDefaults {
     @Composable
     fun sheetSegmentedColors(): ListItemColors =
         segmentedColors(MaterialTheme.colorScheme.surfaceContainerHigh)
-}
-
-/**
- * ListItem switches to three-line padding whenever supporting content reports differing first and
- * last baselines; a row mixing text with badge chips does that while still being a single line.
- */
-fun Modifier.singleLineBaseline(): Modifier = layout { measurable, constraints ->
-    val placeable = measurable.measure(constraints)
-    val baseline = placeable[FirstBaseline]
-    val lines: Map<AlignmentLine, Int> = if (baseline == AlignmentLine.Unspecified) emptyMap()
-        else mapOf(FirstBaseline to baseline, LastBaseline to baseline)
-    layout(placeable.width, placeable.height, lines) { placeable.place(0, 0) }
 }
 
 /**

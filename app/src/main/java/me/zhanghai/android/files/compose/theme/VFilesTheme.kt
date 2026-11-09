@@ -16,6 +16,13 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
+import androidx.compose.ui.text.font.FontWeight
+import me.zhanghai.android.files.R
 import androidx.compose.ui.platform.LocalContext
 import android.provider.Settings as AndroidSettings
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -81,8 +88,71 @@ val VFilesShapes = Shapes(
     extraExtraLarge = RoundedCornerShape(48.dp)
 )
 
-/** Keeps all 15 base and 15 emphasized Material 3 roles. */
-val VFilesTypography = Typography()
+private val TextWeights = listOf(300, 400, 500, 600, 700, 800)
+private val DisplayWeights = listOf(400, 500, 700)
+
+/**
+ * Bundled Google Sans Flex. Each weight is a named instance of the one variable file; display
+ * and headline roles use a larger optical size so big type gets its tighter display drawing.
+ * Few instances are declared on purpose: every distinct variation is a separate typeface.
+ */
+@OptIn(ExperimentalTextApi::class)
+private fun googleSansFlex(weights: List<Int>, opticalSize: Float? = null): FontFamily =
+    FontFamily(weights.map { weight ->
+        Font(
+            R.font.google_sans_flex,
+            weight = FontWeight(weight),
+            variationSettings = if (opticalSize != null) {
+                FontVariation.Settings(
+                    FontVariation.weight(weight), FontVariation.Setting("opsz", opticalSize)
+                )
+            } else FontVariation.Settings(FontVariation.weight(weight))
+        )
+    })
+
+val GoogleSansFlex: FontFamily = googleSansFlex(TextWeights)
+private val GoogleSansFlexDisplay: FontFamily = googleSansFlex(DisplayWeights, opticalSize = 40f)
+
+/**
+ * The Material 3 Expressive type scale, all 15 base and 15 emphasized roles, set in Google Sans
+ * Flex. Sizes, line heights, tracking and weights keep the platform tokens.
+ */
+val VFilesTypography: Typography = Typography().let { base ->
+    fun TextStyle.text() = copy(fontFamily = GoogleSansFlex)
+    fun TextStyle.display() = copy(fontFamily = GoogleSansFlexDisplay)
+    Typography(
+        displayLarge = base.displayLarge.display(),
+        displayMedium = base.displayMedium.display(),
+        displaySmall = base.displaySmall.display(),
+        headlineLarge = base.headlineLarge.display(),
+        headlineMedium = base.headlineMedium.display(),
+        headlineSmall = base.headlineSmall.display(),
+        titleLarge = base.titleLarge.text(),
+        titleMedium = base.titleMedium.text(),
+        titleSmall = base.titleSmall.text(),
+        bodyLarge = base.bodyLarge.text(),
+        bodyMedium = base.bodyMedium.text(),
+        bodySmall = base.bodySmall.text(),
+        labelLarge = base.labelLarge.text(),
+        labelMedium = base.labelMedium.text(),
+        labelSmall = base.labelSmall.text(),
+        displayLargeEmphasized = base.displayLargeEmphasized.display(),
+        displayMediumEmphasized = base.displayMediumEmphasized.display(),
+        displaySmallEmphasized = base.displaySmallEmphasized.display(),
+        headlineLargeEmphasized = base.headlineLargeEmphasized.display(),
+        headlineMediumEmphasized = base.headlineMediumEmphasized.display(),
+        headlineSmallEmphasized = base.headlineSmallEmphasized.display(),
+        titleLargeEmphasized = base.titleLargeEmphasized.text(),
+        titleMediumEmphasized = base.titleMediumEmphasized.text(),
+        titleSmallEmphasized = base.titleSmallEmphasized.text(),
+        bodyLargeEmphasized = base.bodyLargeEmphasized.text(),
+        bodyMediumEmphasized = base.bodyMediumEmphasized.text(),
+        bodySmallEmphasized = base.bodySmallEmphasized.text(),
+        labelLargeEmphasized = base.labelLargeEmphasized.text(),
+        labelMediumEmphasized = base.labelMediumEmphasized.text(),
+        labelSmallEmphasized = base.labelSmallEmphasized.text()
+    )
+}
 
 /**
  * One expressive composition root for every new UI surface (C/D/E).

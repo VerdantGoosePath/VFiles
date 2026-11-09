@@ -127,6 +127,12 @@ object Settings {
             R.string.pref_key_file_list_animation, R.bool.pref_default_value_file_list_animation
         )
 
+    val FILE_LIST_DRAG_TO_SELECT: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_drag_to_select,
+            R.bool.pref_default_value_file_list_drag_to_select
+        )
+
     val EDGE_TO_EDGE: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_edge_to_edge, R.bool.pref_default_value_edge_to_edge
