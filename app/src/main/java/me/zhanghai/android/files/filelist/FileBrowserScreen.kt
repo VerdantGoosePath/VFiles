@@ -6,18 +6,23 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animate
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.draggable
+import androidx.compose.foundation.gestures.rememberDraggableState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -29,13 +34,24 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.AppBarWithSearch
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExpandedFullScreenContainedSearchBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -44,27 +60,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalWideNavigationRail
-import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.SearchBarValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipAnchorPosition
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.WideNavigationRail
 import androidx.compose.material3.WideNavigationRailValue
 import androidx.compose.material3.rememberSearchBarState
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.rememberWideNavigationRailState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -75,18 +87,31 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
-import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowInsetsControllerCompat
 import java8.nio.file.Path
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -135,15 +160,20 @@ interface FileBrowserScreenActions {
     fun onCancelJob(id: Int)
     fun onNavigationOpenChange(open: Boolean)
     fun onTogglePersistentNavigation()
+    /** External picker: return the folder on screen (OPEN_DOCUMENT_TREE). */
+    fun onPickCurrentDirectory() {}
+    /** External picker: save under [fileName] in the folder on screen (CREATE_DOCUMENT). */
+    fun onPickCreateFile(fileName: String) {}
+    fun onPickCancel() {}
 }
 
 /** Typing pauses this long before a recursive provider search starts. */
 private const val SEARCH_DEBOUNCE_MILLIS = 350L
 
 /**
- * The whole browser as one expressive surface: navigation rail, search app bar, folder header,
+ * The whole browser as one expressive surface: navigation rail, flexible app bar with search,
  * files, floating toolbars and the FAB menu share one theme, one inset model and one motion
- * scheme instead of being Compose islands inside legacy Views.
+ * scheme. External picker sessions use the same surface with a picker bar at the bottom.
  */
 @Composable
 fun FileBrowserScreen(
@@ -190,45 +220,140 @@ fun FileBrowserScreen(
                 BrowserScaffold(
                     chrome, content, jobs, createMenuExpanded, actions,
                     showNavigationIcon = false,
+                    navigationOpen = false,
                     modifier = Modifier.weight(1f)
                 )
             }
         } else {
-            BrowserScaffold(
-                chrome, content, jobs, createMenuExpanded, actions,
-                showNavigationIcon = true,
-                modifier = Modifier.fillMaxSize()
+            val panelWidth = minOf(maxWidth - 56.dp, 360.dp)
+            ModalBrowserRail(
+                navigation = navigation,
+                navigationListener = navigationListener,
+                actions = actions,
+                swipeToOpen = chrome.swipeToOpenNavigation && !chrome.searchExpanded,
+                panelWidth = panelWidth
+            ) {
+                BrowserScaffold(
+                    chrome, content, jobs, createMenuExpanded, actions,
+                    showNavigationIcon = true,
+                    navigationOpen = navigation.modalOpen,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Modal rail for compact windows. It is drawn in the browser's own window, so a swipe that
+ * starts anywhere over the files can pull it out under the finger, and a predictive back
+ * gesture slides it away in step with the gesture. Its open state stays owned by the host.
+ */
+@Composable
+private fun ModalBrowserRail(
+    navigation: FileBrowserNavigationState,
+    navigationListener: NavigationItem.Listener,
+    actions: FileBrowserScreenActions,
+    swipeToOpen: Boolean,
+    panelWidth: androidx.compose.ui.unit.Dp,
+    content: @Composable () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val fraction = remember { Animatable(if (navigation.modalOpen) 1f else 0f) }
+    val spatial = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+    val fast = MaterialTheme.motionScheme.fastSpatialSpec<Float>()
+    val widthPx = with(LocalDensity.current) { panelWidth.toPx() }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val currentActions by rememberUpdatedState(actions)
+    var dragging by remember { mutableStateOf(false) }
+    LaunchedEffect(navigation.modalOpen) {
+        if (dragging) return@LaunchedEffect
+        fraction.animateTo(if (navigation.modalOpen) 1f else 0f, spatial)
+    }
+    fun settle(velocity: Float) {
+        dragging = false
+        val directed = if (rtl) -velocity else velocity
+        val open = when {
+            directed > 800f -> true
+            directed < -800f -> false
+            else -> fraction.value > 0.5f
+        }
+        scope.launch { fraction.animateTo(if (open) 1f else 0f, spatial) }
+        if (open != navigation.modalOpen) currentActions.onNavigationOpenChange(open)
+    }
+    val dragState = rememberDraggableState { delta ->
+        val directed = if (rtl) -delta else delta
+        scope.launch { fraction.snapTo((fraction.value + directed / widthPx).coerceIn(0f, 1f)) }
+    }
+    val open = navigation.modalOpen || fraction.value > 0f
+    Box(
+        Modifier.fillMaxSize().draggable(
+            state = dragState,
+            orientation = Orientation.Horizontal,
+            enabled = swipeToOpen || open,
+            onDragStarted = { dragging = true },
+            onDragStopped = { settle(it) }
+        )
+    ) {
+        content()
+        if (open) {
+            PredictiveBackHandler(enabled = navigation.modalOpen) { events ->
+                try {
+                    events.collect { fraction.snapTo(1f - it.progress) }
+                    fraction.animateTo(0f, fast)
+                    currentActions.onNavigationOpenChange(false)
+                } catch (e: CancellationException) {
+                    fraction.animateTo(1f, spatial)
+                    throw e
+                }
+            }
+            val scrim = MaterialTheme.colorScheme.scrim
+            val closeLabel = stringResource(R.string.close)
+            Box(
+                Modifier.fillMaxSize()
+                    .graphicsLayer { alpha = fraction.value }
+                    .background(scrim.copy(alpha = 0.32f))
+                    .clickable(interactionSource = null, indication = null, onClickLabel = closeLabel) {
+                        currentActions.onNavigationOpenChange(false)
+                    }
             )
-            val modalState = rememberWideNavigationRailState()
-            LaunchedEffect(navigation.modalOpen) {
-                if (navigation.modalOpen) modalState.expand() else modalState.collapse()
-            }
-            val currentActions by rememberUpdatedState(actions)
-            // A scrim tap or Back collapses the rail itself; report it so the host agrees.
-            LaunchedEffect(modalState) {
-                snapshotFlow { modalState.targetValue == WideNavigationRailValue.Expanded }
-                    .distinctUntilChanged()
-                    .drop(1)
-                    .collect { currentActions.onNavigationOpenChange(it) }
-            }
-            ModalWideNavigationRail(
-                state = modalState,
-                hideOnCollapse = true,
-                header = {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp),
+                shadowElevation = 2.dp,
+                modifier = Modifier.fillMaxHeight().width(panelWidth)
+                    .graphicsLayer {
+                        val offset = (1f - fraction.value) * (size.width + 16.dp.toPx())
+                        translationX = if (rtl) offset else -offset
+                    }
+                    .semantics { paneTitle = closeLabel }
+                    .onKeyEvent {
+                        if (it.type == KeyEventType.KeyUp && it.key == Key.Escape) {
+                            currentActions.onNavigationOpenChange(false); true
+                        } else false
+                    }
+            ) {
+                Column(
+                    Modifier.windowInsetsPadding(
+                        WindowInsets.systemBars.only(WindowInsetsSides.Vertical + WindowInsetsSides.Start)
+                    )
+                ) {
                     VFilesNavigationRailHeader(
                         expanded = true,
-                        onToggle = { actions.onNavigationOpenChange(false) }
+                        onToggle = { currentActions.onNavigationOpenChange(false) },
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    VFilesNavigationRailContent(
+                        items = navigation.items,
+                        currentPath = navigation.currentPath,
+                        revision = navigation.revision,
+                        expanded = true,
+                        listener = navigationListener,
+                        onAddBookmark = {
+                            currentActions.onFolderAction(FileBrowserFolderAction.ADD_BOOKMARK)
+                        }
                     )
                 }
-            ) {
-                VFilesNavigationRailContent(
-                    items = navigation.items,
-                    currentPath = navigation.currentPath,
-                    revision = navigation.revision,
-                    expanded = true,
-                    listener = navigationListener,
-                    onAddBookmark = { actions.onFolderAction(FileBrowserFolderAction.ADD_BOOKMARK) }
-                )
             }
         }
     }
@@ -242,6 +367,7 @@ private fun BrowserScaffold(
     createMenuExpanded: Boolean,
     actions: FileBrowserScreenActions,
     showNavigationIcon: Boolean,
+    navigationOpen: Boolean,
     modifier: Modifier
 ) {
     val searchBarState = rememberSearchBarState(
@@ -249,11 +375,14 @@ private fun BrowserScaffold(
             else SearchBarValue.Collapsed
     )
     val textFieldState = rememberTextFieldState(chrome.searchQuery)
-    val scrollBehavior = SearchBarDefaults.enterAlwaysSearchBarScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val scope = rememberCoroutineScope()
     val keyboard = LocalSoftwareKeyboardController.current
     val currentActions by rememberUpdatedState(actions)
     var sortSheetOpen by rememberSaveable { mutableStateOf(false) }
+    var folderSheetOpen by rememberSaveable { mutableStateOf(false) }
+    var scrollToTopToken by remember { mutableIntStateOf(0) }
+    val folderBack = remember { Animatable(0f) }
     val selectionMode = chrome.selectedCount > 0
     val pasteMode = !selectionMode && chrome.pasteCount > 0
     val displayed = rememberDisplayedFiles(content)
@@ -299,6 +428,24 @@ private fun BrowserScaffold(
             }
     }
     BackHandler(enabled = selectionMode) { actions.onSelection(FileBrowserSelectionCommand.CLEAR) }
+    // Back to the parent folder previews the move: the list follows the gesture, and on commit
+    // the parent slides in from the start edge with the regular folder transition.
+    PredictiveBackHandler(
+        enabled = chrome.canNavigateUp && !selectionMode && !chrome.searchExpanded &&
+            !navigationOpen && !createMenuExpanded
+    ) { events ->
+        try {
+            events.collect { folderBack.snapTo(it.progress) }
+            currentActions.onFolderAction(FileBrowserFolderAction.NAVIGATE_UP)
+            // Let the leaving page keep its pose while it fades out.
+            delay(400)
+            folderBack.snapTo(0f)
+        } catch (e: CancellationException) {
+            folderBack.animateTo(0f, MaterialTheme_fastSpatial)
+            throw e
+        }
+    }
+    BackHandler(enabled = createMenuExpanded) { actions.onCreateMenuExpandedChange(false) }
 
     val searchExpanded = searchBarState.currentValue == SearchBarValue.Expanded
     val inputField: @Composable () -> Unit = {
@@ -311,7 +458,11 @@ private fun BrowserScaffold(
             },
             placeholder = {
                 Text(
-                    stringResource(R.string.file_browser_search_in_format, chrome.title),
+                    stringResource(
+                        if (searchExpanded) R.string.file_browser_search_in_format
+                        else R.string.file_browser_search_placeholder,
+                        chrome.title
+                    ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -349,45 +500,36 @@ private fun BrowserScaffold(
 
     val layoutDirection = LocalLayoutDirection.current
     Scaffold(
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier = modifier,
         contentWindowInsets = if (showNavigationIcon) ScaffoldDefaults.contentWindowInsets
             // The persistent rail already pads the start edge.
             else ScaffoldDefaults.contentWindowInsets.only(
                 WindowInsetsSides.Vertical + WindowInsetsSides.End
             ),
         topBar = {
-            val fadeSpec = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
-            AnimatedContent(
-                targetState = selectionMode,
-                transitionSpec = { fadeIn(fadeSpec) togetherWith fadeOut(fadeSpec) },
-                label = "browserTopBar"
-            ) { selecting ->
-                if (selecting) {
-                    BrowserSelectionTopBar(
-                        chrome, actions::onSelection,
-                        onSelectRange = rangeFiles?.let { files -> { actions.onRangeSelect(files) } }
-                    )
-                } else {
-                    AppBarWithSearch(
-                        state = searchBarState,
-                        inputField = inputField,
-                        scrollBehavior = scrollBehavior,
-                        windowInsets = if (showNavigationIcon) SearchBarDefaults.windowInsets
-                            else SearchBarDefaults.windowInsets.only(
-                                WindowInsetsSides.Top + WindowInsetsSides.End
-                            ),
-                        navigationIcon = if (showNavigationIcon) {
-                            {
-                                BrowserIconAction(
-                                    R.drawable.menu_icon_control_normal_24dp,
-                                    stringResource(R.string.open_navigation_drawer)
-                                ) { actions.onNavigationOpenChange(true) }
-                            }
-                        } else null,
-                        actions = { BrowserOverflowMenu(chrome, actions::onFolderAction) }
-                    )
+            BrowserHeader(
+                chrome = chrome,
+                scrollBehavior = scrollBehavior,
+                searchBarState = searchBarState,
+                inputField = inputField,
+                windowInsets = WindowInsets.safeDrawing.only(
+                    if (showNavigationIcon) WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+                    else WindowInsetsSides.Top + WindowInsetsSides.End
+                ),
+                showNavigationIcon = showNavigationIcon,
+                selectionMode = selectionMode,
+                onSelectRange = rangeFiles?.let { files -> { actions.onRangeSelect(files) } },
+                actions = actions,
+                onOpenSort = { sortSheetOpen = true },
+                onOpenOverflow = { folderSheetOpen = true },
+                onScrollToTop = {
+                    scrollToTopToken++
+                    val state = scrollBehavior.state
+                    scope.launch {
+                        animate(state.heightOffset, 0f) { value, _ -> state.heightOffset = value }
+                    }
                 }
-            }
+            )
             ExpandedFullScreenContainedSearchBar(state = searchBarState, inputField = inputField) {
                 BrowserSearchResults(
                     query = textFieldState.text.toString(),
@@ -400,8 +542,13 @@ private fun BrowserScaffold(
     ) { padding ->
         val fabVisible = !chrome.picker && !chrome.currentReadOnly && !selectionMode &&
             !pasteMode && !chrome.searchExpanded
-        val toolbarVisible = selectionMode || pasteMode
-        Box(Modifier.fillMaxSize()) {
+        val pickerBarVisible = chrome.picker && (selectionMode ||
+            chrome.pickerMode == PickOptions.Mode.OPEN_DIRECTORY ||
+            chrome.pickerMode == PickOptions.Mode.CREATE_FILE)
+        val toolbarVisible = (selectionMode && !chrome.picker) || pasteMode || pickerBarVisible
+        // The list sits below the header, never under it: the header is opaque and fixed, and
+        // its height only changes through the list's own scroll.
+        Box(Modifier.fillMaxSize().padding(top = padding.calculateTopPadding())) {
             VFilesBrowserContent(
                 state = content,
                 onRefresh = actions::onRefresh,
@@ -409,21 +556,17 @@ private fun BrowserScaffold(
                 onRangeSelect = actions::onRangeSelect,
                 displayed = displayed,
                 onSetSelection = actions::onSetSelection,
+                nestedScrollConnection = scrollBehavior.nestedScrollConnection,
                 // Room for the FAB or floating toolbar so the last row is never covered.
                 contentPadding = PaddingValues(
                     start = padding.calculateStartPadding(layoutDirection),
                     end = padding.calculateEndPadding(layoutDirection),
-                    top = padding.calculateTopPadding(),
+                    top = 0.dp,
                     bottom = padding.calculateBottomPadding() + 112.dp
                 ),
-                header = {
-                    BrowserLocationHeader(
-                        state = chrome,
-                        onBreadcrumb = actions::onBreadcrumb,
-                        onViewType = actions::onViewType,
-                        onOpenSort = { sortSheetOpen = true }
-                    )
-                }
+                scrollToTopToken = scrollToTopToken,
+                backProgress = { folderBack.value },
+                picker = chrome.picker
             )
             if (createMenuExpanded) {
                 // Outside taps close the FAB menu without reaching the rows underneath.
@@ -452,7 +595,7 @@ private fun BrowserScaffold(
                         VFilesJobStatus(jobs, actions::onCancelJob)
                     }
                     AnimatedVisibility(
-                        visible = selectionMode,
+                        visible = selectionMode && !chrome.picker,
                         enter = floatingToolbarEnter(),
                         exit = floatingToolbarExit()
                     ) {
@@ -464,6 +607,13 @@ private fun BrowserScaffold(
                         exit = floatingToolbarExit()
                     ) {
                         BrowserPasteToolbar(chrome, actions::onSelection)
+                    }
+                    AnimatedVisibility(
+                        visible = pickerBarVisible,
+                        enter = floatingToolbarEnter(),
+                        exit = floatingToolbarExit()
+                    ) {
+                        BrowserPickerBar(chrome, actions)
                     }
                 }
                 if (!toolbarVisible) {
@@ -492,15 +642,93 @@ private fun BrowserScaffold(
         }
     }
     if (sortSheetOpen) {
-        BrowserSortSheet(
+        BrowserViewSortSheet(state = chrome, actions = actions, onDismiss = { sortSheetOpen = false })
+    }
+    if (folderSheetOpen) {
+        BrowserFolderSheet(
             state = chrome,
-            onDismiss = { sortSheetOpen = false },
-            onSortBy = actions::onSortBy,
-            onSortOrder = actions::onSortOrder,
-            onDirectoriesFirst = actions::onDirectoriesFirst,
-            onPathSpecificSort = actions::onPathSpecificSort,
-            onShowHiddenFiles = actions::onShowHiddenFiles
+            onAction = actions::onFolderAction,
+            onOpenViewSort = { sortSheetOpen = true },
+            onDismiss = { folderSheetOpen = false }
         )
+    }
+}
+
+private val MaterialTheme_fastSpatial =
+    androidx.compose.animation.core.spring<Float>(dampingRatio = 0.9f, stiffness = 1400f)
+
+/**
+ * External picker controls in the browser's floating toolbar position: pick the selection,
+ * use the folder on screen, or name the file to save.
+ */
+@Composable
+private fun BrowserPickerBar(chrome: FileBrowserChromeState, actions: FileBrowserScreenActions) {
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 3.dp,
+        modifier = Modifier.padding(horizontal = 16.dp).widthIn(max = 640.dp).fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            when {
+                chrome.selectedCount > 0 -> {
+                    Text(
+                        pluralStringResource(
+                            R.plurals.file_browser_selected_count, chrome.selectedCount,
+                            chrome.selectedCount
+                        ),
+                        style = MaterialTheme.typography.titleSmallEmphasized,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = { actions.onSelection(FileBrowserSelectionCommand.PICK) },
+                        shapes = ButtonDefaults.shapes()
+                    ) {
+                        Text(stringResource(
+                            if (chrome.pickerMode == PickOptions.Mode.CREATE_FILE) R.string.save
+                            else R.string.select
+                        ))
+                    }
+                }
+                chrome.pickerMode == PickOptions.Mode.OPEN_DIRECTORY -> {
+                    Text(
+                        chrome.title,
+                        style = MaterialTheme.typography.titleSmallEmphasized,
+                        maxLines = 1,
+                        overflow = TextOverflow.MiddleEllipsis,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(onClick = actions::onPickCurrentDirectory, shapes = ButtonDefaults.shapes()) {
+                        Text(stringResource(R.string.select), maxLines = 1)
+                    }
+                }
+                chrome.pickerMode == PickOptions.Mode.CREATE_FILE -> {
+                    var name by rememberSaveable(chrome.pickerFileName, stateSaver = TextFieldValue.Saver) {
+                        val base = chrome.pickerFileName.substringBeforeLast('.')
+                        mutableStateOf(TextFieldValue(chrome.pickerFileName, TextRange(0, base.length)))
+                    }
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        singleLine = true,
+                        label = { Text(stringResource(R.string.file_browser_dialog_name_label)) },
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { actions.onPickCreateFile(name.text) }),
+                        modifier = Modifier.weight(1f).padding(bottom = 4.dp)
+                    )
+                    Button(
+                        onClick = { actions.onPickCreateFile(name.text) },
+                        shapes = ButtonDefaults.shapes()
+                    ) { Text(stringResource(R.string.save)) }
+                }
+            }
+        }
     }
 }
 
@@ -528,69 +756,6 @@ private fun floatingToolbarExit(): ExitTransition {
             transformOrigin = TransformOrigin(0.5f, 1f)
         ) +
         fadeOut(motion.fastEffectsSpec())
-}
-
-/** Contextual app bar while files are selected: count, close, range and select all. */
-@Composable
-private fun BrowserSelectionTopBar(
-    chrome: FileBrowserChromeState,
-    onSelection: (FileBrowserSelectionCommand) -> Unit,
-    onSelectRange: (() -> Unit)?
-) {
-    val commands = chrome.commandContext().availableCommands()
-    TopAppBar(
-        title = {
-            Text(
-                pluralStringResource(
-                    R.plurals.file_browser_selected_count, chrome.selectedCount,
-                    chrome.selectedCount
-                ),
-                style = MaterialTheme.typography.titleLargeEmphasized
-            )
-        },
-        navigationIcon = {
-            BrowserIconAction(
-                R.drawable.file_browser_icon_close,
-                stringResource(R.string.file_browser_clear_selection)
-            ) { onSelection(FileBrowserSelectionCommand.CLEAR) }
-        },
-        actions = {
-            if (onSelectRange != null) {
-                BrowserIconAction(
-                    R.drawable.select_range_icon_24dp,
-                    stringResource(R.string.file_browser_select_range),
-                    onSelectRange
-                )
-            }
-            if (FileBrowserSelectionCommand.SELECT_ALL in commands) {
-                BrowserIconAction(
-                    R.drawable.select_all_icon_control_normal_24dp,
-                    stringResource(R.string.select_all)
-                ) { onSelection(FileBrowserSelectionCommand.SELECT_ALL) }
-            }
-        },
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-            actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-    )
-}
-
-@Composable
-private fun BrowserIconAction(icon: Int, label: String, onClick: () -> Unit) {
-    TooltipBox(
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
-            TooltipAnchorPosition.Below
-        ),
-        tooltip = { PlainTooltip { Text(label) } },
-        state = rememberTooltipState()
-    ) {
-        IconButton(onClick = onClick, shapes = IconButtonDefaults.shapes()) {
-            Icon(painterResource(icon), contentDescription = label)
-        }
-    }
 }
 
 /**

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Adaptive icons need API 26; older launchers keep the original bitmap icon. -->
+    <item name="launcher_icon_red" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_pink" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_purple" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_deep_purple" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_indigo" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_blue" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_light_blue" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_cyan" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_teal" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_green" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_light_green" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_lime" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_yellow" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_amber" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_orange" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_deep_orange" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_brown" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_grey" type="mipmap">@mipmap/launcher_icon</item>
+    <item name="launcher_icon_blue_grey" type="mipmap">@mipmap/launcher_icon</item>
+</resources>

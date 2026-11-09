@@ -133,6 +133,50 @@ object Settings {
             R.bool.pref_default_value_file_list_drag_to_select
         )
 
+    val FILE_LIST_VIEW_TOGGLE_PLACEMENT: SettingLiveData<ViewTogglePlacement> =
+        EnumSettingLiveData(
+            R.string.pref_key_file_list_view_toggle_placement,
+            R.string.pref_default_value_file_list_view_toggle_placement,
+            ViewTogglePlacement::class.java
+        )
+
+    val FILE_LIST_ITEM_COUNT_STYLE: SettingLiveData<ItemCountStyle> =
+        EnumSettingLiveData(
+            R.string.pref_key_file_list_item_count_style,
+            R.string.pref_default_value_file_list_item_count_style,
+            ItemCountStyle::class.java
+        )
+
+    val FILE_LIST_SHOW_UP_BUTTON: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_show_up_button,
+            R.bool.pref_default_value_file_list_show_up_button
+        )
+
+    val FILE_LIST_LONG_PRESS_SCROLL_TO_TOP: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_long_press_scroll_to_top,
+            R.bool.pref_default_value_file_list_long_press_scroll_to_top
+        )
+
+    val NAVIGATION_SWIPE_TO_OPEN: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_navigation_swipe_to_open,
+            R.bool.pref_default_value_navigation_swipe_to_open
+        )
+
+    val FILE_LIST_ICON_TAP_SELECTS: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_icon_tap_selects,
+            R.bool.pref_default_value_file_list_icon_tap_selects
+        )
+
+    val APP_ICON_COLOR: SettingLiveData<ThemeColor> =
+        EnumSettingLiveData(
+            R.string.pref_key_app_icon_color, R.string.pref_default_value_app_icon_color,
+            ThemeColor::class.java
+        )
+
     val EDGE_TO_EDGE: SettingLiveData<Boolean> =
         BooleanSettingLiveData(
             R.string.pref_key_edge_to_edge, R.bool.pref_default_value_edge_to_edge

@@ -221,6 +221,13 @@ internal fun ExpressiveSettingsScreen(
     val apkAction by Settings.OPEN_APK_DEFAULT_ACTION.observeCompose()
     val showPdf by Settings.SHOW_PDF_THUMBNAIL_PRE_28.observeCompose()
     val remoteThumbs by Settings.READ_REMOTE_FILES_FOR_THUMBNAIL.observeCompose()
+    val appIconColor by Settings.APP_ICON_COLOR.observeCompose()
+    val viewTogglePlacement by Settings.FILE_LIST_VIEW_TOGGLE_PLACEMENT.observeCompose()
+    val itemCountStyle by Settings.FILE_LIST_ITEM_COUNT_STYLE.observeCompose()
+    val showUpButton by Settings.FILE_LIST_SHOW_UP_BUTTON.observeCompose()
+    val longPressScrollToTop by Settings.FILE_LIST_LONG_PRESS_SCROLL_TO_TOP.observeCompose()
+    val swipeToOpenNavigation by Settings.NAVIGATION_SWIPE_TO_OPEN.observeCompose()
+    val iconTapSelects by Settings.FILE_LIST_ICON_TAP_SELECTS.observeCompose()
 
     var dialog by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmRoot by rememberSaveable { mutableStateOf(false) }
@@ -277,14 +284,14 @@ internal fun ExpressiveSettingsScreen(
                 Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
                     ExpressiveSettingsSection(
                         stringResource(R.string.settings_expressive_appearance),
-                        listOf(
-                            ExpressiveSettingRow(
+                        buildList {
+                            add(ExpressiveSettingRow(
                                 "locale", stringResource(R.string.settings_locale_title),
                                 localeSummary, iconRes = R.drawable.settings_icon_language, onClick = {
                                     if (Build.VERSION.SDK_INT >= 33) onOpenSystemLocales() else dialog = "locale"
                                 }
-                            ),
-                            ExpressiveSettingRow(
+                            ))
+                            add(ExpressiveSettingRow(
                                 "color", stringResource(R.string.settings_theme_color_title),
                                 stringResource(R.string.settings_expressive_theme_color_summary),
                                 value = if (color == ThemeColor.DYNAMIC)
@@ -292,20 +299,30 @@ internal fun ExpressiveSettingsScreen(
                                 else color.settingsLabel(context),
                                 iconRes = R.drawable.settings_icon_palette,
                                 onClick = { dialog = "color" }
-                            ),
-                            ExpressiveSettingRow(
+                            ))
+                            if (AppIconColorManager.isSupported) {
+                                add(ExpressiveSettingRow(
+                                    "appIconColor",
+                                    stringResource(R.string.settings_expressive_app_icon_color_title),
+                                    stringResource(R.string.settings_expressive_app_icon_color_summary),
+                                    value = appIconColor.settingsLabel(context),
+                                    iconRes = R.drawable.settings_icon_apps,
+                                    onClick = { dialog = "appIconColor" }
+                                ))
+                            }
+                            add(ExpressiveSettingRow(
                                 "night", stringResource(R.string.settings_night_mode_title),
                                 value = nightNames.getOrElse(night.ordinal) { night.name },
                                 iconRes = R.drawable.settings_icon_dark_mode,
                                 onClick = { dialog = "night" }
-                            ),
-                            ExpressiveSettingRow(
+                            ))
+                            add(ExpressiveSettingRow(
                                 "black", stringResource(R.string.settings_black_night_mode),
                                 stringResource(R.string.settings_expressive_black_explanation),
                                 checked = black, iconRes = R.drawable.settings_icon_contrast,
                                 onClick = { Settings.BLACK_NIGHT_MODE.putValue(!black) }
-                            )
-                        )
+                            ))
+                        }
                     )
                 }
             }
@@ -328,6 +345,14 @@ internal fun ExpressiveSettingsScreen(
                                 onClick = { Settings.FILE_LIST_DRAG_TO_SELECT.putValue(!dragToSelect) }
                             ))
                             add(ExpressiveSettingRow(
+                                "iconTapSelects",
+                                stringResource(R.string.settings_expressive_icon_tap_selects_title),
+                                stringResource(R.string.settings_expressive_icon_tap_selects_summary),
+                                checked = iconTapSelects,
+                                iconRes = R.drawable.settings_icon_touch_app,
+                                onClick = { Settings.FILE_LIST_ICON_TAP_SELECTS.putValue(!iconTapSelects) }
+                            ))
+                            add(ExpressiveSettingRow(
                                 "ellipsis", stringResource(R.string.settings_file_name_ellipsize_title),
                                 value = ellipsisNames.getOrElse(
                                     listOf(TextUtils.TruncateAt.START, TextUtils.TruncateAt.MIDDLE,
@@ -348,6 +373,52 @@ internal fun ExpressiveSettingsScreen(
                                 ))
                             }
                         }
+                    )
+                }
+            }
+            item(key = "headerNavigation") {
+                Box(Modifier.widthIn(max = 760.dp).fillMaxWidth()) {
+                    ExpressiveSettingsSection(
+                        stringResource(R.string.settings_expressive_header_navigation),
+                        listOf(
+                            ExpressiveSettingRow(
+                                "viewToggle", stringResource(R.string.settings_expressive_view_toggle_title),
+                                viewTogglePlacement.label(context),
+                                iconRes = R.drawable.view_grid_icon_control_normal_24dp,
+                                onClick = { dialog = "viewToggle" }
+                            ),
+                            ExpressiveSettingRow(
+                                "itemCounts", stringResource(R.string.settings_expressive_item_count_title),
+                                itemCountStyle.label(context),
+                                iconRes = R.drawable.settings_icon_tag,
+                                onClick = { dialog = "itemCounts" }
+                            ),
+                            ExpressiveSettingRow(
+                                "upButton", stringResource(R.string.settings_expressive_up_button_title),
+                                stringResource(R.string.settings_expressive_up_button_summary),
+                                checked = showUpButton,
+                                iconRes = R.drawable.arrow_up_icon_control_normal_24dp,
+                                onClick = { Settings.FILE_LIST_SHOW_UP_BUTTON.putValue(!showUpButton) }
+                            ),
+                            ExpressiveSettingRow(
+                                "longPressScrollToTop",
+                                stringResource(R.string.settings_expressive_long_press_scroll_top_title),
+                                stringResource(R.string.settings_expressive_long_press_scroll_top_summary),
+                                checked = longPressScrollToTop,
+                                iconRes = R.drawable.settings_icon_vertical_align_top,
+                                onClick = {
+                                    Settings.FILE_LIST_LONG_PRESS_SCROLL_TO_TOP.putValue(!longPressScrollToTop)
+                                }
+                            ),
+                            ExpressiveSettingRow(
+                                "swipeToOpenNavigation",
+                                stringResource(R.string.settings_expressive_swipe_navigation_title),
+                                stringResource(R.string.settings_expressive_swipe_navigation_summary),
+                                checked = swipeToOpenNavigation,
+                                iconRes = R.drawable.menu_open_icon_24dp,
+                                onClick = { Settings.NAVIGATION_SWIPE_TO_OPEN.putValue(!swipeToOpenNavigation) }
+                            )
+                        )
                     )
                 }
             }
@@ -511,6 +582,28 @@ internal fun ExpressiveSettingsScreen(
                     context.wallpaperAccentColor() ?: ContextCompat.getColor(context, selected.resourceId)
                 } else ContextCompat.getColor(context, selected.resourceId))
             }
+        )
+        "appIconColor" -> ExpressiveChoiceDialog(
+            stringResource(R.string.settings_expressive_app_icon_color_title),
+            AppIconColorManager.colors.map { it to it.settingsLabel(context) },
+            appIconColor,
+            {
+                Settings.APP_ICON_COLOR.putValue(it)
+                AppIconColorManager.applyAsync(context, it)
+            },
+            { dialog = null },
+            colorFor = { Color(ContextCompat.getColor(context, AppIconColorManager.backgroundColorRes(it))) }
+        )
+        "viewToggle" -> ExpressiveChoiceDialog(
+            stringResource(R.string.settings_expressive_view_toggle_title),
+            ViewTogglePlacement.entries.map { it to it.label(context) },
+            viewTogglePlacement, { Settings.FILE_LIST_VIEW_TOGGLE_PLACEMENT.putValue(it) },
+            { dialog = null }
+        )
+        "itemCounts" -> ExpressiveChoiceDialog(
+            stringResource(R.string.settings_expressive_item_count_title),
+            ItemCountStyle.entries.map { it to it.label(context) },
+            itemCountStyle, { Settings.FILE_LIST_ITEM_COUNT_STYLE.putValue(it) }, { dialog = null }
         )
         "ellipsis" -> ExpressiveChoiceDialog(
             stringResource(R.string.settings_file_name_ellipsize_title),
@@ -774,6 +867,20 @@ internal fun <T> ExpressiveChoiceDialog(
     )
 }
 
+
+private fun ViewTogglePlacement.label(context: android.content.Context): String =
+    context.getString(when (this) {
+        ViewTogglePlacement.HEADER -> R.string.settings_expressive_view_toggle_header
+        ViewTogglePlacement.SHEET -> R.string.settings_expressive_view_toggle_sheet
+        ViewTogglePlacement.BOTH -> R.string.settings_expressive_view_toggle_both
+    })
+
+private fun ItemCountStyle.label(context: android.content.Context): String =
+    context.getString(when (this) {
+        ItemCountStyle.ICON -> R.string.settings_expressive_item_count_icon
+        ItemCountStyle.TEXT -> R.string.settings_expressive_item_count_text
+        ItemCountStyle.BOTH -> R.string.settings_expressive_item_count_both
+    })
 
 private fun ThemeColor.settingsLabel(context: android.content.Context): String = when (this) {
     ThemeColor.DYNAMIC -> context.getString(R.string.color_picker_dynamic_color_label)

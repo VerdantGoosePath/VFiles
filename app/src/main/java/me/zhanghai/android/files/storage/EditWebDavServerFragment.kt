@@ -5,13 +5,21 @@
 
 package me.zhanghai.android.files.storage
 
+import android.Manifest
 import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.TextUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -19,6 +27,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.withCreated
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
@@ -51,14 +60,49 @@ class EditWebDavServerFragment : Fragment() {
 
     private lateinit var binding: EditWebdavServerFragmentBinding
 
+    private var pendingConnectAndAdd: Boolean? = null
+
+    private val localNetworkPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val shouldConnectAndAdd = pendingConnectAndAdd ?: return@registerForActivityResult
+        pendingConnectAndAdd = null
+        if (granted) {
+            if (shouldConnectAndAdd) connectAndAdd() else saveOrAdd()
+        } else {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.storage_connection_failed_title)
+                .setMessage(R.string.webdav_local_network_permission_denied)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.webdav_open_app_settings) { _, _ ->
+                    startActivity(
+                        Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", requireContext().packageName, null)
+                        )
+                    )
+                }
+                .show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (savedInstanceState?.containsKey("webdavPendingConnectAndAdd") == true) {
+            pendingConnectAndAdd = savedInstanceState.getBoolean("webdavPendingConnectAndAdd")
+        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.connectState.collect { onConnectStateChanged(it) } }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        pendingConnectAndAdd?.let { outState.putBoolean("webdavPendingConnectAndAdd", it) }
     }
 
     override fun onCreateView(
@@ -241,6 +285,7 @@ class EditWebDavServerFragment : Fragment() {
 
     private fun saveOrAdd() {
         val server = getServerOrSetError() ?: return
+        if (!ensureLocalNetworkPermission(connectAndAdd = false)) return
         Storages.addOrReplace(server)
         setResult(Activity.RESULT_OK)
         finish()
@@ -251,7 +296,21 @@ class EditWebDavServerFragment : Fragment() {
             return
         }
         val server = getServerOrSetError() ?: return
+        if (!ensureLocalNetworkPermission(connectAndAdd = true)) return
         viewModel.connect(server)
+    }
+
+    private fun ensureLocalNetworkPermission(connectAndAdd: Boolean): Boolean {
+        if (Build.VERSION.SDK_INT < 37 || ContextCompat.checkSelfPermission(
+                requireContext(), Manifest.permission.ACCESS_LOCAL_NETWORK
+            ) == PackageManager.PERMISSION_GRANTED) {
+            return true
+        }
+        if (pendingConnectAndAdd == null) {
+            pendingConnectAndAdd = connectAndAdd
+            localNetworkPermissionLauncher.launch(Manifest.permission.ACCESS_LOCAL_NETWORK)
+        }
+        return false
     }
 
     private fun onConnectStateChanged(state: ActionState<WebDavServer, Unit>) {

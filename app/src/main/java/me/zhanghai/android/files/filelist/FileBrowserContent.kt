@@ -156,7 +156,9 @@ data class FileBrowserContentState(
     val nameEllipsize: TextUtils.TruncateAt = TextUtils.TruncateAt.END,
     /** Incremented by the host for every user-requested refresh. */
     val refreshToken: Int = 0,
-    val dragToSelect: Boolean = true
+    val dragToSelect: Boolean = true,
+    /** Tapping a row's icon selects it instead of opening it. */
+    val iconTapSelects: Boolean = false
 )
 
 enum class FileBrowserItemAction {
@@ -211,7 +213,9 @@ private data class BrowserPage(val displayed: DisplayedFiles?, val viewType: Fil
 /**
  * Lazy Compose rows and grid; stable path keys + content types, off-main sorting and no provider IO
  * during composition. SaveableStateProvider retains each path/mode scroll position across navigation.
- * The folder [header] is the first lazy item so it scrolls away with the files on small screens.
+ * The folder header lives outside the list; [scrollToTopToken] changes scroll the page to its top.
+ * [backProgress] is the predictive back gesture towards the parent folder: the page on screen
+ * follows it, then the parent slides in when the gesture commits.
  */
 @Composable
 fun VFilesBrowserContent(
@@ -225,9 +229,21 @@ fun VFilesBrowserContent(
     onSetSelection: (List<FileItem>, Boolean) -> Unit = { _, _ -> },
     nestedScrollConnection: NestedScrollConnection? = null,
     selectionEnabled: Boolean = true,
-    header: @Composable () -> Unit = {}
+    scrollToTopToken: Int = 0,
+    backProgress: () -> Float = { 0f },
+    picker: Boolean = state.pickOptions != null
 ) {
     val savedState = rememberSaveableStateHolder()
+    var menuFile by remember { mutableStateOf<FileItem?>(null) }
+    // The page that was on screen when a back gesture began keeps following it while leaving.
+    val backKey = remember { mutableStateOf<String?>(null) }
+    val currentKey by rememberUpdatedState(BrowserPage(displayed, state.viewType).key)
+    val currentBackProgress by rememberUpdatedState(backProgress)
+    LaunchedEffect(Unit) {
+        snapshotFlow { currentBackProgress() > 0f }.collect { active ->
+            if (active) backKey.value = currentKey
+        }
+    }
     val pullState = rememberPullToRefreshState()
     val refreshing = rememberRefreshIndicator(state)
     val motion = MaterialTheme.motionScheme
@@ -251,8 +267,18 @@ fun VFilesBrowserContent(
             transitionSpec = { folderTransition(motion) },
             label = "browserFolder"
         ) { page ->
+            val pageModifier = Modifier.graphicsLayer {
+                if (page.key != backKey.value) return@graphicsLayer
+                val progress = backProgress()
+                translationX = progress * 32.dp.toPx()
+                val scale = 1f - 0.06f * progress
+                scaleX = scale
+                scaleY = scale
+                alpha = 1f - 0.3f * progress
+            }
             // Keep list and grid scroll states independently, for every visited provider path.
             savedState.SaveableStateProvider(page.key) {
+              Box(pageModifier) {
                 BrowserPageContent(
                     page = page,
                     state = state,
@@ -264,10 +290,23 @@ fun VFilesBrowserContent(
                     contentPadding = contentPadding,
                     nestedScrollConnection = nestedScrollConnection,
                     selectionEnabled = selectionEnabled,
-                    header = header
+                    scrollToTopToken = scrollToTopToken,
+                    onOpenMenu = { menuFile = it }
                 )
+              }
             }
         }
+    }
+    menuFile?.let { file ->
+        val selectable = selectionEnabled && canSelectBrowserFile(file, state.pickOptions)
+        FileBrowserItemSheet(
+            file = file,
+            selected = file.path in state.selectedPaths,
+            selectable = selectable,
+            picker = picker,
+            onAction = { onItemAction(file, it) },
+            onDismiss = { menuFile = null }
+        )
     }
 }
 
@@ -302,12 +341,14 @@ private fun AnimatedContentTransitionScope<BrowserPage>.folderTransition(
         from.startsWith(to) -> -1
         else -> 0
     }
-    val enter = fadeIn(motion.defaultEffectsSpec()) +
-        slideInHorizontally(motion.defaultSpatialSpec<IntOffset>()) { it / 12 * direction } +
-        scaleIn(motion.defaultSpatialSpec(), initialScale = if (direction == 0) 0.96f else 1f)
+    // Shared axis X: a short slide with a fade-through, the outgoing page leaving quickly so
+    // the two lists never read as overlapping. Sideways moves (e.g. a bookmark) zoom softly.
+    val enter = fadeIn(motion.defaultEffectsSpec(), initialAlpha = 0f) +
+        slideInHorizontally(motion.defaultSpatialSpec<IntOffset>()) { it / 10 * direction } +
+        scaleIn(motion.defaultSpatialSpec(), initialScale = if (direction == 0) 0.94f else 1f)
     val exit = fadeOut(motion.fastEffectsSpec()) +
-        slideOutHorizontally(motion.fastSpatialSpec<IntOffset>()) { -it / 12 * direction } +
-        scaleOut(motion.fastSpatialSpec(), targetScale = if (direction == 0) 0.98f else 1f)
+        slideOutHorizontally(motion.fastSpatialSpec<IntOffset>()) { -it / 10 * direction } +
+        scaleOut(motion.fastSpatialSpec(), targetScale = if (direction == 0) 1.03f else 1f)
     return (enter togetherWith exit).using(SizeTransform(clip = false))
 }
 
@@ -323,8 +364,10 @@ private fun BrowserPageContent(
     contentPadding: PaddingValues,
     nestedScrollConnection: NestedScrollConnection?,
     selectionEnabled: Boolean,
-    header: @Composable () -> Unit
+    scrollToTopToken: Int,
+    onOpenMenu: (FileItem) -> Unit
 ) {
+    val initialScrollToken = remember { scrollToTopToken }
     val layoutDirection = LocalLayoutDirection.current
     val displayed = page.displayed
     val visible = displayed?.files.orEmpty()
@@ -390,11 +433,16 @@ private fun BrowserPageContent(
                 rangeSelectOnKey(visible, index, key, shift, onRangeSelect)
             },
             selectionEnabled = selectionEnabled,
-            longPressSelects = !dragEnabled
+            longPressSelects = !dragEnabled,
+            iconTapSelects = state.iconTapSelects,
+            onOpenMenu = { onOpenMenu(file) }
         )
     }
     if (state.viewType == FileViewType.LIST || status != null) {
         val listState = rememberLazyListState()
+        LaunchedEffect(scrollToTopToken) {
+            if (scrollToTopToken != initialScrollToken) listState.animateScrollToItem(0)
+        }
         val dragModifier = dragToSelectModifier(
             enabled = dragEnabled,
             files = visible,
@@ -415,7 +463,6 @@ private fun BrowserPageContent(
                 userScrollEnabled = !refreshing,
                 verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)
             ) {
-                item(key = "header", contentType = "header") { header() }
                 item(key = "banner", contentType = "banner") { banner() }
                 if (status != null) {
                     item(key = "status", contentType = "status") { status() }
@@ -429,6 +476,9 @@ private fun BrowserPageContent(
         }
     } else {
         val gridState = rememberLazyGridState()
+        LaunchedEffect(scrollToTopToken) {
+            if (scrollToTopToken != initialScrollToken) gridState.animateScrollToItem(0)
+        }
         val dragModifier = dragToSelectModifier(
             enabled = dragEnabled,
             files = visible,
@@ -448,8 +498,6 @@ private fun BrowserPageContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            item(key = "header", span = { GridItemSpan(maxLineSpan) },
-                contentType = "header") { header() }
             item(key = "banner", span = { GridItemSpan(maxLineSpan) },
                 contentType = "banner") { banner() }
             gridItemsIndexed(visible, key = { _, file -> file.path.toString() },
@@ -460,8 +508,8 @@ private fun BrowserPageContent(
     }
 }
 
-/** Header and banner precede the files in both lazy layouts. */
-private const val FILE_ITEM_OFFSET = 2
+/** The error banner precedes the files in both lazy layouts. */
+private const val FILE_ITEM_OFFSET = 1
 
 internal fun LazyListState.fileIndexAt(position: Offset, count: Int): Int? {
     val info = layoutInfo
@@ -717,14 +765,15 @@ internal fun FileBrowserItem(
     onAction: (FileBrowserItemAction) -> Unit,
     onKeyNavigation: (Key, Boolean) -> Boolean,
     selectionEnabled: Boolean = true,
-    longPressSelects: Boolean = true
+    longPressSelects: Boolean = true,
+    iconTapSelects: Boolean = false,
+    onOpenMenu: () -> Unit = {}
 ) {
     val directory = file.attributes.isDirectory
     val selectable = selectionEnabled && canSelectBrowserFile(file, pickOptions)
     val enabled = selectable || directory || !selectionEnabled
     val readOnly = file.path.fileSystem.isReadOnly
     val archivePath = file.path.isArchivePath
-    var menuExpanded by remember(file.path) { mutableStateOf(false) }
     val selectLabel = stringResource(R.string.select)
     val keyModifier = Modifier.onPreviewKeyEvent { event ->
         if (event.type == KeyEventType.KeyDown &&
@@ -747,16 +796,27 @@ internal fun FileBrowserItem(
         { onAction(FileBrowserItemAction.SELECT) }
     } else null
     val menu: @Composable () -> Unit = {
-        FileBrowserItemMenu(
-            file, readOnly, archivePath, pickOptions != null, selectable, selected,
-            menuExpanded, { menuExpanded = it }, onAction
-        )
+        IconButton(onClick = onOpenMenu, shapes = IconButtonDefaults.shapes()) {
+            Icon(
+                painterResource(R.drawable.file_browser_icon_more),
+                contentDescription = stringResource(R.string.file_browser_item_actions)
+            )
+        }
     }
+    // With the preference on, the icon is a selection toggle of its own.
+    val iconModifier = if (iconTapSelects && selectable) {
+        Modifier.clip(CircleShape).combinedClickable(
+            onClickLabel = stringResource(
+                if (selected) R.string.file_browser_deselect else R.string.select
+            ),
+            onClick = { onAction(FileBrowserItemAction.SELECT) }
+        )
+    } else Modifier
     val supporting = rememberSupportingText(file)
     if (grid) {
         FileBrowserGridTile(
             file, supporting, selected, hasSelection, enabled, ellipsize, onClick, onLongClick,
-            keyModifier, menu
+            keyModifier, menu, iconModifier
         )
         return
     }
@@ -770,7 +830,7 @@ internal fun FileBrowserItem(
         onLongClick = onLongClick,
         onLongClickLabel = if (onLongClick != null) selectLabel else null,
         verticalAlignment = Alignment.CenterVertically,
-        leadingContent = { FileBrowserLeading(file, selected) },
+        leadingContent = { Box(iconModifier) { FileBrowserLeading(file, selected) } },
         trailingContent = { menu() },
         // ListItem reads the supporting slot's baselines while measuring. Keep it a single leaf
         // Text: a Row here makes Compose 1.12 lay out its children from inside a lazy item's
@@ -793,14 +853,17 @@ internal fun FileBrowserItem(
 private fun rememberSupportingText(file: FileItem): String? {
     if (file.attributes.isDirectory) return null
     val context = LocalContext.current
-    return remember(file.attributes, context) {
-        val size = file.attributes.fileSize.formatHumanReadable(context)
-        val modified = file.attributes.lastModifiedTime().toInstant().formatShort(context)
-        buildString {
-            append(modified).append(" · ").append(size)
-            if (file.isArchiveFile) {
-                append(" · ").append(context.getString(R.string.file_browser_badge_archive))
-            }
+    return remember(file.attributes, context) { fileSupportingText(file, context) }
+}
+
+internal fun fileSupportingText(file: FileItem, context: android.content.Context): String? {
+    if (file.attributes.isDirectory) return null
+    val size = file.attributes.fileSize.formatHumanReadable(context)
+    val modified = file.attributes.lastModifiedTime().toInstant().formatShort(context)
+    return buildString {
+        append(modified).append(" · ").append(size)
+        if (file.isArchiveFile) {
+            append(" · ").append(context.getString(R.string.file_browser_badge_archive))
         }
     }
 }
@@ -912,7 +975,8 @@ private fun FileBrowserGridTile(
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?,
     keyModifier: Modifier,
-    menu: @Composable () -> Unit
+    menu: @Composable () -> Unit,
+    iconModifier: Modifier = Modifier
 ) {
     val directory = file.attributes.isDirectory
     val motion = MaterialTheme.motionScheme
@@ -946,8 +1010,8 @@ private fun FileBrowserGridTile(
                 contentAlignment = Alignment.Center
             ) {
                 Box(
-                    if (directory || !file.supportsThumbnail) Modifier.size(72.dp)
-                    else Modifier.fillMaxSize()
+                    (if (directory || !file.supportsThumbnail) Modifier.size(72.dp)
+                    else Modifier.fillMaxSize()).then(iconModifier)
                 ) {
                     FileBrowserThumbnail(file = file, grid = true, modifier = Modifier.matchParentSize())
                     FileBrowserLinkBadge(file, Modifier.align(Alignment.BottomEnd).padding(4.dp))
@@ -1048,75 +1112,6 @@ private fun FileBrowserThumbnail(
                 onSuccess = { loaded = true },
                 onError = { loaded = false }
             )
-        }
-    }
-}
-
-/** Context menu actions mirror res/menu/file_item.xml, grouped by intent ([C17]). */
-@Composable
-private fun FileBrowserItemMenu(
-    file: FileItem,
-    readOnly: Boolean,
-    archivePath: Boolean,
-    picker: Boolean,
-    selectable: Boolean,
-    selected: Boolean,
-    expanded: Boolean,
-    onExpanded: (Boolean) -> Unit,
-    onAction: (FileBrowserItemAction) -> Unit
-) {
-    Box {
-        IconButton(onClick = { onExpanded(true) }, shapes = IconButtonDefaults.shapes()) {
-            Icon(
-                painterResource(R.drawable.file_browser_icon_more),
-                contentDescription = stringResource(R.string.file_browser_item_actions)
-            )
-        }
-        DropdownMenuPopup(expanded = expanded, onDismissRequest = { onExpanded(false) }) {
-            val directory = file.attributes.isDirectory
-            val sections = buildList {
-                add(buildList {
-                    if (selectable) add(
-                        (if (selected) R.string.file_browser_deselect else R.string.select) to
-                            FileBrowserItemAction.SELECT
-                    )
-                    if (!directory) add(R.string.file_item_action_open_with to FileBrowserItemAction.OPEN_WITH)
-                    if (!picker && !readOnly && !archivePath && !directory) {
-                        add(R.string.edit to FileBrowserItemAction.EDIT_WITH)
-                    }
-                })
-                if (!picker) {
-                    add(buildList {
-                        if (!readOnly) add(R.string.cut to FileBrowserItemAction.CUT)
-                        add((if (archivePath) R.string.file_item_action_extract else R.string.copy) to
-                            FileBrowserItemAction.COPY)
-                        if (!readOnly) {
-                            add(R.string.rename to FileBrowserItemAction.RENAME)
-                            add(R.string.delete to FileBrowserItemAction.DELETE)
-                        }
-                    })
-                    add(buildList {
-                        if (file.isArchiveFile) add(R.string.file_item_action_extract to FileBrowserItemAction.EXTRACT)
-                        if (!archivePath) add(R.string.file_item_action_archive to FileBrowserItemAction.ARCHIVE)
-                        add(R.string.share to FileBrowserItemAction.SHARE)
-                        add(R.string.file_item_action_copy_path to FileBrowserItemAction.COPY_PATH)
-                    })
-                    add(buildList {
-                        if (directory) add(R.string.file_item_action_add_bookmark to FileBrowserItemAction.BOOKMARK)
-                        add(R.string.file_item_action_create_shortcut to FileBrowserItemAction.SHORTCUT)
-                        add(R.string.file_item_action_properties to FileBrowserItemAction.PROPERTIES)
-                    })
-                }
-            }.map { section ->
-                section.map { (title, action) ->
-                    BrowserMenuEntry(
-                        title = stringResource(title),
-                        destructive = action == FileBrowserItemAction.DELETE,
-                        onClick = { onExpanded(false); onAction(action) }
-                    )
-                }
-            }
-            BrowserMenuSections(sections)
         }
     }
 }

@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="webdav_local_network_permission_denied">Allow nearby devices access in app settings to connect to WebDAV servers on your local network. Then try connecting again.</string>
+    <string name="webdav_open_app_settings">App settings</string>
+</resources>

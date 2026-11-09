@@ -14,6 +14,7 @@ import me.zhanghai.android.files.filejob.fileJobNotificationTemplate
 import me.zhanghai.android.files.ftpserver.ftpServerServiceNotificationTemplate
 import me.zhanghai.android.files.hiddenapi.HiddenApi
 import me.zhanghai.android.files.provider.FileSystemProviders
+import me.zhanghai.android.files.settings.AppIconColorManager
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.storage.FtpServerAuthenticator
 import me.zhanghai.android.files.storage.SftpServerAuthenticator
@@ -37,6 +38,7 @@ val appInitializers = listOf(
     ::initializeLiveDataObjects,
     ::initializeCustomTheme,
     ::initializeNightMode,
+    ::initializeAppIconColor,
     ::createNotificationChannels
 )
 
@@ -80,6 +82,10 @@ private fun initializeCustomTheme() {
 
 private fun initializeNightMode() {
     NightModeHelper.initialize(application)
+}
+
+private fun initializeAppIconColor() {
+    AppIconColorManager.applyAsync(application)
 }
 
 private fun createNotificationChannels() {

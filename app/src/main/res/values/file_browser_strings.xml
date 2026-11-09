@@ -25,9 +25,24 @@
     <string name="file_browser_navigation_expand">Expand navigation</string>
     <string name="file_browser_navigation_collapse">Collapse navigation</string>
     <string name="file_browser_select_range">Select range</string>
+    <string name="file_browser_search_action">Search</string>
+    <string name="file_browser_search_placeholder">Search this folder</string>
+    <string name="file_browser_sort_a_to_z">A to Z</string>
+    <string name="file_browser_sort_z_to_a">Z to A</string>
+    <string name="file_browser_sort_smallest_first">Smallest first</string>
+    <string name="file_browser_sort_largest_first">Largest first</string>
+    <string name="file_browser_sort_oldest_first">Oldest first</string>
+    <string name="file_browser_sort_newest_first">Newest first</string>
+    <string name="file_browser_sort_reverse_hint">Tap again to reverse</string>
+    <string name="file_browser_only_this_folder">Only for this folder</string>
+    <string name="file_browser_only_this_folder_on">Changes apply to this folder only</string>
+    <string name="file_browser_only_this_folder_off">Changes apply to all folders</string>
+    <string name="file_browser_layout">Layout</string>
+    <string name="file_browser_options">Options</string>
+    <string name="file_browser_folder_actions">Folder options</string>
     <plurals name="file_browser_jobs_running">
-        <item quantity="one">%d operation running</item>
-        <item quantity="other">%d operations running</item>
+        <item quantity="one">%d task running</item>
+        <item quantity="other">%d tasks running</item>
     </plurals>
     <plurals name="file_browser_selected_count">
         <item quantity="one">%d selected</item>
