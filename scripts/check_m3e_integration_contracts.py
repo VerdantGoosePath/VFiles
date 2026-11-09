@@ -45,8 +45,11 @@ assert "Intent.FLAG_GRANT_PREFIX_URI_PERMISSION" in browser
 assert "extraPathList = paths.toList()" in browser
 screen = (java / "filelist/FileBrowserScreen.kt").read_text()
 assert "FileBrowserScreen(" in browser and "VFilesCreateMenu(" in browser
-assert "VFilesBrowserContent(" in screen and "AppBarWithSearch(" in screen
-assert "ModalWideNavigationRail(" in screen and "WideNavigationRail(" in screen
+assert "VFilesBrowserContent(" in screen and "BrowserHeader(" in screen
+header = (java / "filelist/FileBrowserHeader.kt").read_text()
+assert "SearchBar(" in header and "BrowserBreadcrumbs(" in header
+assert "ModalBrowserRail(" in screen and "WideNavigationRail(" in screen
+assert "PredictiveBackHandler(enabled = navigation.modalOpen)" in screen
 assert "NavigationDrawer" not in screen
 
 # ACTION_VIEW must remain external with no internal-viewer private path extras.

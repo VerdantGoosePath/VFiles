@@ -36,19 +36,17 @@ class FileBrowserComposeUiTest {
         val mode = mutableStateOf(FileViewType.LIST)
         composeRule.setContent {
             VFilesTheme(appearance = VFilesAppearance()) {
-                BrowserLocationHeader(
-                    state = FileBrowserChromeState(viewType = mode.value),
-                    onBreadcrumb = {},
-                    onViewType = { mode.value = it },
-                    onOpenSort = {}
+                BrowserViewTypeToggle(
+                    viewType = mode.value,
+                    onViewType = { mode.value = it }
                 )
             }
         }
-        composeRule.onNodeWithContentDescription(
+        composeRule.onNodeWithText(
             context.getString(R.string.file_list_action_view_grid)
         ).performClick()
         composeRule.runOnIdle { assertEquals(FileViewType.GRID, mode.value) }
-        composeRule.onNodeWithContentDescription(
+        composeRule.onNodeWithText(
             context.getString(R.string.file_list_action_view_list)
         ).performClick()
         composeRule.runOnIdle { assertEquals(FileViewType.LIST, mode.value) }
@@ -58,18 +56,16 @@ class FileBrowserComposeUiTest {
         val sortBy = mutableStateOf(FileSortOptions.By.NAME)
         composeRule.setContent {
             VFilesTheme(appearance = VFilesAppearance()) {
-                BrowserSortSheet(
+                BrowserViewSortSheet(
                     state = FileBrowserChromeState(
                         sortOptions = FileSortOptions(
                             sortBy.value, FileSortOptions.Order.ASCENDING, true
                         )
                     ),
                     onDismiss = {},
-                    onSortBy = { sortBy.value = it },
-                    onSortOrder = {},
-                    onDirectoriesFirst = {},
-                    onPathSpecificSort = {},
-                    onShowHiddenFiles = {}
+                    actions = object : RecordingActions() {
+                        override fun onSortBy(by: FileSortOptions.By) { sortBy.value = by }
+                    }
                 )
             }
         }
@@ -99,7 +95,7 @@ class FileBrowserComposeUiTest {
         val actions = RecordingActions()
         renderScreen(actions, mutableStateOf(FileBrowserChromeState(breadcrumbs = TRAIL)))
         composeRule.onNodeWithText(
-            context.getString(R.string.file_browser_search_in_format, "Download")
+            context.getString(R.string.file_browser_search_placeholder)
         ).performClick()
         composeRule.onNode(hasSetTextAction()).performTextInput("backup")
         composeRule.waitUntil(5_000) { actions.submitted == "backup" }
@@ -181,6 +177,7 @@ internal open class RecordingActions : FileBrowserScreenActions {
     override fun onRefresh() {}
     override fun onItemAction(file: FileItem, action: FileBrowserItemAction) {}
     override fun onRangeSelect(files: List<FileItem>) {}
+    override fun onSetSelection(files: List<FileItem>, selected: Boolean) {}
     override fun onSelection(command: FileBrowserSelectionCommand) { commands += command }
     override fun onFolderAction(action: FileBrowserFolderAction) {}
     override fun onCreateMenuExpandedChange(expanded: Boolean) {}

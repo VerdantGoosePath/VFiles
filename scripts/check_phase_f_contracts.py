@@ -66,10 +66,14 @@ assert "SegmentedListItem(" in browser
 screen = (src / "filelist/FileBrowserScreen.kt").read_text()
 # The last row must clear the FAB menu or the floating toolbar.
 assert "bottom = padding.calculateBottomPadding() + 112.dp" in screen
-chrome = (src / "filelist/FileBrowserChrome.kt").read_text()
-assert "modifier = Modifier.clearAndSetSemantics { }" in chrome
-assert re.search(r"Modifier\.fillMaxWidth\(\)[\s.\w{}=()]*?\.horizontalScroll\(scroll\)", chrome)
-assert "rememberScrollState(initial = Int.MAX_VALUE)" in chrome
+header = (src / "filelist/FileBrowserHeader.kt").read_text()
+# The collapsing header hides duplicate controls from accessibility and keeps
+# the current breadcrumb visible in a horizontally scrollable row.
+assert "if (collapsed) Modifier.clearAndSetSemantics { }" in header
+breadcrumbs = header.split("private fun BrowserBreadcrumbs(", 1)[1]
+assert "Modifier.fillMaxWidth()" in breadcrumbs
+assert ".horizontalScroll(scroll)" in breadcrumbs
+assert "rememberScrollState(initial = Int.MAX_VALUE)" in breadcrumbs
 scaffold = (src / "compose/components/SurfaceComponents.kt").read_text()
 assert "IconButton(onClick = onBack)" in scaffold
 assert "settings_expressive_back_24dp" in scaffold
