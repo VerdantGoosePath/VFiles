@@ -233,7 +233,7 @@ internal fun BrowserPasteToolbar(
         }
     }
 }
-internal private fun folderActionTitle(action: FileBrowserFolderAction): Int = when (action) {
+internal fun folderActionTitle(action: FileBrowserFolderAction): Int = when (action) {
     FileBrowserFolderAction.NEW_TASK -> R.string.file_list_action_new_task
     FileBrowserFolderAction.NAVIGATE_UP -> R.string.file_list_action_navigate_up
     FileBrowserFolderAction.NAVIGATE_TO -> R.string.file_list_action_navigate_to

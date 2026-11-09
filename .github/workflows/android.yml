@@ -2,7 +2,7 @@ name: Build Files Fork APK
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'tmp/latest-20261109-153158']
     tags: ['v*']
   workflow_dispatch:
 
