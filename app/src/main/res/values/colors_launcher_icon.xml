@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher backgrounds behind the white folder; darker than the theme accents where a
+         500 tone would not contrast with the foreground. Default is the original icon colour. -->
+    <color name="launcher_icon_background_default">@color/color_primary_light</color>
+    <color name="launcher_icon_background_red">@color/material_red_700</color>
+    <color name="launcher_icon_background_pink">@color/material_pink_600</color>
+    <color name="launcher_icon_background_purple">@color/material_purple_600</color>
+    <color name="launcher_icon_background_deep_purple">@color/material_deep_purple_600</color>
+    <color name="launcher_icon_background_indigo">@color/material_indigo_600</color>
+    <color name="launcher_icon_background_blue">@color/material_blue_700</color>
+    <color name="launcher_icon_background_light_blue">@color/material_light_blue_800</color>
+    <color name="launcher_icon_background_cyan">@color/material_cyan_800</color>
+    <color name="launcher_icon_background_teal">@color/material_teal_700</color>
+    <color name="launcher_icon_background_green">@color/material_green_700</color>
+    <color name="launcher_icon_background_light_green">@color/material_light_green_800</color>
+    <color name="launcher_icon_background_lime">@color/material_lime_900</color>
+    <color name="launcher_icon_background_yellow">@color/material_yellow_900</color>
+    <color name="launcher_icon_background_amber">@color/material_amber_900</color>
+    <color name="launcher_icon_background_orange">@color/material_orange_800</color>
+    <color name="launcher_icon_background_deep_orange">@color/material_deep_orange_700</color>
+    <color name="launcher_icon_background_brown">@color/material_brown_500</color>
+    <color name="launcher_icon_background_grey">@color/material_grey_700</color>
+    <color name="launcher_icon_background_blue_grey">@color/material_blue_grey_600</color>
+</resources>

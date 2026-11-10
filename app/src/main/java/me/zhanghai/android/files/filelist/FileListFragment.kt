@@ -110,6 +110,7 @@ import me.zhanghai.android.files.navigation.NavigationFragment
 import me.zhanghai.android.files.navigation.NavigationItemListLiveData
 import me.zhanghai.android.files.navigation.NavigationRootMapLiveData
 import me.zhanghai.android.files.provider.archive.createArchiveRootPath
+import me.zhanghai.android.files.provider.archive.archiveFile
 import me.zhanghai.android.files.provider.archive.isArchivePath
 import me.zhanghai.android.files.provider.linux.isLinuxPath
 import me.zhanghai.android.files.settings.FileOpenAppCategory
@@ -220,10 +221,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     // Immutable Compose snapshots: selectedFiles/pasteState themselves mutate in-place.
     private var browserChromeState by mutableStateOf(FileBrowserChromeState())
     private var browserContentState by mutableStateOf(FileBrowserContentState())
+    /** The name typed or picked in a CREATE_DOCUMENT session, once it differs from the caller's. */
+    private var browserPickerFileName: String? = null
     private var browserJobs by mutableStateOf<List<FileJobProgress>>(emptyList())
     // Preserve the original RecyclerView and D-pad special cases on TVs and in external pickers.
     private val useComposeFileList: Boolean
-        get() = isAdded && !requireContext().isTelevision && viewModel.pickOptions == null
+        get() = isAdded && !requireContext().isTelevision
     private var browserFabExpanded by mutableStateOf(false)
     private var browserRefreshToken = 0
     private var browserNavigationState by mutableStateOf(FileBrowserNavigationState())
@@ -331,8 +334,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 }
             }
                 .also { callback ->
+                    // The Compose browser runs its own predictive back for folders.
                     viewModel.breadcrumbLiveData.observe(viewLifecycleOwner) {
-                        callback.isEnabled = viewModel.canNavigateUpBreadcrumb
+                        callback.isEnabled = !useComposeFileList &&
+                            viewModel.canNavigateUpBreadcrumb
                     }
                 }
         )
@@ -495,6 +500,14 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             updateBrowserChrome()
         }
         Settings.FILE_LIST_DRAG_TO_SELECT.observe(viewLifecycleOwner) { updateBrowserContent() }
+        Settings.FILE_LIST_ICON_TAP_SELECTS.observe(viewLifecycleOwner) { updateBrowserContent() }
+        Settings.FILE_LIST_VIEW_TOGGLE_PLACEMENT.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        Settings.FILE_LIST_ITEM_COUNT_STYLE.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        Settings.FILE_LIST_SHOW_UP_BUTTON.observe(viewLifecycleOwner) { updateBrowserChrome() }
+        Settings.FILE_LIST_LONG_PRESS_SCROLL_TO_TOP.observe(viewLifecycleOwner) {
+            updateBrowserChrome()
+        }
+        Settings.NAVIGATION_SWIPE_TO_OPEN.observe(viewLifecycleOwner) { updateBrowserChrome() }
         // Retain the View-based operational UI and use scalar projections for Compose chrome.
         // Observing these individually also handles provider changes and in-place set mutations.
         viewModel.currentPathLiveData.observe(viewLifecycleOwner) { updateBrowserChrome() }
@@ -960,6 +973,22 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             )
         }
 
+        override fun onPickCurrentDirectory() {
+            if (viewModel.pickOptions?.mode == PickOptions.Mode.OPEN_DIRECTORY) {
+                pickPaths(linkedSetOf(viewModel.currentPath))
+            }
+        }
+
+        override fun onPickCreateFile(fileName: String) {
+            if (viewModel.pickOptions?.mode != PickOptions.Mode.CREATE_FILE) return
+            browserPickerFileName = fileName
+            pickCreatedFile(fileName.trim())
+        }
+
+        override fun onPickCancel() {
+            requireActivity().finish()
+        }
+
         override fun onTogglePersistentNavigation() {
             Settings.FILE_LIST_PERSISTENT_DRAWER_OPEN.putValue(
                 !Settings.FILE_LIST_PERSISTENT_DRAWER_OPEN.valueCompat
@@ -976,6 +1005,12 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         val selection = viewModel.selectedFilesLiveData.value.orEmpty()
         val paste = viewModel.pasteStateLiveData.value
         val pickOptions = viewModel.pickOptionsLiveData.value
+        val listState = viewModel.fileListLiveData.value
+        val listed = listState?.value?.takeUnless { listState is Failure ||
+            (listState is Loading && it.isEmpty()) }
+        val folderCount = listed?.count { it.attributes.isDirectory }
+        val pasteFiles = paste?.files.orEmpty()
+        val pasteIsExtract = pasteFiles.isNotEmpty() && pasteFiles.all { it.path.isArchivePath }
         browserChromeState = FileBrowserChromeState(
             breadcrumbs = segments,
             currentIndex = breadcrumb?.selectedIndex ?: -1,
@@ -995,9 +1030,26 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             currentReadOnly = viewModel.currentPath.fileSystem.isReadOnly,
             picker = pickOptions != null,
             pickerCanSelectMultiple = pickOptions?.allowMultiple == true,
-            pasteCount = paste?.files?.size ?: 0,
+            pickerTitle = pickOptions?.let { pickerTitle(it) }.orEmpty(),
+            pickerMode = pickOptions?.mode,
+            pickerFileName = browserPickerFileName ?: pickOptions?.fileName.orEmpty(),
+            pasteCount = pasteFiles.size,
             pasteIsCopy = paste?.copy == true,
-            canOpenInTerminal = viewModel.currentPath.isLinuxPath
+            pasteIsExtract = pasteIsExtract,
+            pasteFirstName = pasteFiles.firstOrNull()?.name.orEmpty(),
+            pasteArchiveName = if (pasteIsExtract) {
+                pasteFiles.map { it.path.archiveFile }.distinct().singleOrNull()
+                    ?.fileName?.toString()
+            } else null,
+            canOpenInTerminal = viewModel.currentPath.isLinuxPath,
+            folderCount = folderCount,
+            fileCount = listed?.let { it.size - folderCount!! },
+            canNavigateUp = viewModel.canNavigateUpBreadcrumb,
+            viewTogglePlacement = Settings.FILE_LIST_VIEW_TOGGLE_PLACEMENT.valueCompat,
+            itemCountStyle = Settings.FILE_LIST_ITEM_COUNT_STYLE.valueCompat,
+            showUpButton = Settings.FILE_LIST_SHOW_UP_BUTTON.valueCompat,
+            longPressScrollToTop = Settings.FILE_LIST_LONG_PRESS_SCROLL_TO_TOP.valueCompat,
+            swipeToOpenNavigation = Settings.NAVIGATION_SWIPE_TO_OPEN.valueCompat
         )
         if (browserChromeState.picker || browserChromeState.currentReadOnly ||
             browserChromeState.selectedCount > 0 || browserChromeState.pasteCount > 0 ||
@@ -1064,7 +1116,8 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             pickOptions = viewModel.pickOptions,
             nameEllipsize = Settings.FILE_NAME_ELLIPSIZE.valueCompat,
             refreshToken = browserRefreshToken,
-            dragToSelect = Settings.FILE_LIST_DRAG_TO_SELECT.valueCompat
+            dragToSelect = Settings.FILE_LIST_DRAG_TO_SELECT.valueCompat,
+            iconTapSelects = Settings.FILE_LIST_ICON_TAP_SELECTS.valueCompat
         )
     }
 
@@ -1390,22 +1443,27 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         startActivitySafe(intent)
     }
 
+    // Names the request and the app that made it, so it is clear this is a picker opened by
+    // another app, not the standalone browser.
+    private fun pickerTitle(pickOptions: PickOptions): String {
+        val count = if (pickOptions.allowMultiple) Int.MAX_VALUE else 1
+        val baseTitle = when (pickOptions.mode) {
+            PickOptions.Mode.OPEN_FILE ->
+                getQuantityString(R.plurals.file_list_title_open_file, count)
+            PickOptions.Mode.CREATE_FILE -> getString(R.string.file_list_title_create_file)
+            PickOptions.Mode.OPEN_DIRECTORY ->
+                getQuantityString(R.plurals.file_list_title_open_directory, count)
+        }
+        val callingAppLabel = callingAppLabel()
+        return if (callingAppLabel != null) "$baseTitle · $callingAppLabel" else baseTitle
+    }
+
     private fun onPickOptionsChanged(pickOptions: PickOptions?) {
+        // The marquee lets the (longer) picker title be read fully in the View toolbar.
         val title = if (pickOptions == null) {
             getString(R.string.file_list_title)
         } else {
-            val count = if (pickOptions.allowMultiple) Int.MAX_VALUE else 1
-            val baseTitle = when (pickOptions.mode) {
-                PickOptions.Mode.OPEN_FILE ->
-                    getQuantityString(R.plurals.file_list_title_open_file, count)
-                PickOptions.Mode.CREATE_FILE -> getString(R.string.file_list_title_create_file)
-                PickOptions.Mode.OPEN_DIRECTORY ->
-                    getQuantityString(R.plurals.file_list_title_open_directory, count)
-            }
-            // Append the requesting app so it's clear this is a picker opened by another app, not
-            // the standalone Material Files. The marquee lets the (now longer) title be read fully.
-            val callingAppLabel = callingAppLabel()
-            if (callingAppLabel != null) "$baseTitle · $callingAppLabel" else baseTitle
+            pickerTitle(pickOptions)
         }
         requireActivity().title = title
         applyToolbarTitleMarquee()
@@ -1674,7 +1732,10 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
     }
 
     private fun confirmReplaceFile(file: FileItem, setFileName: Boolean = true) {
-        if (setFileName) {
+        if (setFileName && useComposeFileList) {
+            browserPickerFileName = file.name
+            updateBrowserChrome()
+        } else if (setFileName) {
             val fileName = file.name
             binding.bottomCreateFileNameEdit.setText(fileName)
             binding.bottomCreateFileNameEdit.setSelection(
@@ -1861,20 +1922,7 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
                 true
             }
             R.id.action_create -> {
-                val fileName = binding.bottomCreateFileNameEdit.text.toString()
-                if (fileName.isEmpty()) {
-                    showToast(R.string.file_list_create_file_name_error_empty)
-                } else if (fileName.asFileNameOrNull() == null) {
-                    showToast(R.string.file_list_create_file_name_error_invalid)
-                } else {
-                    val file = getFileWithName(fileName)
-                    if (file != null) {
-                        confirmReplaceFile(file, false)
-                    } else {
-                        val path = viewModel.currentPath.resolve(fileName)
-                        pickPaths(linkedSetOf(path))
-                    }
-                }
+                pickCreatedFile(binding.bottomCreateFileNameEdit.text.toString())
                 true
             }
             R.id.action_paste -> {
@@ -1883,6 +1931,22 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             }
             else -> false
         }
+
+    private fun pickCreatedFile(fileName: String) {
+        if (fileName.isEmpty()) {
+            showToast(R.string.file_list_create_file_name_error_empty)
+        } else if (fileName.asFileNameOrNull() == null) {
+            showToast(R.string.file_list_create_file_name_error_invalid)
+        } else {
+            val file = getFileWithName(fileName)
+            if (file != null) {
+                confirmReplaceFile(file, false)
+            } else {
+                val path = viewModel.currentPath.resolve(fileName)
+                pickPaths(linkedSetOf(path))
+            }
+        }
+    }
 
     private fun onBottomActionModeFinished() {
         val pickOptions = viewModel.pickOptions

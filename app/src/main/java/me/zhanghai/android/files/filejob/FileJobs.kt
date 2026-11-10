@@ -125,7 +125,8 @@ private fun FileJob.postNotification(
     max: Int,
     progress: Int,
     indeterminate: Boolean,
-    showCancel: Boolean
+    showCancel: Boolean,
+    metrics: FileJobProgressMetrics = FileJobProgressMetrics()
 ) {
     val notification = fileJobNotificationTemplate.createBuilder(service).apply {
         setContentTitle(title)
@@ -150,8 +151,39 @@ private fun FileJob.postNotification(
         }
     }.build()
     service.notificationManager.notify(id, notification)
-    FileJobProgressLiveData.update(id, title, text, max, progress, indeterminate)
+    FileJobProgressLiveData.update(
+        id, title, text, max, progress, indeterminate, metrics.kind, metrics.totalBytes,
+        metrics.processedBytes, metrics.totalFiles, metrics.processedFiles,
+        metrics.currentFileName
+    )
 }
+
+/** In-app task metrics that ride along with a notification update; never shown in it. */
+private class FileJobProgressMetrics(
+    val kind: FileJobKind = FileJobKind.OTHER,
+    val totalBytes: Long? = null,
+    val processedBytes: Long? = null,
+    val totalFiles: Int? = null,
+    val processedFiles: Int? = null,
+    val currentFileName: String? = null
+)
+
+private fun scanKind(@PluralsRes titleRes: Int): FileJobKind =
+    when (titleRes) {
+        R.plurals.file_job_copy_scan_notification_title_format -> FileJobKind.COPY
+        R.plurals.file_job_extract_scan_notification_title_format -> FileJobKind.EXTRACT
+        R.plurals.file_job_move_scan_notification_title_format -> FileJobKind.MOVE
+        R.plurals.file_job_delete_scan_notification_title_format -> FileJobKind.DELETE
+        R.plurals.file_job_archive_scan_notification_title_format -> FileJobKind.ARCHIVE
+        else -> FileJobKind.OTHER
+    }
+
+private val CopyMoveType.kind: FileJobKind
+    get() = when (this) {
+        CopyMoveType.COPY -> FileJobKind.COPY
+        CopyMoveType.EXTRACT -> FileJobKind.EXTRACT
+        CopyMoveType.MOVE -> FileJobKind.MOVE
+    }
 
 private const val PROGRESS_INTERVAL_MILLIS = 200L
 
@@ -310,7 +342,9 @@ private fun FileJob.postScanNotification(scanInfo: ScanInfo, @PluralsRes titleRe
     val size = scanInfo.size.asFileSize().formatHumanReadable(service)
     val fileCount: Int = scanInfo.fileCount
     val title: String = getQuantityString(titleRes, fileCount, fileCount, size)
-    postNotification(title, null, null, null, 0, 0, true, true)
+    postNotification(
+        title, null, null, null, 0, 0, true, true, FileJobProgressMetrics(scanKind(titleRes))
+    )
 }
 
 private class ScanInfo {
@@ -345,7 +379,8 @@ private fun FileJob.postTransferSizeNotification(
     transferInfo: TransferInfo,
     currentSource: Path,
     @StringRes titleOneRes: Int,
-    @PluralsRes titleMultipleRes: Int
+    @PluralsRes titleMultipleRes: Int,
+    kind: FileJobKind
 ) {
     if (!transferInfo.shouldPostNotification()) {
         return
@@ -388,14 +423,19 @@ private fun FileJob.postTransferSizeNotification(
         max = maxLong.toInt()
         progress = progressLong.toInt()
     }
-    postNotification(title, text, null, null, max, progress, false, true)
+    val metrics = FileJobProgressMetrics(
+        kind, size, transferredSize, fileCount,
+        transferInfo.transferredFileCount.coerceAtMost(fileCount), getFileName(currentSource)
+    )
+    postNotification(title, text, null, null, max, progress, false, true, metrics)
 }
 
 private fun FileJob.postTransferCountNotification(
     transferInfo: TransferInfo,
     currentPath: Path,
     @StringRes titleOneRes: Int,
-    @PluralsRes titleMultipleRes: Int
+    @PluralsRes titleMultipleRes: Int,
+    kind: FileJobKind = FileJobKind.OTHER
 ) {
     if (!transferInfo.shouldPostNotification()) {
         return
@@ -424,7 +464,12 @@ private fun FileJob.postTransferCountNotification(
         progress = transferredFileCount
         indeterminate = false
     }
-    postNotification(title, text, null, null, max, progress, indeterminate, true)
+    val metrics = FileJobProgressMetrics(
+        kind, totalFiles = fileCount,
+        processedFiles = transferInfo.transferredFileCount.coerceAtMost(fileCount),
+        currentFileName = getFileName(currentPath)
+    )
+    postNotification(title, text, null, null, max, progress, indeterminate, true, metrics)
 }
 
 private class TransferInfo(scanInfo: ScanInfo, val target: Path?) {
@@ -730,7 +775,7 @@ private fun FileJob.archive(
 private fun FileJob.postArchiveNotification(transferInfo: TransferInfo, currentFile: Path) {
     postTransferSizeNotification(
         transferInfo, currentFile, R.string.file_job_archive_notification_title_one_format,
-        R.plurals.file_job_archive_notification_title_multiple_format
+        R.plurals.file_job_archive_notification_title_multiple_format, FileJobKind.ARCHIVE
     )
 }
 
@@ -1064,7 +1109,7 @@ private fun FileJob.delete(path: Path, transferInfo: TransferInfo?, actionAllInf
 private fun FileJob.postDeleteNotification(transferInfo: TransferInfo, currentPath: Path) {
     postTransferCountNotification(
         transferInfo, currentPath, R.string.file_job_delete_notification_title_one_format,
-        R.plurals.file_job_delete_notification_title_multiple_format
+        R.plurals.file_job_delete_notification_title_multiple_format, FileJobKind.DELETE
     )
 }
 
@@ -1452,7 +1497,7 @@ private fun FileJob.postCopyMoveNotification(
             R.plurals.file_job_copy_notification_title_multiple_format,
             R.plurals.file_job_extract_notification_title_multiple_format,
             R.plurals.file_job_move_notification_title_multiple_format
-        )
+        ), type.kind
     )
 }
 
@@ -2328,5 +2373,8 @@ private fun FileJob.postWriteNotification(transferInfo: TransferInfo) {
     )
     val max = size.toInt()
     val progress = transferredSize.toInt()
-    postNotification(title, text, null, null, max, progress, false, true)
+    val metrics = FileJobProgressMetrics(
+        FileJobKind.WRITE, size, transferredSize, currentFileName = getFileName(target)
+    )
+    postNotification(title, text, null, null, max, progress, false, true, metrics)
 }

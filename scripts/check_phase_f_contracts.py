@@ -66,10 +66,14 @@ assert "SegmentedListItem(" in browser
 screen = (src / "filelist/FileBrowserScreen.kt").read_text()
 # The last row must clear the FAB menu or the floating toolbar.
 assert "bottom = padding.calculateBottomPadding() + 112.dp" in screen
-chrome = (src / "filelist/FileBrowserChrome.kt").read_text()
-assert "modifier = Modifier.clearAndSetSemantics { }" in chrome
-assert re.search(r"Modifier\.fillMaxWidth\(\)[\s.\w{}=()]*?\.horizontalScroll\(scroll\)", chrome)
-assert "rememberScrollState(initial = Int.MAX_VALUE)" in chrome
+header = (src / "filelist/FileBrowserHeader.kt").read_text()
+# The hidden search bar under the collapsed title leaves the accessibility tree.
+assert "Modifier.clearAndSetSemantics { }" in header
+# The path bar scrolls horizontally and opens scrolled to the current folder.
+assert re.search(r"Modifier\.onSizeChanged[\s.\w{}=()]*?\.horizontalScroll\(scroll\)", header)
+assert "rememberScrollState(initial = Int.MAX_VALUE)" in header
+# The collapsing details must not pad the status bar a second time.
+assert "windowInsets.only(WindowInsetsSides.Horizontal)" in header
 scaffold = (src / "compose/components/SurfaceComponents.kt").read_text()
 assert "IconButton(onClick = onBack)" in scaffold
 assert "settings_expressive_back_24dp" in scaffold

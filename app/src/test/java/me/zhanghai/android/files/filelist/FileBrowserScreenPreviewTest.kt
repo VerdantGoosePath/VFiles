@@ -7,6 +7,8 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeUp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java8.nio.file.Path
 import java8.nio.file.Paths
@@ -202,6 +204,101 @@ class FileBrowserScreenPreviewTest {
         )
     )
 
+    private val deepTrail = listOf(
+        BreadcrumbUi("0", "Internal storage"), BreadcrumbUi("1", "Download"),
+        BreadcrumbUi("2", "Receipts 2025"), BreadcrumbUi("3", "March")
+    )
+
+    private fun chrome(
+        breadcrumbs: List<BreadcrumbUi> = deepTrail,
+        currentIndex: Int = -1
+    ) = FileBrowserChromeState(
+        breadcrumbs = breadcrumbs, currentIndex = currentIndex, subtitle = "3 folders, 4 files",
+        folderCount = 3, fileCount = 4, currentReadOnly = false, canNavigateUp = true
+    )
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun phoneHeaderPath() = render("phone-header-path", chrome = chrome())
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun phoneHeaderForward() = render(
+        "phone-header-forward", chrome = chrome(currentIndex = 1)
+    )
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun phoneHeaderCollapsed() {
+        val many = (1..30).map { item("File $it.txt", "text/plain", 1_000L * it) }
+        composeRule.setContent {
+            Screen(false) {
+                FileBrowserScreen(
+                    chrome = chrome(),
+                    content = FileBrowserContentState(
+                        pathKey = "/storage/emulated/0/Download", files = many, loading = false
+                    ),
+                    jobs = emptyList(),
+                    navigation = FileBrowserNavigationState(
+                        items = previewNavigationItems,
+                        currentPath = Paths.get("/storage/emulated/0/Download")
+                    ),
+                    navigationListener = PreviewNavigation,
+                    createMenuExpanded = false,
+                    actions = PreviewActions
+                )
+            }
+        }
+        composeRule.onAllNodes(isRoot())[0].performTouchInput {
+            swipeUp(startY = bottom * 0.8f, endY = bottom * 0.2f, durationMillis = 400)
+        }
+        capture("phone-header-collapsed")
+    }
+
+    private fun paste(
+        count: Int, copy: Boolean, extract: Boolean = false, readOnly: Boolean = false,
+        archive: String? = null
+    ) = chrome().copy(
+        pasteCount = count, pasteIsCopy = copy, pasteIsExtract = extract,
+        pasteFirstName = "photo.jpg", pasteArchiveName = archive, currentReadOnly = readOnly
+    )
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun phonePasteMove() = render("phone-paste-move", chrome = paste(1, copy = false))
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun phonePasteExtract() = render(
+        "phone-paste-extract",
+        chrome = paste(4, copy = true, extract = true, archive = "backup-archive.zip")
+    )
+
+    @Test @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun phonePasteReadOnly() = render(
+        "phone-paste-read-only", dark = true, chrome = paste(3, copy = true, readOnly = true)
+    )
+
+    private fun picker(mode: PickOptions.Mode, title: String, name: String = "") = chrome().copy(
+        picker = true, pickerMode = mode, pickerTitle = title, pickerFileName = name
+    )
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun phonePickerOpenFile() = render(
+        "phone-picker-open-file", chrome = picker(PickOptions.Mode.OPEN_FILE, "Choose a file for Docs")
+    )
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun phonePickerOpenDirectory() = render(
+        "phone-picker-open-directory",
+        chrome = picker(PickOptions.Mode.OPEN_DIRECTORY, "Choose a folder for Backup")
+    )
+
+    @Test @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun phonePickerCreateFile() = render(
+        "phone-picker-create-file", dark = true,
+        chrome = picker(PickOptions.Mode.CREATE_FILE, "Save to VFiles", name = "Invoice 2025.pdf")
+    )
+
+    @Test @Config(qualifiers = "w1280dp-h800dp-xhdpi")
+    fun tabletPicker() = render(
+        "tablet-picker", chrome = picker(PickOptions.Mode.OPEN_FILE, "Choose a file for Docs")
+    )
 }
 
 internal class PreviewFileAttributes(private val directory: Boolean, private val size: Long) :

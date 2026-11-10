@@ -27,9 +27,11 @@ for package in ("viewer/image", "viewer/text"):
 assert "viewer.saveas.SaveAsActivity" in manifest
 assert "FileListActivity" in manifest and "FileSystemDocumentsProvider" in manifest
 
-# Keep the original SAF picker, grants and URI result payloads while using Compose
-# for ordinary non-TV browser sessions.
+# Keep the original SAF picker grants and URI result payloads; every non-TV session,
+# external picker included, uses the Compose browser.
 assert "viewModel.pickOptions == null" in browser and "isTelevision" in browser
+assert "get() = isAdded && !requireContext().isTelevision\n" in browser
+assert "override fun onPickCurrentDirectory()" in browser and "override fun onPickCreateFile(" in browser
 # The touch browser is one full-screen Compose surface; the View tree stays for TV/pickers.
 assert "legacyBrowserView.isVisible = !compose" in browser
 assert "browserScreenView?.isVisible = compose" in browser
@@ -45,8 +47,11 @@ assert "Intent.FLAG_GRANT_PREFIX_URI_PERMISSION" in browser
 assert "extraPathList = paths.toList()" in browser
 screen = (java / "filelist/FileBrowserScreen.kt").read_text()
 assert "FileBrowserScreen(" in browser and "VFilesCreateMenu(" in browser
-assert "VFilesBrowserContent(" in screen and "AppBarWithSearch(" in screen
-assert "ModalWideNavigationRail(" in screen and "WideNavigationRail(" in screen
+assert "VFilesBrowserContent(" in screen and "BrowserHeader(" in screen
+assert "ExpandedFullScreenContainedSearchBar(" in screen
+# Compact windows use an in-window modal rail so a swipe can pull it out under the finger.
+assert "ModalBrowserRail(" in screen and "WideNavigationRail(" in screen
+assert "BrowserPickerBar(chrome, actions)" in screen
 assert "NavigationDrawer" not in screen
 
 # ACTION_VIEW must remain external with no internal-viewer private path extras.

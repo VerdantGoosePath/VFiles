@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_kind_copy">Copie</string>
+    <string name="task_kind_move">Déplacement</string>
+    <string name="task_kind_extract">Extraction</string>
+    <string name="task_kind_delete">Suppression</string>
+    <string name="task_kind_archive">Compression</string>
+    <string name="task_kind_write">Enregistrement</string>
+    <string name="task_kind_other">En cours</string>
+    <plurals name="task_count">
+        <item quantity="one">%d tâche</item>
+        <item quantity="many">%d tâches</item>
+        <item quantity="other">%d tâches</item>
+    </plurals>
+    <string name="task_percent_format">%1$d %%</string>
+    <string name="task_separator_format">%1$s · %2$s</string>
+    <string name="task_speed_format">%1$s/s</string>
+    <string name="task_eta_format">%1$s restantes</string>
+    <string name="task_size_progress_format">%1$s sur %2$s</string>
+    <plurals name="task_files_progress_format">
+        <item quantity="one">%1$s fichier sur %2$s</item>
+        <item quantity="many">%1$s fichiers sur %2$s</item>
+        <item quantity="other">%1$s fichiers sur %2$s</item>
+    </plurals>
+    <string name="task_preparing">Préparation…</string>
+    <string name="task_speed">Vitesse</string>
+    <string name="task_speed_average">Moyenne</string>
+    <string name="task_files">Fichiers</string>
+    <string name="task_size">Taille</string>
+    <string name="task_elapsed">Écoulé</string>
+    <string name="task_time_left">Temps restant</string>
+    <string name="task_cancel">Annuler la tâche</string>
+    <string name="task_all_tasks">Toutes les tâches</string>
+    <string name="task_speed_graph_description">Vitesse de transfert pendant la dernière minute</string>
+    <string name="task_duration_seconds_format">%1$d s</string>
+    <string name="task_duration_minutes_format">%1$d min</string>
+    <string name="task_duration_minutes_seconds_format">%1$d min %2$d s</string>
+    <string name="task_duration_hours_format">%1$d h</string>
+    <string name="task_duration_hours_minutes_format">%1$d h %2$d min</string>
+    <string name="task_duration_days_format">%1$d j</string>
+    <string name="task_duration_days_hours_format">%1$d j %2$d h</string>
+</resources>

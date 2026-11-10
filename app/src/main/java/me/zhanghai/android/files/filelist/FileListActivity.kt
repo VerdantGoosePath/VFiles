@@ -30,6 +30,15 @@ class FileListActivity : AppActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // The launcher entry is an activity-alias that changes with the app icon colour, so the
+        // platform cannot always match a launcher tap to the existing task and would stack a new
+        // browser on top of it, making back walk through every earlier session. Resume the
+        // existing task as it was instead.
+        if (savedInstanceState == null && !isTaskRoot && intent.isLauncherIntent) {
+            finish()
+            return
+        }
+
         if (!Settings.ONBOARDING_COMPLETED.valueCompat) {
             if (Environment::class.isExternalStorageAccessGranted()) {
                 // Existing install with permissions already granted: skip onboarding.
@@ -89,6 +98,10 @@ class FileListActivity : AppActivity() {
         }
         return super.onKeyUp(keyCode, event)
     }
+
+    private val Intent.isLauncherIntent: Boolean
+        get() = action == Intent.ACTION_MAIN && (hasCategory(Intent.CATEGORY_LAUNCHER) ||
+            hasCategory(Intent.CATEGORY_LEANBACK_LAUNCHER))
 
     companion object {
         fun createViewIntent(path: Path): Intent =
