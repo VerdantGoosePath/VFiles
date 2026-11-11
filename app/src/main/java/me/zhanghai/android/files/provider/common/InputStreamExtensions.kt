@@ -17,25 +17,43 @@ fun InputStream.copyTo(
     intervalMillis: Long,
     listener: ((Long) -> Unit)?
 ) {
-    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-    var lastProgressMillis = System.currentTimeMillis()
-    var copiedSize = 0L
-    while (true) {
-        val readSize = read(buffer)
-        if (readSize == -1) {
-            break
+    val buffer = acquireCopyBuffer()
+    try {
+        var lastProgressMillis = System.currentTimeMillis()
+        var copiedSize = 0L
+        while (true) {
+            val readSize = read(buffer)
+            if (readSize == -1) {
+                break
+            }
+            outputStream.write(buffer, 0, readSize)
+            copiedSize += readSize.toLong()
+            throwIfInterrupted()
+            val currentTimeMillis = System.currentTimeMillis()
+            if (listener != null && currentTimeMillis >= lastProgressMillis + intervalMillis) {
+                listener(copiedSize)
+                lastProgressMillis = currentTimeMillis
+                copiedSize = 0
+            }
         }
-        outputStream.write(buffer, 0, readSize)
-        copiedSize += readSize.toLong()
-        throwIfInterrupted()
-        val currentTimeMillis = System.currentTimeMillis()
-        if (listener != null && currentTimeMillis >= lastProgressMillis + intervalMillis) {
-            listener(copiedSize)
-            lastProgressMillis = currentTimeMillis
-            copiedSize = 0
-        }
+        listener?.invoke(copiedSize)
+    } finally {
+        releaseCopyBuffer(buffer)
     }
-    listener?.invoke(copiedSize)
+}
+
+const val COPY_BUFFER_SIZE = 256 * 1024
+
+// Reused per thread because zeroing a fresh 256 KiB array for every small file dominates copying
+// many small files. The slot is emptied while in use so a nested copy on the same thread gets its
+// own array instead of clobbering the outer one.
+private val threadCopyBuffer = ThreadLocal<ByteArray?>()
+
+private fun acquireCopyBuffer(): ByteArray =
+    threadCopyBuffer.get()?.also { threadCopyBuffer.set(null) } ?: ByteArray(COPY_BUFFER_SIZE)
+
+private fun releaseCopyBuffer(buffer: ByteArray) {
+    threadCopyBuffer.set(buffer)
 }
 
 @Throws(IOException::class)

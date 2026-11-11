@@ -13,11 +13,9 @@ import me.zhanghai.android.files.provider.common.PosixFileAttributes
 import me.zhanghai.android.files.provider.common.PosixFileMode
 import me.zhanghai.android.files.provider.common.PosixFileType
 import me.zhanghai.android.files.provider.common.copyTo
-import me.zhanghai.android.files.provider.common.getLastModifiedTime
 import me.zhanghai.android.files.provider.common.newInputStream
 import me.zhanghai.android.files.provider.common.readAttributes
 import me.zhanghai.android.files.provider.common.readSymbolicLinkByteString
-import me.zhanghai.android.files.provider.common.size
 import java.io.Closeable
 import java.io.IOException
 
@@ -32,19 +30,19 @@ class ArchiveWriter @Throws(IOException::class) constructor(
     @Throws(IOException::class)
     fun write(file: Path, entryName: Path, intervalMillis: Long, listener: ((Long) -> Unit)?) {
         val name = entryName.toString()
-        val lastModifiedTime = file.getLastModifiedTime(LinkOption.NOFOLLOW_LINKS)
-        val lastAccessTime = null
-        val creationTime = null
         val attributes = file.readAttributes(
             BasicFileAttributes::class.java, LinkOption.NOFOLLOW_LINKS
         )
+        val lastModifiedTime = attributes.lastModifiedTime()
+        val lastAccessTime = null
+        val creationTime = null
         val type = when {
             attributes is PosixFileAttributes -> attributes.type()
             attributes.isDirectory -> PosixFileType.DIRECTORY
             attributes.isSymbolicLink -> PosixFileType.SYMBOLIC_LINK
             else -> PosixFileType.REGULAR_FILE
         }
-        val size = file.size(LinkOption.NOFOLLOW_LINKS)
+        val size = attributes.size()
         val posixAttributes = attributes as? PosixFileAttributes
         val owner = posixAttributes?.owner()
         val group = posixAttributes?.group()

@@ -70,7 +70,11 @@ data class FileJobSpeedSnapshot(
     val samples: List<FileJobSpeedSample> = emptyList()
 )
 
-/** Per-job speed history; fed with each progress snapshot, at most every notification interval. */
+/**
+ * Per-job speed history; fed with each progress snapshot, at most every notification interval.
+ * Samples are kept [HISTORY_SLACK_MILLIS] longer than [windowMillis], so a chart of the window
+ * scrolling between updates always has data at its left edge.
+ */
 class FileJobSpeedTracker(
     private val windowMillis: Long = DEFAULT_WINDOW_MILLIS,
     timeConstantMillis: Long = FileJobRateSmoother.DEFAULT_TIME_CONSTANT_MILLIS
@@ -101,7 +105,8 @@ class FileJobSpeedTracker(
             bytes.add(timeMillis, processedBytes)?.let {
                 samples.addLast(FileJobSpeedSample(timeMillis, it.toFloat()))
             }
-            while (samples.isNotEmpty() && samples.first().timeMillis < timeMillis - windowMillis) {
+            val oldest = timeMillis - windowMillis - HISTORY_SLACK_MILLIS
+            while (samples.isNotEmpty() && samples.first().timeMillis < oldest) {
                 samples.removeFirst()
             }
         }
@@ -122,6 +127,7 @@ class FileJobSpeedTracker(
 
     companion object {
         const val DEFAULT_WINDOW_MILLIS = 60_000L
+        const val HISTORY_SLACK_MILLIS = 5_000L
     }
 }
 

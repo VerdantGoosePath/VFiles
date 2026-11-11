@@ -17,6 +17,8 @@ import java8.nio.file.attribute.BasicFileAttributeView
 import java8.nio.file.attribute.BasicFileAttributes
 import java8.nio.file.attribute.FileTime
 import java.io.IOException
+import java.io.InterruptedIOException
+import java.io.OutputStream
 
 internal object ForeignCopyMove {
     @Throws(IOException::class)
@@ -35,7 +37,10 @@ internal object ForeignCopyMove {
                 || sourceAttributes.isSymbolicLink)) {
             throw IOException("Cannot copy special file to foreign provider")
         }
-        if (!copyOptions.replaceExisting && target.exists(LinkOption.NOFOLLOW_LINKS)) {
+        // For regular files, CREATE_NEW already refuses an existing target, so the extra stat is
+        // only needed on failure (see newTargetOutputStream()).
+        if (!copyOptions.replaceExisting && !sourceAttributes.isRegularFile
+            && target.exists(LinkOption.NOFOLLOW_LINKS)) {
             throw FileAlreadyExistsException(source.toString(), target.toString(), null)
         }
         when {
@@ -49,9 +54,7 @@ internal object ForeignCopyMove {
                     emptyArray()
                 }
                 source.newInputStream(*openOptions).use { inputStream ->
-                    val outputStream = target.newOutputStream(
-                        StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE
-                    )
+                    val outputStream = newTargetOutputStream(source, target)
                     var successful = false
                     try {
                         inputStream.copyTo(
@@ -120,6 +123,40 @@ internal object ForeignCopyMove {
             e.printStackTrace()
         } catch (e: UnsupportedOperationException) {
             e.printStackTrace()
+        }
+    }
+
+    // Not every provider maps a CREATE_NEW collision to FileAlreadyExistsException (e.g. SFTP or
+    // content), so on failure fall back to the existence check that used to precede the open.
+    @Throws(IOException::class)
+    private fun newTargetOutputStream(source: Path, target: Path): OutputStream {
+        try {
+            return target.newOutputStream(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)
+        } catch (e: FileAlreadyExistsException) {
+            throw FileAlreadyExistsException(source.toString(), target.toString(), null)
+                .apply { initCause(e) }
+        } catch (e: InterruptedIOException) {
+            throw e
+        } catch (e: IOException) {
+            throwIfTargetExists(source, target, e)
+            throw e
+        } catch (e: UnsupportedOperationException) {
+            throwIfTargetExists(source, target, e)
+            throw e
+        }
+    }
+
+    @Throws(FileAlreadyExistsException::class)
+    private fun throwIfTargetExists(source: Path, target: Path, cause: Exception) {
+        val exists = try {
+            target.exists(LinkOption.NOFOLLOW_LINKS)
+        } catch (e: RuntimeException) {
+            cause.addSuppressed(e)
+            false
+        }
+        if (exists) {
+            throw FileAlreadyExistsException(source.toString(), target.toString(), null)
+                .apply { initCause(cause) }
         }
     }
 

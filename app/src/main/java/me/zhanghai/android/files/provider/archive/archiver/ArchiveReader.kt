@@ -5,6 +5,7 @@
 
 package me.zhanghai.android.files.provider.archive.archiver
 
+import android.os.ParcelFileDescriptor
 import androidx.preference.PreferenceManager
 import java8.nio.channels.SeekableByteChannel
 import java8.nio.charset.StandardCharsets
@@ -18,11 +19,13 @@ import me.zhanghai.android.files.provider.common.PosixFileMode
 import me.zhanghai.android.files.provider.common.PosixFileType
 import me.zhanghai.android.files.provider.common.newByteChannel
 import me.zhanghai.android.files.provider.common.newInputStream
+import me.zhanghai.android.files.provider.linux.isLinuxPath
 import me.zhanghai.android.files.provider.root.isRunningAsRoot
 import me.zhanghai.android.files.provider.root.rootContext
 import me.zhanghai.android.files.settings.Settings
 import me.zhanghai.android.files.util.valueCompat
 import java.io.Closeable
+import java.io.FileNotFoundException
 import java.io.IOException
 import java.io.InputStream
 import java.nio.charset.Charset
@@ -37,24 +40,7 @@ object ArchiveReader {
         val entries = mutableMapOf<Path, ReadArchive.Entry>()
         val rawEntries = readEntries(file, passwords)
         for (entry in rawEntries) {
-            var path = rootPath.resolve(entry.name)
-            // Normalize an absolute path to prevent path traversal attack.
-            if (!path.isAbsolute) {
-                // TODO: Will this actually happen?
-                throw AssertionError("Path must be absolute: $path")
-            }
-            if (path.nameCount > 0) {
-                path = path.normalize()
-                if (path.nameCount == 0) {
-                    // Don't allow a path to become the root path only after normalization.
-                    continue
-                }
-            } else {
-                if (!entry.isDirectory) {
-                    // Ignore a root path that's not a directory
-                    continue
-                }
-            }
+            val path = normalizeEntryPath(rootPath, entry.name, entry.isDirectory) ?: continue
             entries.getOrPut(path) { entry }
         }
         entries.getOrPut(rootPath) { createDirectoryEntry("") }
@@ -78,6 +64,32 @@ object ArchiveReader {
             }
         }
         return entries to tree
+    }
+
+    /**
+     * Resolves an entry name against [rootPath] and normalizes it to prevent path traversal.
+     *
+     * @return the normalized absolute path of the entry, or `null` if the entry should be ignored
+     */
+    fun normalizeEntryPath(rootPath: Path, name: String, isDirectory: Boolean): Path? {
+        var path = rootPath.resolve(name)
+        if (!path.isAbsolute) {
+            // TODO: Will this actually happen?
+            throw AssertionError("Path must be absolute: $path")
+        }
+        if (path.nameCount > 0) {
+            path = path.normalize()
+            if (path.nameCount == 0) {
+                // Don't allow a path to become the root path only after normalization.
+                return null
+            }
+        } else {
+            if (!isDirectory) {
+                // Ignore a root path that's not a directory
+                return null
+            }
+        }
+        return path
     }
 
     private fun createDirectoryEntry(name: String): ReadArchive.Entry {
@@ -127,11 +139,40 @@ object ArchiveReader {
         }
     }
 
+    /**
+     * @param preferFd whether to let libarchive read a local archive file directly from its file
+     * descriptor. Reads then no longer go through Java and can't be interrupted, so this is only
+     * suitable for callers that check for interruption between calls into the archive.
+     */
     @Throws(IOException::class)
-    private fun openArchive(
+    internal fun openArchive(
         file: Path,
-        passwords: List<String>
-    ): Pair<ReadArchive, ArchiveCloseable> {
+        passwords: List<String>,
+        preferFd: Boolean = false,
+        bufferSize: Int = ReadArchive.DEFAULT_READ_BUFFER_SIZE
+    ): Pair<ReadArchive, Closeable> {
+        if (preferFd && file.isLinuxPath) {
+            val pfd = try {
+                ParcelFileDescriptor.open(file.toFile(), ParcelFileDescriptor.MODE_READ_ONLY)
+            } catch (e: FileNotFoundException) {
+                // Might need root, fall back to the provider.
+                null
+            } catch (e: SecurityException) {
+                null
+            }
+            if (pfd != null) {
+                var successful = false
+                try {
+                    val archive = ReadArchive(pfd.fd, passwords, bufferSize)
+                    successful = true
+                    return archive to ArchiveCloseable(archive, pfd)
+                } finally {
+                    if (!successful) {
+                        pfd.close()
+                    }
+                }
+            }
+        }
         val channel = try {
             CacheSizeSeekableByteChannel(file.newByteChannel())
         } catch (e: Exception) {
@@ -141,7 +182,7 @@ object ArchiveReader {
         if (channel != null) {
             var successful = false
             try {
-                val archive = ReadArchive(channel, passwords)
+                val archive = ReadArchive(channel, passwords, bufferSize)
                 successful = true
                 return archive to ArchiveCloseable(archive, channel)
             } finally {
@@ -153,7 +194,7 @@ object ArchiveReader {
         val inputStream = file.newInputStream()
         var successful = false
         try {
-            val archive = ReadArchive(inputStream, passwords)
+            val archive = ReadArchive(inputStream, passwords, bufferSize)
             successful = true
             return archive to ArchiveCloseable(archive, inputStream)
         } finally {
@@ -187,7 +228,7 @@ object ArchiveReader {
         override fun size(): Long = size
     }
 
-    private val archiveFileNameCharset: Charset
+    internal val archiveFileNameCharset: Charset
         get() =
             if (isRunningAsRoot) {
                 try {

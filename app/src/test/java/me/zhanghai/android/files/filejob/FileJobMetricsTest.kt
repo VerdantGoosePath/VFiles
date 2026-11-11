@@ -108,7 +108,10 @@ class FileJobMetricsTest {
             bytes += 1_000
         }
         val snapshot = tracker.snapshot(30_000)
-        assertTrue(snapshot.samples.first().timeMillis >= 20_000)
+        // The window plus a little slack, so a scrolling chart never runs out at its left edge.
+        val oldest = 20_000 - FileJobSpeedTracker.HISTORY_SLACK_MILLIS
+        assertTrue(snapshot.samples.first().timeMillis >= oldest)
+        assertTrue(snapshot.samples.first().timeMillis < 20_000)
         assertEquals(30_000L, snapshot.samples.last().timeMillis)
         assertEquals(2_000.0, snapshot.averageBytesPerSecond!!, 0.001)
         assertEquals(2_000.0, snapshot.bytesPerSecond!!, 1.0)

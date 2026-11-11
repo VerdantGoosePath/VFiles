@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown instead of a speed once a running task stops reporting progress. -->
+    <string name="task_sheet_waiting">Waiting…</string>
+    <plurals name="task_sheet_files_per_second">
+        <item quantity="one">%1$s file/s</item>
+        <item quantity="other">%1$s files/s</item>
+    </plurals>
+</resources>

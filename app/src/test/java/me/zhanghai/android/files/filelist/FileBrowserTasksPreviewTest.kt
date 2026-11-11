@@ -61,6 +61,36 @@ class FileBrowserTasksPreviewTest {
         startedAtMillis = now - 3_000, updatedAtMillis = now
     )
 
+    private val deletingFiles = FileJobProgress(
+        4, "Deleting 1,204 files", "482 / 1,204", 0.4f, FileJobKind.DELETE,
+        totalFiles = 1_204, processedFiles = 482,
+        currentFileName = "thumbnail_cache_entry_0482_with_a_rather_long_generated_name.tmp",
+        startedAtMillis = now - 21_000, updatedAtMillis = now
+    )
+
+    private val stalled = FileJobProgress(
+        5, "Copying 3 files to \u201cNAS\u201d", "1 / 3", 0.37f, FileJobKind.COPY,
+        totalBytes = 9_100_000_000, processedBytes = 3_367_000_000, totalFiles = 3,
+        processedFiles = 1, currentFileName = "Holiday 2024.mkv",
+        startedAtMillis = now - 410_000, updatedAtMillis = now - 12_000
+    )
+
+    private val nearlyDone = FileJobProgress(
+        6, "Moving \u201cScreenshot_20250314-181502_com.example.verylongpackagename.png\u201d",
+        null, 0.997f, FileJobKind.MOVE, totalBytes = 812_000_000, processedBytes = 809_600_000,
+        totalFiles = 1, processedFiles = 0,
+        currentFileName = "Screenshot_20250314-181502_com.example.verylongpackagename.activity.png",
+        startedAtMillis = now - 19_000, updatedAtMillis = now
+    )
+
+    private val stalledSpeed = FileJobSpeedSnapshot(
+        bytesPerSecond = 64_000.0, averageBytesPerSecond = 8_200_000.0,
+        samples = (0..96).map { i ->
+            val t = now - 60_000 + i * 500L
+            FileJobSpeedSample(t, if (i < 72) 9_000_000f + 600_000f * sin(i / 5f) else 0f)
+        }
+    )
+
     private val speed = FileJobSpeedSnapshot(
         bytesPerSecond = 12_400_000.0,
         averageBytesPerSecond = 9_000_000.0,
@@ -99,9 +129,35 @@ class FileBrowserTasksPreviewTest {
 
     private val list: @Composable () -> Unit = {
         TaskListContent(
-            listOf(copy, extract, deleting),
-            speeds = { if (it == 3) FileJobSpeedSnapshot() else speed },
+            listOf(copy, extract, deletingFiles, stalled, deleting),
+            speeds = {
+                when (it) {
+                    3 -> FileJobSpeedSnapshot()
+                    4 -> FileJobSpeedSnapshot(filesPerSecond = 38.4)
+                    5 -> stalledSpeed
+                    else -> speed
+                }
+            },
+            nowMillis = now,
             onOpen = {}, onCancel = {}
+        )
+    }
+
+    private val filesOnly: @Composable () -> Unit = {
+        TaskDetailsContent(
+            deletingFiles, FileJobSpeedSnapshot(filesPerSecond = 38.4), now, onBack = {},
+            onCancel = {}
+        )
+    }
+
+    private val stalledDetails: @Composable () -> Unit = {
+        TaskDetailsContent(stalled, stalledSpeed, now, onBack = null, onCancel = {})
+    }
+
+    private val nearlyDoneDetails: @Composable () -> Unit = {
+        TaskDetailsContent(
+            nearlyDone, speed.copy(bytesPerSecond = 61_000_000.0, averageBytesPerSecond = 42_700_000.0),
+            now, onBack = null, onCancel = {}
         )
     }
 
@@ -131,6 +187,33 @@ class FileBrowserTasksPreviewTest {
 
     @Test @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
     fun listDark() = render("task-list-dark", true, list)
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun filesOnlyLight() = render("task-details-files-light", false, filesOnly)
+
+    @Test @Config(qualifiers = "w411dp-h891dp-night-xxhdpi")
+    fun stalledDark() = render("task-details-stalled-dark", true, stalledDetails)
+
+    @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
+    fun nearlyDoneLight() = render("task-details-nearly-done-light", false, nearlyDoneDetails)
+
+    @Test @Config(qualifiers = "w411dp-h1400dp-xxhdpi", fontScale = 1.5f)
+    fun detailsFontScale15() = render("task-details-font-1.5", false, details)
+
+    @Test @Config(qualifiers = "w411dp-h1800dp-xhdpi", fontScale = 2.0f)
+    fun detailsFontScale2() = render("task-details-font-2.0", false, details)
+
+    @Test @Config(qualifiers = "w411dp-h1400dp-xhdpi", fontScale = 2.0f)
+    fun listFontScale2() = render("task-list-font-2.0", false, list)
+
+    @Test @Config(qualifiers = "w411dp-h1400dp-xhdpi", fontScale = 2.0f)
+    fun pillFontScale2() = render("task-pill-font-2.0", false, pills)
+
+    @Test @Config(qualifiers = "ar-ldrtl-w411dp-h891dp-xxhdpi")
+    fun detailsRtl() = render("task-details-rtl", false, details)
+
+    @Test @Config(qualifiers = "w600dp-h960dp-xhdpi")
+    fun detailsTablet() = render("task-details-tablet", false, details)
 
     private fun render(name: String, dark: Boolean, content: @Composable () -> Unit) {
         composeRule.setContent {

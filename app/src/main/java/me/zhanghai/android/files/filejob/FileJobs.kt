@@ -201,7 +201,7 @@ private fun FileJob.showToast(text: CharSequence, duration: Int = Toast.LENGTH_S
     }
 }
 
-private fun FileJob.getFileName(path: Path): String =
+internal fun FileJob.getFileName(path: Path): String =
     if (path.isAbsolute && path.nameCount == 0) {
         path.fileSystem.separator
     } else {
@@ -347,7 +347,7 @@ private fun FileJob.postScanNotification(scanInfo: ScanInfo, @PluralsRes titleRe
     )
 }
 
-private class ScanInfo {
+internal class ScanInfo {
     var fileCount = 0
         private set
     var size = 0L
@@ -472,7 +472,7 @@ private fun FileJob.postTransferCountNotification(
     postNotification(title, text, null, null, max, progress, indeterminate, true, metrics)
 }
 
-private class TransferInfo(scanInfo: ScanInfo, val target: Path?) {
+internal class TransferInfo(scanInfo: ScanInfo, val target: Path?) {
     var fileCount: Int = scanInfo.fileCount
         private set
     var transferredFileCount = 0
@@ -531,7 +531,7 @@ private class TransferInfo(scanInfo: ScanInfo, val target: Path?) {
 
 // TODO: Make invalid file name, remount etc user actions as well.
 @Throws(InterruptedIOException::class)
-private fun FileJob.showUserAction(exception: UserActionRequiredException): Boolean =
+internal fun FileJob.showUserAction(exception: UserActionRequiredException): Boolean =
     try {
         runBlocking {
             suspendCoroutine { continuation ->
@@ -546,7 +546,7 @@ private fun FileJob.showUserAction(exception: UserActionRequiredException): Bool
     }
 
 @Throws(InterruptedIOException::class)
-private fun FileJob.showErrorDialog(
+internal fun FileJob.showErrorDialog(
     title: CharSequence,
     message: CharSequence,
     readOnlyFileStore: PosixFileStore?,
@@ -574,7 +574,7 @@ private fun FileJob.showErrorDialog(
         throw InterruptedIOException().apply { initCause(e) }
     }
 
-private fun FileJob.getReadOnlyFileStore(path: Path, exception: IOException): PosixFileStore? {
+internal fun FileJob.getReadOnlyFileStore(path: Path, exception: IOException): PosixFileStore? {
     if (exception !is ReadOnlyFileSystemException || !path.isLinuxPath) {
         return null
     }
@@ -587,13 +587,13 @@ private fun FileJob.getReadOnlyFileStore(path: Path, exception: IOException): Po
     return if (fileStore.isReadOnly) fileStore else null
 }
 
-private class ErrorResult(
+internal class ErrorResult(
     val action: FileJobErrorAction,
     val isAll: Boolean
 )
 
 @Throws(IOException::class)
-private fun FileJob.showConflictDialog(
+internal fun FileJob.showConflictDialog(
     sourceFile: FileItem,
     targetFile: FileItem,
     type: CopyMoveType
@@ -635,13 +635,13 @@ fun CopyMoveType.getResourceId(
         CopyMoveType.MOVE -> moveRes
     }
 
-private class ConflictResult(
+internal class ConflictResult(
     val action: FileJobConflictAction,
     val name: String?,
     val isAll: Boolean
 )
 
-private class ActionAllInfo(
+internal class ActionAllInfo(
     var skipCopyMoveIntoItself: Boolean = false,
     var skipCopyMoveOverItself: Boolean = false,
     var merge: Boolean = false,
@@ -792,16 +792,28 @@ class CopyFileJob(private val sources: List<Path>, private val targetDirectory: 
         )
         val transferInfo = TransferInfo(scanInfo, targetDirectory)
         val actionAllInfo = ActionAllInfo()
-        for (source in sources) {
-            val target = if (source.parent == targetDirectory) {
-                getTargetPathForDuplicate(source)
-            } else {
-                targetDirectory.resolveForeign(getTargetFileName(source))
+        if (isExtract) {
+            // Extract each archive in a single pass instead of reopening it for every entry.
+            for (archiveSources in sources.groupBy { it.archiveFile }.values) {
+                val targets = archiveSources.map { getTarget(it) }
+                extractArchive(archiveSources, targets, transferInfo, actionAllInfo)
+                throwIfInterrupted()
             }
+            return
+        }
+        for (source in sources) {
+            val target = getTarget(source)
             copyRecursively(source, target, isExtract, transferInfo, actionAllInfo)
             throwIfInterrupted()
         }
     }
+
+    private fun getTarget(source: Path): Path =
+        if (source.parent == targetDirectory) {
+            getTargetPathForDuplicate(source)
+        } else {
+            targetDirectory.resolveForeign(getTargetFileName(source))
+        }
 
     @Throws(IOException::class)
     private fun copyRecursively(
@@ -1483,7 +1495,7 @@ private fun FileJob.copyOrMove(
     return true
 }
 
-private fun FileJob.postCopyMoveNotification(
+internal fun FileJob.postCopyMoveNotification(
     transferInfo: TransferInfo,
     currentSource: Path,
     type: CopyMoveType

@@ -73,20 +73,23 @@ internal class ArchiveFileSystem(
         }
 
     @Throws(IOException::class)
-    fun newInputStream(file: Path): InputStream =
-        synchronized(lock) {
+    fun newInputStream(file: Path): InputStream {
+        // Scanning to the entry may take long, so don't block other users of the lock meanwhile.
+        val (entry, passwords) = synchronized(lock) {
             ensureEntriesLocked(file)
             val entry = getEntryLocked(file)
             if (entry.isDirectory) {
                 throw IsDirectoryException(file.toString())
             }
-            val inputStream = try {
-                ArchiveReader.newInputStream(archiveFile, passwords, entry)
-            } catch (e: ArchiveException) {
-                throw e.toFileSystemOrInterruptedIOException(file)
-            } ?: throw NoSuchFileException(file.toString())
-            ArchiveExceptionInputStream(inputStream, file)
+            entry to passwords
         }
+        val inputStream = try {
+            ArchiveReader.newInputStream(archiveFile, passwords, entry)
+        } catch (e: ArchiveException) {
+            throw e.toFileSystemOrInterruptedIOException(file)
+        } ?: throw NoSuchFileException(file.toString())
+        return ArchiveExceptionInputStream(inputStream, file)
+    }
 
     @Throws(IOException::class)
     fun getDirectoryChildren(directory: Path): List<Path> =
@@ -109,6 +112,9 @@ internal class ArchiveFileSystem(
             }
             entry.symbolicLinkTarget.orEmpty()
         }
+
+    /** A snapshot of the passwords added so far. */
+    fun getPasswords(): List<String> = synchronized(lock) { passwords }
 
     fun addPassword(password: String) {
         synchronized(lock) {

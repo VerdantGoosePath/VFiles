@@ -11,6 +11,7 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.InterruptedIOException
 import java.nio.ByteBuffer
+import java.nio.channels.ClosedByInterruptException
 import java.nio.charset.Charset
 import java.time.Instant
 import java8.nio.channels.SeekableByteChannel
@@ -30,14 +31,18 @@ class ReadArchive : Closeable {
     private val archive = Archive.readNew()
 
     @Throws(ArchiveException::class)
-    constructor(inputStream: InputStream, passwords: List<String>) {
+    constructor(
+        inputStream: InputStream,
+        passwords: List<String>,
+        bufferSize: Int = DEFAULT_READ_BUFFER_SIZE
+    ) {
         var successful = false
         try {
             Archive.setCharset(archive, StandardCharsets.UTF_8.name().toByteArray())
             Archive.readSupportFilterAll(archive)
             Archive.readSupportFormatAll(archive)
             Archive.readSetCallbackData(archive, null)
-            val buffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE)
+            val buffer = ByteBuffer.allocate(bufferSize)
             Archive.readSetReadCallback<Any?>(archive) { _, _ ->
                 buffer.clear()
                 val bytesRead = try {
@@ -72,14 +77,18 @@ class ReadArchive : Closeable {
     }
 
     @Throws(ArchiveException::class)
-    constructor(channel: SeekableByteChannel, passwords: List<String>) {
+    constructor(
+        channel: SeekableByteChannel,
+        passwords: List<String>,
+        bufferSize: Int = DEFAULT_READ_BUFFER_SIZE
+    ) {
         var successful = false
         try {
             Archive.setCharset(archive, StandardCharsets.UTF_8.name().toByteArray())
             Archive.readSupportFilterAll(archive)
             Archive.readSupportFormatAll(archive)
             Archive.readSetCallbackData(archive, null)
-            val buffer = ByteBuffer.allocateDirect(DEFAULT_BUFFER_SIZE)
+            val buffer = ByteBuffer.allocateDirect(bufferSize)
             Archive.readSetReadCallback<Any?>(archive) { _, _ ->
                 buffer.clear()
                 val bytesRead = try {
@@ -132,9 +141,35 @@ class ReadArchive : Closeable {
         }
     }
 
+    /**
+     * Reads directly from [fd] inside libarchive, without crossing JNI for every block. The caller
+     * keeps ownership of [fd] and must keep it open until this archive is closed.
+     */
+    @Throws(ArchiveException::class)
+    constructor(fd: Int, passwords: List<String>, blockSize: Int = DEFAULT_READ_BUFFER_SIZE) {
+        var successful = false
+        try {
+            Archive.setCharset(archive, StandardCharsets.UTF_8.name().toByteArray())
+            Archive.readSupportFilterAll(archive)
+            Archive.readSupportFormatAll(archive)
+            for (password in passwords) {
+                Archive.readAddPassphrase(archive, password.toByteArray())
+            }
+            Archive.readOpenFd(archive, fd, blockSize.toLong())
+            successful = true
+        } finally {
+            if (!successful) {
+                close()
+            }
+        }
+    }
+
     private fun IOException.toArchiveException(message: String): ArchiveException =
         when (this) {
-            is InterruptedIOException -> ArchiveException(OsConstants.EINTR, message, this)
+            // An interrupted channel is closed and throws ClosedByInterruptException, which isn't
+            // an InterruptedIOException.
+            is InterruptedIOException, is ClosedByInterruptException ->
+                ArchiveException(OsConstants.EINTR, message, this)
             else -> ArchiveException(Archive.ERRNO_FATAL, message, this)
         }
 
@@ -202,6 +237,29 @@ class ReadArchive : Closeable {
     @Throws(ArchiveException::class)
     fun newDataInputStream(): InputStream = DataInputStream()
 
+    /**
+     * Reads data of the current entry into [buffer] from its position up to its limit, and
+     * advances its position.
+     *
+     * @return the number of bytes read, or 0 at the end of the entry data
+     */
+    @Throws(ArchiveException::class)
+    fun readData(buffer: ByteBuffer): Int {
+        val position = buffer.position()
+        Archive.readData(archive, buffer)
+        return buffer.position() - position
+    }
+
+    @Throws(ArchiveException::class)
+    fun readDataSkip() {
+        Archive.readDataSkip(archive)
+    }
+
+    @Throws(ArchiveException::class)
+    fun readDataIntoFd(fd: Int) {
+        Archive.readDataIntoFd(archive, fd)
+    }
+
     @Throws(ArchiveException::class)
     override fun close() {
         Archive.readFree(archive)
@@ -232,22 +290,27 @@ class ReadArchive : Closeable {
 
         @Throws(IOException::class)
         override fun read(): Int {
-            read(oneByteBuffer)
-            return if (oneByteBuffer.hasRemaining()) oneByteBuffer.get().toUByte().toInt() else -1
+            oneByteBuffer.clear()
+            val bytesRead = readData(oneByteBuffer)
+            return if (bytesRead > 0) oneByteBuffer.get(0).toUByte().toInt() else -1
         }
 
         @Throws(IOException::class)
         override fun read(b: ByteArray, off: Int, len: Int): Int {
-            val buffer = ByteBuffer.wrap(b, off, len)
-            read(buffer)
-            return if (buffer.hasRemaining()) buffer.remaining() else -1
+            if (off < 0 || len < 0 || len > b.size - off) {
+                throw IndexOutOfBoundsException()
+            }
+            if (len == 0) {
+                return 0
+            }
+            // libarchive honors the position and array offset of a heap buffer, so this reads
+            // straight into b[off, off + len).
+            val bytesRead = readData(ByteBuffer.wrap(b, off, len))
+            return if (bytesRead > 0) bytesRead else -1
         }
+    }
 
-        @Throws(IOException::class)
-        private fun read(buffer: ByteBuffer) {
-            buffer.clear()
-            Archive.readData(archive, buffer)
-            buffer.flip()
-        }
+    companion object {
+        const val DEFAULT_READ_BUFFER_SIZE = 256 * 1024
     }
 }

@@ -32,7 +32,9 @@ class WriteArchive @Throws(ArchiveException::class) constructor(
     init {
         var successful = false
         try {
-            Archive.writeSetBytesPerBlock(archive, DEFAULT_BUFFER_SIZE)
+            // A multiple of the 512-byte tar record; bytes in last block = 1 means the final block
+            // is flushed unpadded, so this only changes how much is buffered per channel write.
+            Archive.writeSetBytesPerBlock(archive, BYTES_PER_BLOCK)
             Archive.writeSetBytesInLastBlock(archive, 1)
             Archive.writeSetFormat(archive, format)
             Archive.writeAddFilter(archive, filter)
@@ -43,8 +45,14 @@ class WriteArchive @Throws(ArchiveException::class) constructor(
                     archive, null, "encryption".toByteArray(), "zipcrypt".toByteArray()
                 )
             }
+            // The callback has no return value, so libarchive assumes the whole buffer was
+            // consumed and a short channel write must not be dropped.
             Archive.writeOpen(
-                archive, null, null, { _, _, buffer -> channel.write(buffer) }, null
+                archive, null, null, { _, _, buffer ->
+                    while (buffer.hasRemaining()) {
+                        channel.write(buffer)
+                    }
+                }, null
             )
             successful = true
         } finally {
@@ -59,8 +67,10 @@ class WriteArchive @Throws(ArchiveException::class) constructor(
         Archive.writeHeader(archive, entry.entry)
     }
 
+    private val dataOutputStream by lazy { DataOutputStream() }
+
     @Throws(ArchiveException::class)
-    fun newDataOutputStream(): OutputStream = DataOutputStream()
+    fun newDataOutputStream(): OutputStream = dataOutputStream
 
     @Throws(ArchiveException::class)
     override fun close() {
@@ -128,6 +138,10 @@ class WriteArchive @Throws(ArchiveException::class) constructor(
         override fun close() {
             ArchiveEntry.free(entry)
         }
+    }
+
+    companion object {
+        private const val BYTES_PER_BLOCK = 256 * 1024
     }
 
     private inner class DataOutputStream : OutputStream() {

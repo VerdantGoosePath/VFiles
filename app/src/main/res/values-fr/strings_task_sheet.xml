@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="task_sheet_waiting">En attente…</string>
+    <plurals name="task_sheet_files_per_second">
+        <item quantity="one">%1$s fichier/s</item>
+        <item quantity="many">%1$s fichiers/s</item>
+        <item quantity="other">%1$s fichiers/s</item>
+    </plurals>
+</resources>
