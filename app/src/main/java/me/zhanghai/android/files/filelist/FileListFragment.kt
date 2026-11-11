@@ -501,6 +501,16 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
         }
         Settings.FILE_LIST_DRAG_TO_SELECT.observe(viewLifecycleOwner) { updateBrowserContent() }
         Settings.FILE_LIST_ICON_TAP_SELECTS.observe(viewLifecycleOwner) { updateBrowserContent() }
+        Settings.FILE_LIST_CROSS_APP_DRAG.observe(viewLifecycleOwner) { updateBrowserContent() }
+        Settings.FILE_LIST_CROSS_APP_DRAG_HOLD_MILLIS.observe(viewLifecycleOwner) {
+            updateBrowserContent()
+        }
+        Settings.FILE_LIST_CROSS_APP_DRAG_ALLOW_DIRECTORIES.observe(viewLifecycleOwner) {
+            updateBrowserContent()
+        }
+        Settings.FILE_LIST_CROSS_APP_DRAG_ALLOW_MULTIPLE.observe(viewLifecycleOwner) {
+            updateBrowserContent()
+        }
         Settings.FILE_LIST_VIEW_TOGGLE_PLACEMENT.observe(viewLifecycleOwner) { updateBrowserChrome() }
         Settings.FILE_LIST_ITEM_COUNT_STYLE.observe(viewLifecycleOwner) { updateBrowserChrome() }
         Settings.FILE_LIST_SHOW_UP_BUTTON.observe(viewLifecycleOwner) { updateBrowserChrome() }
@@ -928,6 +938,9 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             viewModel.selectFiles(selection, selected)
         }
 
+        override fun onStartCrossAppDrag(view: View, style: CrossAppDragShadowStyle): Boolean =
+            startCrossAppDrag(view, style)
+
         override fun onSelection(command: FileBrowserSelectionCommand) {
             // Compose cannot bypass the same read-only/picker restrictions as the legacy
             // contextual menus; recheck at command dispatch time.
@@ -1117,8 +1130,28 @@ class FileListFragment : Fragment(), BreadcrumbLayout.Listener, FileListAdapter.
             nameEllipsize = Settings.FILE_NAME_ELLIPSIZE.valueCompat,
             refreshToken = browserRefreshToken,
             dragToSelect = Settings.FILE_LIST_DRAG_TO_SELECT.valueCompat,
-            iconTapSelects = Settings.FILE_LIST_ICON_TAP_SELECTS.valueCompat
+            iconTapSelects = Settings.FILE_LIST_ICON_TAP_SELECTS.valueCompat,
+            crossAppDragHoldMillis = if (Settings.FILE_LIST_CROSS_APP_DRAG.valueCompat &&
+                viewModel.pickOptions == null) {
+                CrossAppDragHold.coerce(Settings.FILE_LIST_CROSS_APP_DRAG_HOLD_MILLIS.valueCompat)
+                    .toLong()
+            } else null,
+            crossAppDragReady = crossAppDragRules().allows(viewModel.selectedFiles)
         )
+    }
+
+    private fun crossAppDragRules() = CrossAppDragRules(
+        allowDirectories = Settings.FILE_LIST_CROSS_APP_DRAG_ALLOW_DIRECTORIES.valueCompat,
+        allowMultiple = Settings.FILE_LIST_CROSS_APP_DRAG_ALLOW_MULTIPLE.valueCompat
+    )
+
+    private fun startCrossAppDrag(view: View, style: CrossAppDragShadowStyle): Boolean {
+        if (!Settings.FILE_LIST_CROSS_APP_DRAG.valueCompat || viewModel.pickOptions != null) {
+            return false
+        }
+        val files = viewModel.selectedFiles.toList()
+        if (!crossAppDragRules().allows(files)) return false
+        return view.startCrossAppDrag(files, style)
     }
 
     private fun onComposeRangeSelect(files: List<FileItem>) {

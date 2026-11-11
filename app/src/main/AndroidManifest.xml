@@ -620,6 +620,12 @@
             android:theme="@style/Theme.MaterialFiles.Material3" />
 
         <activity
+            android:name="me.zhanghai.android.files.settings.CrossAppDragSettingsActivity"
+            android:label="@string/settings_cross_app_drag_title"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.MaterialFiles.Material3" />
+
+        <activity
             android:name="me.zhanghai.android.files.about.AboutActivity"
             android:label="@string/about_title"
             android:launchMode="singleTop"

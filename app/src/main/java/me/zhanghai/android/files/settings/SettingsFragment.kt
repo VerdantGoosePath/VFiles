@@ -62,6 +62,11 @@ class SettingsFragment : Fragment() {
                     onOpenDefaultApps = {
                         requireContext().startActivitySafe(DefaultAppsActivity::class.createIntent())
                     },
+                    onOpenCrossAppDrag = {
+                        requireContext().startActivitySafe(
+                            CrossAppDragSettingsActivity::class.createIntent()
+                        )
+                    },
                     onOpenFtpServer = {
                         requireContext().startActivitySafe(FtpServerActivity::class.createIntent())
                     },

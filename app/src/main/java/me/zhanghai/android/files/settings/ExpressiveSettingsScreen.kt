@@ -56,6 +56,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -87,6 +88,7 @@ import me.zhanghai.android.files.compose.theme.VFilesAppearance
 import me.zhanghai.android.files.compose.theme.VFilesTheme
 import me.zhanghai.android.files.compose.theme.observeCompose
 import me.zhanghai.android.files.filejob.FileJobService
+import me.zhanghai.android.files.filelist.CrossAppDragHold
 import me.zhanghai.android.files.filelist.OpenApkDefaultAction
 import me.zhanghai.android.files.filelist.toUserFriendlyString
 import me.zhanghai.android.files.navigation.StandardDirectoriesLiveData
@@ -114,12 +116,18 @@ internal data class ExpressiveSettingRow(
 )
 
 @Composable
-internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSettingRow>) {
+internal fun ExpressiveSettingsSection(
+    title: String,
+    rows: List<ExpressiveSettingRow>,
+    enabled: Boolean = true
+) {
     if (rows.isEmpty()) return
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             title,
-            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp).semantics { heading() },
+            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp)
+                .alpha(if (enabled) 1f else DISABLED_CONTENT_ALPHA)
+                .semantics { heading() },
             style = MaterialTheme.typography.titleSmallEmphasized,
             color = MaterialTheme.colorScheme.primary
         )
@@ -139,7 +147,13 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
                     // The default switches to top alignment for taller rows; switches and values
                     // must stay centred on the row whatever its text wraps to.
                     verticalAlignment = Alignment.CenterVertically,
-                    leadingContent = row.iconRes?.let { id -> { SettingsRowIcon(id) } },
+                    leadingContent = row.iconRes?.let { id ->
+                        {
+                            Box(Modifier.alpha(if (row.enabled) 1f else DISABLED_CONTENT_ALPHA)) {
+                                SettingsRowIcon(id)
+                            }
+                        }
+                    },
                     content = {
                         Text(
                             row.title, style = MaterialTheme.typography.titleMedium,
@@ -151,7 +165,8 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
                             Text(
                                 summary, style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis
+                                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.alpha(if (row.enabled) 1f else DISABLED_CONTENT_ALPHA)
                             )
                         }
                     },
@@ -162,6 +177,7 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
                             Switch(
                                 checked = row.checked,
                                 onCheckedChange = null,
+                                enabled = row.enabled,
                                 modifier = Modifier.clearAndSetSemantics { }
                             )
                         } else if (row.value != null) {
@@ -170,6 +186,7 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1, overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.widthIn(max = 140.dp)
+                                    .alpha(if (row.enabled) 1f else DISABLED_CONTENT_ALPHA)
                             )
                         }
                     }
@@ -178,6 +195,9 @@ internal fun ExpressiveSettingsSection(title: String, rows: List<ExpressiveSetti
         }
     }
 }
+
+/** Material's disabled content emphasis, for text that sets its own colour. */
+internal const val DISABLED_CONTENT_ALPHA = 0.38f
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -188,6 +208,7 @@ internal fun ExpressiveSettingsScreen(
     onOpenStandardDirectories: () -> Unit,
     onOpenBookmarks: () -> Unit,
     onOpenDefaultApps: () -> Unit,
+    onOpenCrossAppDrag: () -> Unit,
     onOpenFtpServer: () -> Unit,
     onOpenAbout: () -> Unit,
     onOpenSystemLocales: () -> Unit,
@@ -228,6 +249,8 @@ internal fun ExpressiveSettingsScreen(
     val longPressScrollToTop by Settings.FILE_LIST_LONG_PRESS_SCROLL_TO_TOP.observeCompose()
     val swipeToOpenNavigation by Settings.NAVIGATION_SWIPE_TO_OPEN.observeCompose()
     val iconTapSelects by Settings.FILE_LIST_ICON_TAP_SELECTS.observeCompose()
+    val crossAppDrag by Settings.FILE_LIST_CROSS_APP_DRAG.observeCompose()
+    val crossAppDragHold by Settings.FILE_LIST_CROSS_APP_DRAG_HOLD_MILLIS.observeCompose()
 
     var dialog by rememberSaveable { mutableStateOf<String?>(null) }
     var confirmRoot by rememberSaveable { mutableStateOf(false) }
@@ -343,6 +366,15 @@ internal fun ExpressiveSettingsScreen(
                                 checked = dragToSelect,
                                 iconRes = R.drawable.select_range_icon_24dp,
                                 onClick = { Settings.FILE_LIST_DRAG_TO_SELECT.putValue(!dragToSelect) }
+                            ))
+                            add(ExpressiveSettingRow(
+                                "crossAppDrag", stringResource(R.string.settings_cross_app_drag_title),
+                                if (crossAppDrag) stringResource(
+                                    R.string.settings_cross_app_drag_summary_on,
+                                    formatHoldDuration(CrossAppDragHold.coerce(crossAppDragHold))
+                                ) else stringResource(R.string.settings_cross_app_drag_summary_off),
+                                iconRes = R.drawable.settings_icon_pan_tool,
+                                onClick = onOpenCrossAppDrag
                             ))
                             add(ExpressiveSettingRow(
                                 "iconTapSelects",

@@ -45,6 +45,7 @@ class SettingsScreenPreviewTest {
                 ExpressiveSettingsScreen(
                     onNavigateUp = {}, onOpenDefaultDirectory = {}, onOpenStorages = {},
                     onOpenStandardDirectories = {}, onOpenBookmarks = {}, onOpenDefaultApps = {},
+                    onOpenCrossAppDrag = {},
                     onOpenFtpServer = {}, onOpenAbout = {}, onOpenSystemLocales = {},
                     onSetAppLocalesPre33 = {}
                 )

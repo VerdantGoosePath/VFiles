@@ -153,6 +153,8 @@ interface FileBrowserScreenActions {
     fun onItemAction(file: FileItem, action: FileBrowserItemAction)
     fun onRangeSelect(files: List<FileItem>)
     fun onSetSelection(files: List<FileItem>, selected: Boolean)
+    /** Lifts the current selection into a drag other apps can accept; false if none started. */
+    fun onStartCrossAppDrag(view: android.view.View, style: CrossAppDragShadowStyle): Boolean = false
     fun onSelection(command: FileBrowserSelectionCommand)
     fun onFolderAction(action: FileBrowserFolderAction)
     fun onCreateMenuExpandedChange(expanded: Boolean)
@@ -565,7 +567,8 @@ private fun BrowserScaffold(
                 ),
                 scrollToTopToken = scrollToTopToken,
                 backProgress = { folderBack.value },
-                picker = chrome.picker
+                picker = chrome.picker,
+                onStartCrossAppDrag = actions::onStartCrossAppDrag
             )
             if (createMenuExpanded) {
                 // Outside taps close the FAB menu without reaching the rows underneath.

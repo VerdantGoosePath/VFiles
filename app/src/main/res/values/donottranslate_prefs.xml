@@ -65,6 +65,14 @@
     <bool name="pref_default_value_navigation_swipe_to_open">true</bool>
     <string name="pref_key_file_list_icon_tap_selects">key_file_list_icon_tap_selects</string>
     <bool name="pref_default_value_file_list_icon_tap_selects">false</bool>
+    <string name="pref_key_file_list_cross_app_drag">key_file_list_cross_app_drag</string>
+    <bool name="pref_default_value_file_list_cross_app_drag">true</bool>
+    <string name="pref_key_file_list_cross_app_drag_hold_millis">key_file_list_cross_app_drag_hold_millis</string>
+    <integer name="pref_default_value_file_list_cross_app_drag_hold_millis">2000</integer>
+    <string name="pref_key_file_list_cross_app_drag_allow_directories">key_file_list_cross_app_drag_allow_directories</string>
+    <bool name="pref_default_value_file_list_cross_app_drag_allow_directories">true</bool>
+    <string name="pref_key_file_list_cross_app_drag_allow_multiple">key_file_list_cross_app_drag_allow_multiple</string>
+    <bool name="pref_default_value_file_list_cross_app_drag_allow_multiple">true</bool>
     <string name="pref_key_app_icon_color">key_app_icon_color</string>
     <string name="pref_default_value_app_icon_color">0</string>
     <string name="pref_key_edge_to_edge">key_edge_to_edge</string>

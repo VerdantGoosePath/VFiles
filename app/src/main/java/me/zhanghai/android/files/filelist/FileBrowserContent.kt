@@ -3,6 +3,7 @@
 package me.zhanghai.android.files.filelist
 
 import android.text.TextUtils
+import android.view.View
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
@@ -88,6 +89,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -97,7 +99,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.AwaitPointerEventScope
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -105,6 +109,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.onLongClick
@@ -158,7 +163,14 @@ data class FileBrowserContentState(
     val refreshToken: Int = 0,
     val dragToSelect: Boolean = true,
     /** Tapping a row's icon selects it instead of opening it. */
-    val iconTapSelects: Boolean = false
+    val iconTapSelects: Boolean = false,
+    /**
+     * Holding an already selected item this long starts a drag into other apps; null when the
+     * feature is off or unavailable (e.g. while picking for another app).
+     */
+    val crossAppDragHoldMillis: Long? = null,
+    /** The current selection may be dragged under the user's folder and multiple item rules. */
+    val crossAppDragReady: Boolean = false
 )
 
 enum class FileBrowserItemAction {
@@ -231,7 +243,8 @@ fun VFilesBrowserContent(
     selectionEnabled: Boolean = true,
     scrollToTopToken: Int = 0,
     backProgress: () -> Float = { 0f },
-    picker: Boolean = state.pickOptions != null
+    picker: Boolean = state.pickOptions != null,
+    onStartCrossAppDrag: (View, CrossAppDragShadowStyle) -> Boolean = { _, _ -> false }
 ) {
     val savedState = rememberSaveableStateHolder()
     var menuFile by remember { mutableStateOf<FileItem?>(null) }
@@ -291,7 +304,8 @@ fun VFilesBrowserContent(
                     nestedScrollConnection = nestedScrollConnection,
                     selectionEnabled = selectionEnabled,
                     scrollToTopToken = scrollToTopToken,
-                    onOpenMenu = { menuFile = it }
+                    onOpenMenu = { menuFile = it },
+                    onStartCrossAppDrag = onStartCrossAppDrag
                 )
               }
             }
@@ -365,7 +379,8 @@ private fun BrowserPageContent(
     nestedScrollConnection: NestedScrollConnection?,
     selectionEnabled: Boolean,
     scrollToTopToken: Int,
-    onOpenMenu: (FileItem) -> Unit
+    onOpenMenu: (FileItem) -> Unit,
+    onStartCrossAppDrag: (View, CrossAppDragShadowStyle) -> Boolean
 ) {
     val initialScrollToken = remember { scrollToTopToken }
     val layoutDirection = LocalLayoutDirection.current
@@ -418,6 +433,10 @@ private fun BrowserPageContent(
     val pick = state.pickOptions
     val dragEnabled = selectionEnabled && state.dragToSelect && status == null &&
         (pick == null || pick.allowMultiple)
+    val holdToDragMillis = state.crossAppDragHoldMillis
+        ?.takeIf { selectionEnabled && status == null && pick == null }
+    // Either gesture needs the whole long press, so rows then leave it to the list.
+    val listOwnsLongPress = dragEnabled || holdToDragMillis != null
     val itemContent: @Composable (Int, FileItem, Boolean) -> Unit = { index, file, grid ->
         FileBrowserItem(
             file = file,
@@ -433,7 +452,7 @@ private fun BrowserPageContent(
                 rangeSelectOnKey(visible, index, key, shift, onRangeSelect)
             },
             selectionEnabled = selectionEnabled,
-            longPressSelects = !dragEnabled,
+            longPressSelects = !listOwnsLongPress,
             iconTapSelects = state.iconTapSelects,
             onOpenMenu = { onOpenMenu(file) }
         )
@@ -443,15 +462,19 @@ private fun BrowserPageContent(
         LaunchedEffect(scrollToTopToken) {
             if (scrollToTopToken != initialScrollToken) listState.animateScrollToItem(0)
         }
-        val dragModifier = dragToSelectModifier(
-            enabled = dragEnabled,
+        val dragModifier = selectionGestureModifier(
+            dragToSelect = dragEnabled,
+            holdToDragMillis = holdToDragMillis,
+            crossAppDragReady = state.crossAppDragReady,
             files = visible,
             selectedPaths = state.selectedPaths,
             pickOptions = pick,
             contentPadding = listPadding,
             hitTest = { listState.fileIndexAt(it, visible.size) },
             scrollBy = { listState.scrollBy(it) },
-            onSetSelection = onSetSelection
+            onSetSelection = onSetSelection,
+            onLongPressSelect = { onItemAction(it, FileBrowserItemAction.SELECT) },
+            onStartCrossAppDrag = onStartCrossAppDrag
         )
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             // Long names should not span an entire expanded window: bound the list.
@@ -479,15 +502,19 @@ private fun BrowserPageContent(
         LaunchedEffect(scrollToTopToken) {
             if (scrollToTopToken != initialScrollToken) gridState.animateScrollToItem(0)
         }
-        val dragModifier = dragToSelectModifier(
-            enabled = dragEnabled,
+        val dragModifier = selectionGestureModifier(
+            dragToSelect = dragEnabled,
+            holdToDragMillis = holdToDragMillis,
+            crossAppDragReady = state.crossAppDragReady,
             files = visible,
             selectedPaths = state.selectedPaths,
             pickOptions = pick,
             contentPadding = listPadding,
             hitTest = { gridState.fileIndexAt(it, visible.size) },
             scrollBy = { gridState.scrollBy(it) },
-            onSetSelection = onSetSelection
+            onSetSelection = onSetSelection,
+            onLongPressSelect = { onItemAction(it, FileBrowserItemAction.SELECT) },
+            onStartCrossAppDrag = onStartCrossAppDrag
         )
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 148.dp),
@@ -531,29 +558,51 @@ internal fun LazyGridState.fileIndexAt(position: Offset, count: Int): Int? {
 }
 
 /**
- * Long press, then drag across rows to select the range between the anchor and the finger.
- * Rows that leave the range return to their state from before the drag. Near the top or bottom
- * edge the list scrolls by itself. Until the long press fires nothing is consumed, so taps,
- * flings and row clicks behave normally.
+ * Long press gestures the list owns instead of its rows.
+ *
+ * Drag to select: long press, then drag across rows to select the range between the anchor and
+ * the finger. Rows that leave the range return to their state from before the drag. Near the top
+ * or bottom edge the list scrolls by itself.
+ *
+ * Hold to drag: holding an item that is already selected for [holdToDragMillis] lifts the whole
+ * selection into a platform drag other apps can accept. Releasing earlier, after the long press
+ * timeout, deselects the item as a long press would; moving instead starts drag to select.
+ *
+ * Until the long press fires nothing is consumed, so taps, flings and row clicks behave normally.
  */
 @Composable
-private fun dragToSelectModifier(
-    enabled: Boolean,
+private fun selectionGestureModifier(
+    dragToSelect: Boolean,
+    holdToDragMillis: Long?,
+    crossAppDragReady: Boolean,
     files: List<FileItem>,
     selectedPaths: Set<Path>,
     pickOptions: PickOptions?,
     contentPadding: PaddingValues,
     hitTest: (Offset) -> Int?,
     scrollBy: suspend (Float) -> Float,
-    onSetSelection: (List<FileItem>, Boolean) -> Unit
+    onSetSelection: (List<FileItem>, Boolean) -> Unit,
+    onLongPressSelect: (FileItem) -> Unit,
+    onStartCrossAppDrag: (View, CrossAppDragShadowStyle) -> Boolean
 ): Modifier {
-    if (!enabled) return Modifier
+    if (!dragToSelect && holdToDragMillis == null) return Modifier
     val haptics = LocalHapticFeedback.current
     val density = LocalDensity.current
+    val view = LocalView.current
+    val colors = MaterialTheme.colorScheme
+    val shadowStyle = CrossAppDragShadowStyle(
+        colors.primaryContainer.toArgb(), colors.onPrimaryContainer.toArgb()
+    )
+    val currentShadowStyle by rememberUpdatedState(shadowStyle)
+    val currentDragToSelect by rememberUpdatedState(dragToSelect)
+    val currentHoldMillis by rememberUpdatedState(holdToDragMillis)
+    val currentDragReady by rememberUpdatedState(crossAppDragReady)
     val currentSelected by rememberUpdatedState(selectedPaths)
     val currentHitTest by rememberUpdatedState(hitTest)
     val currentScrollBy by rememberUpdatedState(scrollBy)
     val currentOnSetSelection by rememberUpdatedState(onSetSelection)
+    val currentOnLongPressSelect by rememberUpdatedState(onLongPressSelect)
+    val currentOnStartCrossAppDrag by rememberUpdatedState(onStartCrossAppDrag)
     val currentPick by rememberUpdatedState(pickOptions)
     val topEdge = with(density) { contentPadding.calculateTopPadding().toPx() + 48.dp.toPx() }
     val bottomInset = with(density) { contentPadding.calculateBottomPadding().toPx() }
@@ -564,30 +613,55 @@ private fun dragToSelectModifier(
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
                 val anchor = currentHitTest(down.position) ?: return@awaitEachGesture
-                val longPressed = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
-                    while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
-                        if (event.changes.size > 1) return@withTimeoutOrNull false
-                        val change = event.changes.firstOrNull { it.id == down.id }
-                            ?: return@withTimeoutOrNull false
-                        if (!change.pressed || change.isConsumed ||
-                            (change.position - down.position).getDistance() >
-                            viewConfiguration.touchSlop) {
-                            return@withTimeoutOrNull false
+                val anchorFile = files.getOrNull(anchor) ?: return@awaitEachGesture
+                val longPressMillis = viewConfiguration.longPressTimeoutMillis
+                val holdMillis = currentHoldMillis
+                    ?.takeIf { currentDragReady && anchorFile.path in currentSelected }
+                val firstWait = holdMillis?.coerceAtMost(longPressMillis) ?: longPressMillis
+                if (awaitStillHold(down, firstWait, consume = false).result != HoldResult.HELD) {
+                    return@awaitEachGesture
+                }
+                var pointer = down.position
+                if (holdMillis != null) {
+                    // Past the long press the row must not click on release any more.
+                    val rest = holdMillis - firstWait
+                    val outcome = if (rest > 0) awaitStillHold(down, rest, consume = true)
+                        else HoldOutcome(HoldResult.HELD, down.position)
+                    pointer = outcome.position
+                    when (outcome.result) {
+                        HoldResult.HELD -> {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            currentOnStartCrossAppDrag(view, currentShadowStyle)
+                            consumeUntilUp(down)
+                            return@awaitEachGesture
+                        }
+                        HoldResult.RELEASED -> {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            currentOnLongPressSelect(anchorFile)
+                            return@awaitEachGesture
+                        }
+                        HoldResult.CANCELLED -> {
+                            consumeUntilUp(down)
+                            return@awaitEachGesture
+                        }
+                        HoldResult.MOVED -> if (!currentDragToSelect) {
+                            consumeUntilUp(down)
+                            return@awaitEachGesture
                         }
                     }
-                    @Suppress("UNREACHABLE_CODE")
-                    false
-                } == null
-                if (!longPressed) return@awaitEachGesture
-                val anchorFile = files.getOrNull(anchor) ?: return@awaitEachGesture
+                }
                 if (!canSelectBrowserFile(anchorFile, currentPick)) return@awaitEachGesture
+                if (!currentDragToSelect) {
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    currentOnLongPressSelect(anchorFile)
+                    consumeUntilUp(down)
+                    return@awaitEachGesture
+                }
                 val initial = currentSelected
                 val select = anchorFile.path !in initial
                 haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                 currentOnSetSelection(listOf(anchorFile), select)
                 var range = anchor..anchor
-                var pointer = down.position
                 fun extendTo(target: Int) {
                     val next = minOf(anchor, target)..maxOf(anchor, target)
                     if (next == range) return
@@ -608,6 +682,8 @@ private fun dragToSelectModifier(
                         else -> 0f
                     } * maxStep
                 }
+                // A move that ended the hold already reached rows beyond the anchor.
+                currentHitTest(pointer)?.let(::extendTo)
                 // Frames are only requested while the finger rests in an edge zone.
                 var autoScroll: Job? = null
                 try {
@@ -636,6 +712,50 @@ private fun dragToSelectModifier(
                 }
             }
         }
+    }
+}
+
+private enum class HoldResult { HELD, RELEASED, MOVED, CANCELLED }
+
+private class HoldOutcome(val result: HoldResult, val position: Offset)
+
+/**
+ * Waits up to [timeoutMillis] for the [down] pointer to stay pressed within touch slop.
+ * With [consume] every event is consumed so neither rows nor the list react meanwhile.
+ */
+private suspend fun AwaitPointerEventScope.awaitStillHold(
+    down: PointerInputChange,
+    timeoutMillis: Long,
+    consume: Boolean
+): HoldOutcome {
+    var position = down.position
+    val result = withTimeoutOrNull(timeoutMillis) {
+        while (true) {
+            val event = awaitPointerEvent(PointerEventPass.Initial)
+            val alreadyConsumed = event.changes.any { it.isConsumed }
+            if (consume) event.changes.forEach { it.consume() }
+            if (event.changes.size > 1) return@withTimeoutOrNull HoldResult.CANCELLED
+            val change = event.changes.firstOrNull { it.id == down.id }
+                ?: return@withTimeoutOrNull HoldResult.CANCELLED
+            position = change.position
+            if (!change.pressed) return@withTimeoutOrNull HoldResult.RELEASED
+            if (!consume && alreadyConsumed) return@withTimeoutOrNull HoldResult.CANCELLED
+            if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                return@withTimeoutOrNull HoldResult.MOVED
+            }
+        }
+        @Suppress("UNREACHABLE_CODE")
+        HoldResult.CANCELLED
+    } ?: HoldResult.HELD
+    return HoldOutcome(result, position)
+}
+
+private suspend fun AwaitPointerEventScope.consumeUntilUp(down: PointerInputChange) {
+    while (true) {
+        val event = awaitPointerEvent(PointerEventPass.Initial)
+        event.changes.forEach { it.consume() }
+        val change = event.changes.firstOrNull { it.id == down.id }
+        if (change == null || !change.pressed) return
     }
 }
 

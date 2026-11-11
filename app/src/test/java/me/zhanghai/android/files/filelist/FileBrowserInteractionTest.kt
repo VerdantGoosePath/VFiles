@@ -157,4 +157,137 @@ class FileBrowserInteractionTest {
         assertEquals("Music", FileBrowserChromeState(breadcrumbs = crumbs).title)
         assertNull(FileBrowserChromeState().title.takeIf { it.isNotEmpty() })
     }
+
+    private class HoldHarness(val files: List<FileItem>, initial: Set<Int>) {
+        var selected by mutableStateOf(initial.map { files[it].path }.toSet())
+        var drags = 0
+        fun indices() = files.indices.filter { files[it].path in selected }.toSet()
+    }
+
+    private fun setHoldContent(
+        harness: HoldHarness,
+        dragToSelect: Boolean = true,
+        ready: Boolean = true
+    ) {
+        composeRule.setContent {
+            VFilesTheme(appearance = VFilesAppearance()) {
+                VFilesBrowserContent(
+                    state = FileBrowserContentState(
+                        pathKey = "/hold", files = harness.files, loading = false,
+                        selectedPaths = harness.selected, dragToSelect = dragToSelect,
+                        crossAppDragHoldMillis = 2_000, crossAppDragReady = ready
+                    ),
+                    onRefresh = {},
+                    onItemAction = { file, action ->
+                        if (action == FileBrowserItemAction.SELECT) {
+                            // Path is Iterable, so plus/minus need the element as a set.
+                            harness.selected = if (file.path in harness.selected) {
+                                harness.selected - setOf(file.path)
+                            } else harness.selected + setOf(file.path)
+                        }
+                    },
+                    onRangeSelect = {},
+                    onSetSelection = { changed, select ->
+                        harness.selected = if (select) harness.selected + changed.map { it.path }
+                            else harness.selected - changed.map { it.path }.toSet()
+                    },
+                    contentPadding = PaddingValues(),
+                    onStartCrossAppDrag = { _, _ -> harness.drags++; true }
+                )
+            }
+        }
+        composeRule.waitForIdle()
+    }
+
+    /** Presses [index], waits [millis] with a sub-slop wiggle, then lifts. */
+    private fun hold(index: Int, millis: Long, release: Boolean = true) {
+        val list = composeRule.onNode(hasScrollAction())
+        val listTop = list.fetchSemanticsNode().boundsInRoot.top
+        val start = centerOf(name(index), listTop)
+        list.performTouchInput {
+            down(start)
+            advanceEventTime(millis)
+            moveTo(start + Offset(0f, 1f))
+            if (release) up()
+        }
+        composeRule.waitForIdle()
+    }
+
+    @Test
+    fun holdingASelectedItemStartsACrossAppDragAndKeepsTheSelection() {
+        val harness = HoldHarness(files("/hold", 20), setOf(2, 3))
+        setHoldContent(harness)
+        hold(3, 2_100)
+        assertEquals(1, harness.drags)
+        assertEquals(setOf(2, 3), harness.indices())
+    }
+
+    @Test
+    fun releasingASelectedItemBeforeTheHoldDeselectsItWithoutDragging() {
+        val harness = HoldHarness(files("/hold", 20), setOf(2, 3))
+        setHoldContent(harness)
+        hold(3, 1_000)
+        assertEquals(0, harness.drags)
+        assertEquals(setOf(2), harness.indices())
+    }
+
+    @Test
+    fun aShortTapOnASelectedItemStillToggles() {
+        val harness = HoldHarness(files("/hold", 20), setOf(2, 3))
+        setHoldContent(harness)
+        hold(3, 50)
+        assertEquals(0, harness.drags)
+        // A tap reaches the row's click, which toggles while a selection exists.
+        assertEquals(setOf(2), harness.indices())
+    }
+
+    @Test
+    fun holdingAnUnselectedItemSelectsItAndNeverDrags() {
+        val harness = HoldHarness(files("/hold", 20), setOf(2))
+        setHoldContent(harness)
+        hold(5, 2_500)
+        assertEquals(0, harness.drags)
+        assertEquals(setOf(2, 5), harness.indices())
+    }
+
+    @Test
+    fun movingAfterTheLongPressOnASelectedItemDragsToDeselect() {
+        val files = files("/hold", 20)
+        val harness = HoldHarness(files, setOf(3, 4, 5, 6))
+        setHoldContent(harness)
+        val list = composeRule.onNode(hasScrollAction())
+        val listTop = list.fetchSemanticsNode().boundsInRoot.top
+        val start = centerOf(name(3), listTop)
+        val end = centerOf(name(5), listTop)
+        list.performTouchInput {
+            down(start)
+            advanceEventTime(viewConfiguration.longPressTimeoutMillis + 200)
+            moveTo(start + Offset(0f, 1f))
+            moveTo(end)
+            up()
+        }
+        composeRule.waitForIdle()
+        assertEquals(0, harness.drags)
+        assertEquals(setOf(6), harness.indices())
+    }
+
+    @Test
+    fun aSelectionOutsideTheRulesKeepsTheNormalLongPress() {
+        val harness = HoldHarness(files("/hold", 20), setOf(2, 3))
+        setHoldContent(harness, ready = false)
+        hold(3, 2_500)
+        assertEquals(0, harness.drags)
+        assertEquals(setOf(2), harness.indices())
+    }
+
+    @Test
+    fun withoutDragToSelectTheListStillOwnsLongPressAndHold() {
+        val harness = HoldHarness(files("/hold", 20), emptySet())
+        setHoldContent(harness, dragToSelect = false)
+        hold(4, 800)
+        assertEquals(setOf(4), harness.indices())
+        hold(4, 2_100)
+        assertEquals(1, harness.drags)
+        assertEquals(setOf(4), harness.indices())
+    }
 }

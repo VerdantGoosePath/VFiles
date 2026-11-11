@@ -171,6 +171,31 @@ object Settings {
             R.bool.pref_default_value_file_list_icon_tap_selects
         )
 
+    val FILE_LIST_CROSS_APP_DRAG: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_cross_app_drag,
+            R.bool.pref_default_value_file_list_cross_app_drag
+        )
+
+    /** Milliseconds; read through [me.zhanghai.android.files.filelist.CrossAppDragHold.coerce]. */
+    val FILE_LIST_CROSS_APP_DRAG_HOLD_MILLIS: SettingLiveData<Int> =
+        IntegerSettingLiveData(
+            R.string.pref_key_file_list_cross_app_drag_hold_millis,
+            R.integer.pref_default_value_file_list_cross_app_drag_hold_millis
+        )
+
+    val FILE_LIST_CROSS_APP_DRAG_ALLOW_DIRECTORIES: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_cross_app_drag_allow_directories,
+            R.bool.pref_default_value_file_list_cross_app_drag_allow_directories
+        )
+
+    val FILE_LIST_CROSS_APP_DRAG_ALLOW_MULTIPLE: SettingLiveData<Boolean> =
+        BooleanSettingLiveData(
+            R.string.pref_key_file_list_cross_app_drag_allow_multiple,
+            R.bool.pref_default_value_file_list_cross_app_drag_allow_multiple
+        )
+
     val APP_ICON_COLOR: SettingLiveData<ThemeColor> =
         EnumSettingLiveData(
             R.string.pref_key_app_icon_color, R.string.pref_default_value_app_icon_color,

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Hold an already selected item to drag it into another app. -->
+    <string name="settings_cross_app_drag_title">Drag to other apps</string>
+    <!-- %1$s is a duration such as "2.0 s". -->
+    <string name="settings_cross_app_drag_summary_on">Hold selected items for %1$s</string>
+    <string name="settings_cross_app_drag_summary_off">Off</string>
+    <string name="settings_cross_app_drag_main_switch">Use drag to other apps</string>
+    <string name="settings_cross_app_drag_description">Hold an item that is already selected until it lifts, then drop it into another app on screen, such as one in split screen or a desktop window.</string>
+    <string name="settings_cross_app_drag_gesture">Gesture</string>
+    <string name="settings_cross_app_drag_hold_title">Hold duration</string>
+    <string name="settings_cross_app_drag_hold_summary">How long to hold before the drag starts</string>
+    <!-- %1$s is a number of seconds such as "2.0". -->
+    <string name="settings_cross_app_drag_seconds_format">%1$s s</string>
+    <string name="settings_cross_app_drag_hold_edit">Enter an exact duration</string>
+    <string name="settings_cross_app_drag_hold_field">Seconds</string>
+    <!-- %1$s and %2$s are durations such as "0.5 s" and "5.0 s". -->
+    <string name="settings_cross_app_drag_hold_range">From %1$s to %2$s, in steps of 0.1 s</string>
+    <string name="settings_cross_app_drag_items">What can be dragged</string>
+    <string name="settings_cross_app_drag_folders_title">Folders</string>
+    <string name="settings_cross_app_drag_folders_summary">Drag folders, not only files</string>
+    <string name="settings_cross_app_drag_multiple_title">Multiple items</string>
+    <string name="settings_cross_app_drag_multiple_summary">Drag several items at once</string>
+    <string name="settings_cross_app_drag_allowed_files">You can drag one file at a time.</string>
+    <string name="settings_cross_app_drag_allowed_file_or_folder">You can drag one file or one folder at a time.</string>
+    <string name="settings_cross_app_drag_allowed_files_multiple">You can drag one or more files. Selections with folders stay put.</string>
+    <string name="settings_cross_app_drag_allowed_all">You can drag any selection of files and folders.</string>
+    <string name="settings_cross_app_drag_archive_note">Items inside archives can’t be dragged. Extract them first.</string>
+</resources>
